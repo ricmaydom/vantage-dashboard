@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Vantage</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vantage">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base: #0f0f0f;
+  --bg-surface: #181818;
+  --bg-elevated: #222222;
+  --bg-border: #2d2d2d;
+  --text-primary: #f0f0f0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #787878;
+  --text-disabled: #505050;
+  --accent: #c9a84c;
+  --accent-hover: #e0b85c;
+
+  --color-red: #e05252;
+  --color-red-dim: rgba(224,82,82,0.15);
+  --color-amber: #d4924a;
+  --color-amber-dim: rgba(212,146,74,0.15);
+  --color-green: #52a87c;
+  --color-green-dim: rgba(82,168,124,0.15);
+  --color-blue: #4a90d4;
+  --color-blue-dim: rgba(74,144,212,0.15);
+  --color-purple: #9b6dd4;
+  --color-purple-dim: rgba(155,109,212,0.15);
+  --color-teal: #3dada8;
+  --color-teal-dim: rgba(61,173,168,0.15);
+  --color-cyan: #4ab8d4;
+  --color-cyan-dim: rgba(74,184,212,0.15);
+  --color-orange: #d47a3d;
+  --color-orange-dim: rgba(212,122,61,0.15);
+  --color-pink: #d46da0;
+  --color-pink-dim: rgba(212,109,160,0.15);
+  --color-sage: #7aad80;
+  --color-sage-dim: rgba(122,173,128,0.15);
+  --color-slate: #8494a8;
+  --color-slate-dim: rgba(132,148,168,0.15);
+  --color-gold: #c9a84c;
+  --color-gold-dim: rgba(201,168,76,0.15);
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --lh-tight: 1.3;
+  --lh-base: 1.5;
+  --lh-loose: 1.7;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: var(--text-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* AUTH GATE */
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-base);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border);
+  border-radius: 16px;
+  width: min(380px, 94vw);
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.auth-mark {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-base);
+  border: 1px solid var(--bg-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.auth-mark svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.auth-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.auth-sub {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: -10px;
+}
+
+.auth-inp {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bg-border);
+  border-radius: 8px;
+  padding: 10px 13px;
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: var(--text-base);
+  outline: none;
+  transition: border-color 0.14s;
+}
+
+.auth-inp::placeholder {
+  color: var(--text-disabled);
+}
+
+.auth-inp:focus {
+  border-color: var(--accent);
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: var(--bg-base);
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+
+.auth-btn:hover {
+  background: var(--accent-hover);
+}
+
+.auth-err {
+  font-size: var(--text-xs);
+  color: var(--color-red);
+  text-align: center;
+  min-height: 16px;
+}
+
+.auth-note {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: var(--lh-base);
+}
+
+/* APP LAYOUT */
+.app {
+  display: flex;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--bg-border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+  z-index: 20;
+}
+
+.sidebar.collapsed {
+  width: 56px;
+  min-width: 56px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px 11px;
+  border-bottom: 1px solid var(--bg-border);
+  min-height: 55px;
+}
+
+.workspace-mark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.mark-icon {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  background: var(--bg-base);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.mark-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.mark-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.2s, width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mark-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.mark-sub {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.sidebar.collapsed .mark-text,
+.sidebar.collapsed .nav-list,
+.sidebar.collapsed .nav-section {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.collapse-btn {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: 1px solid var(--bg-border);
+  background: var(--bg-elevated);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  transition: all 0.14s;
+  padding: 0;
+}
+
+.collapse-btn:hover {
+  background: var(--bg-border);
+  color: var(--text-primary);
+}
+
+.collapse-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar.collapsed .collapse-btn svg {
+  transform: rotate(180deg);
+}
+
+.briefing-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  margin: 10px 10px 3px;
+  background: var(--color-gold-dim);
+  border: 1px solid var(--color-gold);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.14s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.briefing-pill:hover {
+  background: rgba(201, 168, 76, 0.25);
+}
+
+.briefing-dot {
+  width: 5px;
+  height: 5px;
+  min-width: 5px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 2.4s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.briefing-text {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--accent-hover);
+}
+
+.sidebar.collapsed .briefing-text {
+  display: none;
+}
+
+.nav-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+  scrollbar-width: none;
+  transition: opacity 0.2s, width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-list::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-section {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 8px 14px 3px;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.nav-group {
+  padding: 2px 0;
+}
+
+.nav-group + .nav-group {
+  border-top: 1px solid var(--bg-border);
+  margin-top: 3px;
+  padding-top: 5px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  margin: 1px 7px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+  position: relative;
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.nav-item:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--color-gold-dim);
+  color: var(--accent-hover);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+}
+
+.nav-item.active .nav-icon {
+  background: rgba(201, 168, 76, 0.25);
+}
+
+.nav-icon {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+
+.nav-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-label {
+  flex: 1;
+  overflow: hidden;
+}
+
+.nav-badge {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  padding: 1px 5px;
+  border-radius: 10px;
+  min-width: 17px;
+  text-align: center;
+  flex-shrink: 0;
+  background: var(--accent);
+  color: var(--bg-base);
+  transition: opacity 0.2s;
+}
+
+.nav-badge.alert {
+  background: var(--color-red);
+  color: #fff;
+}
+
+.sidebar.collapsed .nav-badge {
+  opacity: 0;
+}
+
+.nav-item::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(56px - 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--bg-border);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.14s;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.sidebar.collapsed .nav-item:hover::after {
+  opacity: 1;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--bg-border);
+  padding: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.footer-btn {
+  flex: 1;
+  padding: 7px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.14s;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-btn:hover {
+  background: var(--bg-border);
+  color: var(--text-primary);
+}
+
+.footer-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+}
+
+/* MAIN */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bg-border);
+  background: var(--bg-surface);
+  min-height: 50px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.granola-status {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  padding: 4px 8px;
+  background: var(--bg-base);
+  border-radius: 4px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--bg-border);
+  background: var(--bg-elevated);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.14s;
+  padding: 0;
+}
+
+.header-btn:hover {
+  background: var(--bg-border);
+  color: var(--text-primary);
+}
+
+.header-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-border) transparent;
+}
+
+.content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--bg-border);
+  border-radius: 4px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-elevated);
+}
+
+.content-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.content-inner.full-width {
+  max-width: none;
+}
+
+.content-inner.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* CARD */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bg-border);
+  min-height: 44px;
+}
+
+.card-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-body {
+  padding: 12px 0;
+}
+
+.card-body.collapsed {
+  display: none;
+}
+
+.card-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--bg-border);
+  display: flex;
+  gap: 8px;
+}
+
+.toggle-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  padding: 0;
+}
+
+.toggle-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+  transition: transform 0.2s;
+}
+
+.toggle-btn.collapsed svg {
+  transform: rotate(-90deg);
+}
+
+/* ROWS */
+.row {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bg-border);
+  cursor: pointer;
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--text-base);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--bg-elevated);
+}
+
+.row.clickable {
+  cursor: pointer;
+}
+
+.row-primary {
+  color: var(--text-primary);
+  font-weight: 500;
+  flex: 1;
+  font-size: var(--text-base);
+}
+
+.row-secondary {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.row-meta {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.row-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* INPUTS */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.input-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+textarea,
+select {
+  width: 100%;
+  padding: 9px 11px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: var(--text-base);
+  transition: border-color 0.14s;
+  outline: none;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="tel"]::placeholder,
+textarea::placeholder {
+  color: var(--text-disabled);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-size: var(--text-base);
+  line-height: var(--lh-base);
+}
+
+/* BUTTONS */
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.14s;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:hover {
+  background: var(--bg-border);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--bg-base);
+  border-color: var(--accent);
+}
+
+.btn.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn.danger {
+  background: var(--color-red-dim);
+  color: var(--color-red);
+  border-color: var(--color-red);
+}
+
+.btn.danger:hover {
+  background: rgba(224, 82, 82, 0.25);
+}
+
+.btn.small {
+  padding: 5px 10px;
+  font-size: var(--text-xs);
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+}
+
+/* MODALS */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.modal-overlay.center {
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border);
+  border-radius: 12px 12px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal.center {
+  border-radius: 12px;
+  max-height: 90vh;
+  max-width: 500px;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--bg-border);
+  min-height: 50px;
+}
+
+.modal-header h2 {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--bg-border);
+  background: var(--bg-elevated);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.14s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.modal-close:hover {
+  background: var(--bg-border);
+  color: var(--text-primary);
+}
+
+.modal-close svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+.modal-footer {
+  padding: 16px;
+  border-top: 1px solid var(--bg-border);
+  display: flex;
+  gap: 8px;
+}
+
+.inline-edit-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--bg-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0 0 12px 0;
+  animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+/* FAB */
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bg-base);
+  z-index: 50;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
+  padding: 0;
+}
+
+.fab:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4);
+}
+
+.fab svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .content-inner.two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .sidebar {
+    display: none;
+  }
+
+  .content-inner {
+    padding: 12px;
+  }
+
+  .fab {
+    width: 48px;
+    height: 48px;
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .fab svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .card-title {
+    font-size: var(--text-md);
+  }
+
+  .row {
+    padding: 10px 12px;
+    font-size: var(--text-base);
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+      </div>
+    </div>
+    <h1 class="auth-title">Vantage</h1>
+    <p class="auth-sub">Sign in to your account</p>
+    <input type="email" class="auth-inp" id="authEmail" placeholder="your@email.com">
+    <input type="password" class="auth-inp" id="authPass" placeholder="Password">
+    <button class="auth-btn" id="authBtn">Sign In</button>
+    <div class="auth-err" id="authErr"></div>
+    <p class="auth-note">Demo: use leo@vantage.system / test or any email with password 'test'</p>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none;">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="workspace-mark">
+        <div class="mark-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+        </div>
+        <div class="mark-text">
+          <div class="mark-name">Vantage</div>
+          <div class="mark-sub">Ric Maydom</div>
+        </div>
+      </div>
+      <button class="collapse-btn" id="collapseBtn" style="padding:0;">
+        <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke="currentColor" fill="none"/></svg>
+      </button>
+    </div>
+
+    <div class="briefing-pill" id="briefingPill" style="display:none;">
+      <div class="briefing-dot"></div>
+      <div class="briefing-text">Briefing Done</div>
+    </div>
+
+    <div class="nav-list">
+      <div class="nav-group">
+        <div class="nav-section">WORKSPACE</div>
+        <div class="nav-item active" data-view="Today" data-tip="Today">
+          <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" fill="none"/></svg></div>
+          <div class="nav-label">Today</div>
+          <div class="nav-badge" id="navBadgeCR" style="display:none;">0</div>
+        </div>
+        <div class="nav-item" data-view="CRM" data-tip="CRM">
+          <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" fill="none"/><circle cx="12" cy="7" r="4" stroke="currentColor" fill="none"/></svg></div>
+          <div class="nav-label">CRM</div>
+          <div class="nav-badge" id="navBadgeContacts">0</div>
+        </div>
+        <div class="nav-item" data-view="Actions" data-tip="Actions">
+          <div class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3" stroke="currentColor" fill="none"/><polyline points="12 12.5 20 7.5" stroke="currentColor" fill="none"/><polyline points="12 12.5 12 21" stroke="currentColor" fill="none"/><polyline points="12 12.5 4 7.5" stroke="currentColor" fill="none"/></svg></div>
+          <div class="nav-label">Actions</div>
+          <div class="nav-badge" id="navBadgeTasks">0</div>
+        </div>
+        <div class="nav-item" data-view="Deals" data-tip="Deals">
+          <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" stroke="currentColor" fill="none"/><polyline points="13 2 13 9 20 9" stroke="currentColor" fill="none"/></svg></div>
+          <div class="nav-label">Deals</div>
+          <div class="nav-badge" id="navBadgeDeals">0</div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-section">INTELLIGENCE</div>
+        <div class="nav-item" data-view="Market" data-tip="Market">
+          <div class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="12 3 20.123 10.88 12 7.77 3.877 10.88 12 3" stroke="currentColor" fill="none"/><polyline points="12 12 20 16.123 12 19 4 16.123 12 12" stroke="currentColor" fill="none"/><path d="M12 19v2" stroke="currentColor" fill="none"/></svg></div>
+          <div class="nav-label">Market Intel</div>
+          <div class="nav-badge" id="navBadgeIntel">0</div>
+        </div>
+        <div class="nav-item" data-view="Strategy" data-tip="Strategy">
+          <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" stroke="currentColor" fill="none"/></svg></div>
+          <div class="nav-label">Strategy & Ideas</div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-section">ADMIN</div>
+        <div class="nav-item" data-view="Knowledge" data-tip="Knowledge">
+          <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" fill="none"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" fill="none"/></svg></div>
+          <div class="nav-label">Knowledge Base</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="footer-btn" id="logoutBtn" title="Sign out" style="padding:0;">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" fill="none" stroke-width="2"/><polyline points="16 17 21 12 16 7" stroke="currentColor" fill="none" stroke-width="2"/><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="main-header">
+      <div class="header-left">
+        <h1 class="header-title" id="headerTitle">Today</h1>
+        <div class="granola-status" id="granolaStatus">Granola: syncing...</div>
+      </div>
+      <div class="header-right">
+        <button class="header-btn" id="refreshBtn" title="Refresh data" style="padding:0;">
+          <svg viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" fill="none" stroke-width="2"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64" stroke="currentColor" fill="none" stroke-width="2"/><path d="M3.51 15A9 9 0 0 0 18.36 18.36" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="content-inner" id="contentInner">
+        <!-- Views render here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" id="fab" title="New capture">
+  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" fill="none" stroke-width="2"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// CONSTANTS
+const SUPABASE_URL = 'https://qxjdwafkntlgiytdxeaf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_AnpuVpUdk7ggC435BgdvNQ_aRFl6Yh_';
+const AUTH_ENABLED = true;
+
+// STATE
+const S = {
+  supabase: null,
+  user: null,
+  view: 'Today',
+  contacts: [],
+  deals: [],
+  tasks: [],
+  interactions: [],
+  intel: [],
+  ideas: [],
+  contactSearch: '',
+  taskSearch: '',
+  intelSearch: '',
+  editingTaskId: null,
+};
+
+// INIT
+async function init() {
+  try {
+    S.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { data: { session }, error } = await S.supabase.auth.getSession();
+    if (error || !session) {
+      showAuthGate();
+    } else {
+      S.user = session.user;
+      showApp();
+      await loadAll();
+      setupRealtime();
+      setupUI();
+    }
+  } catch (e) {
+    console.error('Init error:', e);
+    showAuthGate();
+  }
+}
+
+// AUTH
+function showAuthGate() {
+  document.getElementById('authGate').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authBtn').onclick = authSignIn;
+  document.getElementById('authPass').onkeypress = (e) => {
+    if (e.key === 'Enter') authSignIn();
+  };
+}
+
+async function authSignIn() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const errEl = document.getElementById('authErr');
+  errEl.textContent = '';
+
+  if (!email || !pass) {
+    errEl.textContent = 'Email and password required';
+    return;
+  }
+
+  try {
+    const { data, error } = await S.supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    S.user = data.user;
+    showApp();
+    await loadAll();
+    setupRealtime();
+    setupUI();
+  } catch (e) {
+    errEl.textContent = e.message || 'Sign in failed. Try leo@vantage.system / test';
+  }
+}
+
+function authSignOut() {
+  S.supabase.auth.signOut().then(() => {
+    S.user = null;
+    location.reload();
+  });
+}
+
+function showApp() {
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+
+// LOAD DATA
+async function loadAll() {
+  try {
+    const [contacts, deals, tasks, interactions, intel] = await Promise.all([
+      S.supabase.from('contacts').select('*'),
+      S.supabase.from('deals').select('*'),
+      S.supabase.from('tasks').select('*'),
+      S.supabase.from('interactions').select('*'),
+      S.supabase.from('intel_records').select('*'),
+    ]);
+
+    if (contacts.data) S.contacts = contacts.data;
+    if (deals.data) S.deals = deals.data;
+    if (tasks.data) S.tasks = tasks.data;
+    if (interactions.data) S.interactions = interactions.data;
+    if (intel.data) S.intel = intel.data;
+
+    updateBadges();
+    render();
+  } catch (e) {
+    console.error('Load error:', e);
+  }
+}
+
+// REALTIME
+function setupRealtime() {
+  S.supabase.channel('db-changes').on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'contacts' },
+    (payload) => {
+      if (payload.eventType === 'INSERT') {
+        S.contacts.push(payload.new);
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = S.contacts.findIndex(c => c.id === payload.new.id);
+        if (idx >= 0) S.contacts[idx] = payload.new;
+      } else if (payload.eventType === 'DELETE') {
+        S.contacts = S.contacts.filter(c => c.id !== payload.old.id);
+      }
+      if (S.view === 'CRM') renderCRMView();
+      updateBadges();
+    }
+  ).on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'deals' },
+    (payload) => {
+      if (payload.eventType === 'INSERT') {
+        S.deals.push(payload.new);
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = S.deals.findIndex(d => d.id === payload.new.id);
+        if (idx >= 0) S.deals[idx] = payload.new;
+      } else if (payload.eventType === 'DELETE') {
+        S.deals = S.deals.filter(d => d.id !== payload.old.id);
+      }
+      if (S.view === 'Deals' || S.view === 'Today') render();
+      updateBadges();
+    }
+  ).on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'tasks' },
+    (payload) => {
+      if (payload.eventType === 'INSERT') {
+        S.tasks.push(payload.new);
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = S.tasks.findIndex(t => t.id === payload.new.id);
+        if (idx >= 0) S.tasks[idx] = payload.new;
+      } else if (payload.eventType === 'DELETE') {
+        S.tasks = S.tasks.filter(t => t.id !== payload.old.id);
+      }
+      if (S.view === 'Actions' || S.view === 'Today') render();
+      updateBadges();
+    }
+  ).on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'intel_records' },
+    (payload) => {
+      if (payload.eventType === 'INSERT') {
+        S.intel.push(payload.new);
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = S.intel.findIndex(i => i.id === payload.new.id);
+        if (idx >= 0) S.intel[idx] = payload.new;
+      } else if (payload.eventType === 'DELETE') {
+        S.intel = S.intel.filter(i => i.id !== payload.old.id);
+      }
+      if (S.view === 'Market') renderMarketView();
+      updateBadges();
+    }
+  ).subscribe();
+}
+
+// UPDATE BADGES
+function updateBadges() {
+  document.getElementById('navBadgeContacts').textContent = S.contacts.length;
+  document.getElementById('navBadgeTasks').textContent = S.tasks.filter(t => t.status !== 'Completed').length;
+  document.getElementById('navBadgeDeals').textContent = S.deals.length;
+  document.getElementById('navBadgeIntel').textContent = S.intel.length;
+}
+
+// SETUP UI
+function setupUI() {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.onclick = () => {
+      document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      S.view = el.dataset.view;
+      updateHeader();
+      render();
+    };
+  });
+
+  document.getElementById('collapseBtn').onclick = () => {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  };
+
+  document.getElementById('refreshBtn').onclick = loadAll;
+  document.getElementById('fab').onclick = showCaptureModal;
+  document.getElementById('logoutBtn').onclick = authSignOut;
+}
+
+// HEADER
+function updateHeader() {
+  document.getElementById('headerTitle').textContent = S.view;
+}
+
+// RENDER
+function render() {
+  const inner = document.getElementById('contentInner');
+  inner.innerHTML = '';
+
+  if (S.view === 'Today') {
+    renderToday();
+  } else if (S.view === 'CRM') {
+    renderCRMView();
+  } else if (S.view === 'Actions') {
+    renderActionsView();
+  } else if (S.view === 'Deals') {
+    renderDealsView();
+  } else if (S.view === 'Market') {
+    renderMarketView();
+  } else if (S.view === 'Strategy') {
+    renderStrategyView();
+  } else if (S.view === 'Knowledge') {
+    renderKnowledgeView();
+  }
+}
+
+// TODAY VIEW
+function renderToday() {
+  const inner = document.getElementById('contentInner');
+  inner.classList.remove('two-col', 'full-width');
+  inner.classList.add('two-col');
+
+  const html = `
+    <div class="card" style="grid-column: 1/-1;">
+      <div class="card-header"><h2 class="card-title">Today's Commitments</h2></div>
+      <div class="card-body">
+        <div style="padding: 16px; text-align: center; color: var(--text-secondary);">
+          <p style="font-size: var(--text-base); margin-bottom: 12px;">No briefing selected yet.</p>
+          <button class="btn primary" onclick="showBriefingModal()">Start Today's Briefing</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Active Pipeline</h2></div>
+      <div class="card-body"><div style="padding: 16px; text-align: center; font-size: var(--text-xl); font-weight: 600; color: var(--accent);">${S.deals.filter(d => ['In Pursuit', 'In DD', 'IC Stage'].includes(d.deal_stage)).length}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Open Actions</h2></div>
+      <div class="card-body"><div style="padding: 16px; text-align: center; font-size: var(--text-xl); font-weight: 600; color: var(--accent);">${S.tasks.filter(t => t.status !== 'Completed').length}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Deals in DD</h2></div>
+      <div class="card-body"><div style="padding: 16px; text-align: center; font-size: var(--text-xl); font-weight: 600; color: var(--accent);">${S.deals.filter(d => d.deal_stage === 'In DD').length}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Open CRM</h2></div>
+      <div class="card-body">${renderContactsList(S.contacts.slice(0, 5))}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Recent Intel</h2></div>
+      <div class="card-body">
+        ${S.intel.length === 0 ? '<div style="padding: 16px; color: var(--text-tertiary); font-size: var(--text-sm);">No intel records yet</div>' : S.intel.slice(0, 5).map(i => `<div class="row"><div class="row-primary">${i.summary || 'Untitled'}</div><div class="row-meta">${new Date(i.intel_date).toLocaleDateString()}</div></div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  inner.innerHTML = html;
+}
+
+// CRM VIEW
+function renderCRMView() {
+  const inner = document.getElementById('contentInner');
+  inner.classList.add('full-width');
+
+  const filtered = filterContacts();
+  const html = `
+    <div class="card" style="grid-column: 1/-1;">
+      <div class="card-header"><h2 class="card-title">Contacts</h2></div>
+      <div class="card-body">
+        <div style="padding: 12px 16px;">
+          <input type="text" placeholder="Search contacts..." id="contactSearch" style="width: 100%; font-size: var(--text-base);" value="${S.contactSearch}">
+        </div>
+        ${renderContactsList(filtered)}
+      </div>
+    </div>
+  `;
+
+  inner.innerHTML = html;
+
+  const searchEl = document.getElementById('contactSearch');
+  searchEl.oninput = (e) => {
+    S.contactSearch = e.target.value;
+    const parent = searchEl.closest('.card-body');
+    const filtered2 = filterContacts();
+    parent.innerHTML = '<div style="padding: 12px 16px;"><input type="text" placeholder="Search contacts..." id="contactSearch" style="width: 100%; font-size: var(--text-base);" value="' + S.contactSearch + '"></div>' + renderContactsList(filtered2);
+    document.getElementById('contactSearch').oninput = arguments.callee;
+    document.getElementById('contactSearch').focus();
+  };
+
+  searchEl.focus();
+}
+
+function filterContacts() {
+  if (!S.contactSearch) return S.contacts;
+  const q = S.contactSearch.toLowerCase();
+  return S.contacts.filter(c =>
+    (c.name && c.name.toLowerCase().includes(q)) ||
+    (c.email && c.email.toLowerCase().includes(q)) ||
+    (c.firm && c.firm.toLowerCase().includes(q))
+  );
+}
+
+function getContactTypeColor(type) {
+  const map = {
+    'Agent': {color:'var(--color-blue)',dim:'var(--color-blue-dim)'},
+    'Valuer': {color:'var(--color-purple)',dim:'var(--color-purple-dim)'},
+    'Investor': {color:'var(--color-gold)',dim:'var(--color-gold-dim)'},
+    'Financier (Debt)': {color:'var(--color-teal)',dim:'var(--color-teal-dim)'},
+    'Financier (Equity)': {color:'var(--color-cyan)',dim:'var(--color-cyan-dim)'},
+    'Lawyer': {color:'var(--color-orange)',dim:'var(--color-orange-dim)'},
+    'Advisor': {color:'var(--color-pink)',dim:'var(--color-pink-dim)'},
+    'Consultant': {color:'var(--color-amber)',dim:'var(--color-amber-dim)'},
+    'Government / Approvals': {color:'var(--color-sage)',dim:'var(--color-sage-dim)'},
+    'Former Employer': {color:'var(--color-slate)',dim:'var(--color-slate-dim)'},
+    'Personal': {color:'var(--color-gold)',dim:'var(--color-gold-dim)'},
+  };
+  // Fallback: infer from legacy firm_type
+  if (!map[type]) {
+    if (/agent|agency|cbre|jll|colliers|savills|cushman|knight frank/i.test(type||'')) return map['Agent'];
+    if (/valu/i.test(type||'')) return map['Valuer'];
+    if (/fund|super|invest|reit|asset manag/i.test(type||'')) return map['Investor'];
+    if (/bank|debt|lend/i.test(type||'')) return map['Financier (Debt)'];
+    if (/law|legal|solicitor/i.test(type||'')) return map['Lawyer'];
+    return {color:'var(--color-slate)',dim:'var(--color-slate-dim)'};
+  }
+  return map[type];
+}
+
+function renderContactRow(c) {
+  const typeLabel = c.contact_type || c.firm_type || '';
+  const tc = getContactTypeColor(typeLabel);
+  const badge = typeLabel ? `<span style="background:${tc.dim};color:${tc.color};border:1px solid ${tc.color}33;padding:2px 7px;border-radius:4px;font-size:var(--text-xs);font-weight:500;white-space:nowrap;flex-shrink:0;">${typeLabel.length > 14 ? typeLabel.slice(0,13)+'…' : typeLabel}</span>` : '';
+  return `
+    <div class="row clickable" onclick="showContactDetail('${c.id}')">
+      <div style="flex: 1; min-width: 0;">
+        <div class="row-primary">${c.name || 'Untitled'}</div>
+        <div class="row-secondary">${[c.firm, c.role_title].filter(Boolean).join(' · ')}</div>
+        ${c.city ? `<div class="row-meta">${c.city}${c.state ? ', ' + c.state : ''}</div>` : ''}
+      </div>
+      ${badge}
+    </div>
+  `;
+}
+
+function renderContactsList(contacts) {
+  if (contacts.length === 0) {
+    return '<div style="padding: 16px; color: var(--text-tertiary); text-align: center;">No contacts found</div>';
+  }
+  const tierGroups = [
+    { tier: 1, label: 'Tier 1 — Core', id: 'contact-tier-1' },
+    { tier: 2, label: 'Tier 2 — Network', id: 'contact-tier-2' },
+    { tier: 3, label: 'Tier 3 — Peripheral', id: 'contact-tier-3' },
+    { tier: 0, label: 'Untiered', id: 'contact-tier-0' },
+  ];
+  const sections = tierGroups.map(({ tier, label, id }) => {
+    const group = tier === 0
+      ? contacts.filter(c => !c.relationship_tier)
+      : contacts.filter(c => c.relationship_tier === tier);
+    if (group.length === 0) return '';
+    const collapsed = initSectionState(id, false);
+    return `
+      <div id="${id}" style="border-bottom: 1px solid var(--bg-border);">
+        <div onclick="toggleSection('${id}')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;user-select:none;">
+          <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;">${label}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:var(--text-xs);color:var(--text-tertiary);">${group.length}</span>
+            <button class="toggle-btn ${collapsed ? 'collapsed' : ''}" style="pointer-events:none;">
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="currentColor" fill="none"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body" style="${collapsed ? 'display:none;' : ''}">
+          ${group.map(c => renderContactRow(c)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+  return sections || '<div style="padding: 16px; color: var(--text-tertiary); text-align: center;">No contacts found</div>';
+}
+
+// ACTIONS VIEW
+function renderActionsView() {
+  const inner = document.getElementById('contentInner');
+  inner.classList.add('full-width');
+
+  const sorted = S.tasks.slice().sort((a, b) => {
+    const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+    const aPrio = priorityOrder[a.importance] || 2;
+    const bPrio = priorityOrder[b.importance] || 2;
+    if (aPrio !== bPrio) return aPrio - bPrio;
+    if (a.deadline_date && b.deadline_date) return new Date(a.deadline_date) - new Date(b.deadline_date);
+    return new Date(b.date_logged || 0) - new Date(a.date_logged || 0);
+  });
+
+  const html = `
+    <div class="card" style="grid-column: 1/-1;">
+      <div class="card-header"><h2 class="card-title">Tasks</h2></div>
+      <div class="card-body">
+        ${sorted.map(t => `
+          <div class="row clickable" onclick="showTaskEdit('${t.id}')" id="task-${t.id}">
+            <div style="flex: 1;">
+              <div class="row-primary">${t.task || 'Untitled'}</div>
+              <div class="row-secondary">${t.category || ''}</div>
+            </div>
+            <div class="row-badge" style="background: ${getPriorityColor(t.importance).dim}; color: ${getPriorityColor(t.importance).color}; border: 1px solid ${getPriorityColor(t.importance).color}33;">${t.importance || 'Low'}</div>
+          </div>
+          <div id="task-edit-${t.id}"></div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  inner.innerHTML = html;
+}
+
+// DEALS VIEW
+function renderDealsView() {
+  const inner = document.getElementById('contentInner');
+  inner.classList.add('full-width');
+
+  const watching = S.deals.filter(d => ['Monitoring', 'Watching', 'Identified'].includes(d.deal_stage));
+  const active = S.deals.filter(d => ['In Pursuit', 'In DD', 'IC Stage'].includes(d.deal_stage));
+  const completed = S.deals.filter(d => ['Completed', 'Settled'].includes(d.deal_stage));
+  const dead = S.deals.filter(d => ['Dead', 'Withdrawn', 'On Hold'].includes(d.deal_stage));
+
+  const html = `
+    ${renderDealSection('Watching', watching, 'deal-section-watching')}
+    ${renderDealSection('Active', active, 'deal-section-active')}
+    ${renderDealSection('Completed', completed, 'deal-section-completed')}
+    ${renderDealSection('Dead / On Hold', dead, 'deal-section-dead')}
+  `;
+
+  inner.innerHTML = html;
+}
+
+function renderDealSection(title, deals, sectionId) {
+  if (deals.length === 0) return '';
+  const collapsed = initSectionState(sectionId, false);
+  return `
+    <div class="card" style="grid-column: 1/-1;" id="${sectionId}">
+      <div class="card-header" onclick="toggleSection('${sectionId}')" style="cursor:pointer;">
+        <h2 class="card-title">${title} <span style="color:var(--text-tertiary);font-weight:400;">(${deals.length})</span></h2>
+        <button class="toggle-btn ${collapsed ? 'collapsed' : ''}" style="padding:0;pointer-events:none;">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="currentColor" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="section-body" style="${collapsed ? 'display:none;' : ''}">
+        ${deals.map(d => `
+          <div class="row clickable" onclick="event.stopPropagation();showDealDetail('${d.id}')">
+            <div style="flex: 1;">
+              <div class="row-primary">${d.deal_name || 'Untitled'}</div>
+              <div class="row-secondary">${d.asset_address || ''}</div>
+            </div>
+            <div class="row-badge" style="background: ${getDealStageColor(d.deal_stage).dim}; color: ${getDealStageColor(d.deal_stage).color}; border: 1px solid ${getDealStageColor(d.deal_stage).color}33;">${d.deal_stage || 'Unknown'}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// MARKET VIEW
+function renderMarketView() {
+  const inner = document.getElementById('contentInner');
+  inner.classList.add('full-width');
+
+  const collapsed = initSectionState('market-intel-main', false);
+  const html = `
+    <div class="card" style="grid-column: 1/-1;" id="market-intel-main">
+      <div class="card-header" onclick="toggleSection('market-intel-main')" style="cursor:pointer;">
+        <h2 class="card-title">Market Intelligence <span style="color:var(--text-tertiary);font-weight:400;">(${S.intel.length})</span></h2>
+        <button class="toggle-btn ${collapsed ? 'collapsed' : ''}" style="padding:0;pointer-events:none;">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="currentColor" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="section-body" style="${collapsed ? 'display:none;' : ''}">
+        ${renderIntel()}
+      </div>
+    </div>
+  `;
+
+  inner.innerHTML = html;
+}
+
+function renderIntel() {
+  if (S.intel.length === 0) {
+    return '<div style="padding: 16px; color: var(--text-tertiary); text-align: center;">No intel records yet</div>';
+  }
+  return S.intel.map(i => `
+    <div class="row">
+      <div style="flex: 1;">
+        <div class="row-primary">${i.summary || 'Untitled'}</div>
+        <div class="row-secondary">${i.asset_class || ''} • ${i.geography || ''}</div>
+      </div>
+      <div class="row-badge" style="background: ${getConfidenceColor(i.confidence).dim}; color: ${getConfidenceColor(i.confidence).color}; border: 1px solid ${getConfidenceColor(i.confidence).color}33;">${i.confidence || 'Unknown'}</div>
+    </div>
+  `).join('');
+}
+
+// STRATEGY VIEW
+function renderStrategyView() {
+  const inner = document.getElementById('contentInner');
+  inner.classList.remove('two-col');
+  inner.classList.add('full-width');
+
+  const subtypeColors = {
+    'Thesis': 'var(--color-purple)', 'Sourcing': 'var(--color-blue)', 'Market View': 'var(--color-teal)',
+    'Capital': 'var(--color-gold)', 'Relationship': 'var(--color-pink)', 'IC Narrative': 'var(--color-orange)', 'Other': 'var(--color-slate)'
+  };
+  const subtypeDims = {
+    'Thesis': 'var(--color-purple-dim)', 'Sourcing': 'var(--color-blue-dim)', 'Market View': 'var(--color-teal-dim)',
+    'Capital': 'var(--color-gold-dim)', 'Relationship': 'var(--color-pink-dim)', 'IC Narrative': 'var(--color-orange-dim)', 'Other': 'var(--color-slate-dim)'
+  };
+
+  const ideas = S.ideas || [];
+
+  function ideaRow(idea, idx) {
+    const subtype = idea.idea_type || idea.subtype || 'Other';
+    const c = subtypeColors[subtype] || 'var(--color-slate)';
+    const d = subtypeDims[subtype] || 'var(--color-slate-dim)';
+    const preview = (idea.content || '').slice(0, 80) + ((idea.content || '').length > 80 ? '…' : '');
+    const date = idea.created_at ? new Date(idea.created_at).toLocaleDateString('en-AU', {day:'numeric',month:'short'}) : '';
+    return `<div class="idea-row" onclick="selectIdea('${idea.id}')" style="padding: 10px 14px; border-bottom: 1px solid var(--bg-border); cursor: pointer; border-radius: 6px; transition: background 0.12s;" onmouseover="this.style.background='var(--bg-elevated)'" onmouseout="this.style.background='transparent'">
+      <div style="display:flex; align-items:flex-start; gap:8px;">
+        <span style="background:${d};color:${c};border:1px solid ${c}33;padding:2px 7px;border-radius:4px;font-size:var(--text-xs);font-weight:500;white-space:nowrap;flex-shrink:0;">${subtype}</span>
+        <span style="font-size:var(--text-base);color:var(--text-primary);line-height:var(--lh-base);flex:1;">${preview || 'Untitled idea'}</span>
+      </div>
+      <div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:4px;padding-left:0;">${date}</div>
+    </div>`;
+  }
+
+  inner.innerHTML = `
+    <div style="display:grid; grid-template-columns: 40% 60%; height:100%; gap:0; overflow:hidden;">
+      <div style="border-right:1px solid var(--bg-border); overflow-y:auto; display:flex; flex-direction:column;">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--bg-border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+          <span style="font-size:var(--text-xs);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-tertiary);">Strategy & Ideas &middot; ${ideas.length}</span>
+          <button onclick="showCaptureSheet('Idea')" style="background:var(--bg-elevated);border:1px solid var(--bg-border);border-radius:6px;padding:4px 10px;font-size:var(--text-xs);color:var(--accent);cursor:pointer;font-weight:500;">+ Capture</button>
+        </div>
+        <div style="flex:1; overflow-y:auto; padding:6px;">
+          ${ideas.length === 0
+            ? `<div style="padding:40px 20px;text-align:center;color:var(--text-tertiary);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px;opacity:0.4;"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                <p style="font-size:var(--text-base);margin-bottom:6px;">No ideas filed yet</p>
+                <p style="font-size:var(--text-sm);">Capture a strategic thought via the + button</p>
+              </div>`
+            : ideas.map((idea, i) => ideaRow(idea, i)).join('')}
+        </div>
+      </div>
+      <div id="ideaDetail" style="overflow-y:auto; padding:28px 32px; display:flex; align-items:center; justify-content:center; color:var(--text-tertiary);">
+        <div style="text-align:center;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="margin-bottom:12px;opacity:0.3;"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+          <p style="font-size:var(--text-base);">Select an idea to view it</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  S._selectedIdeaId = null;
+}
+
+function selectIdea(ideaId) {
+  const idea = (S.ideas || []).find(i => i.id === ideaId);
+  if (!idea) return;
+  S._selectedIdeaId = ideaId;
+  const subtype = idea.idea_type || idea.subtype || 'Other';
+  const subtypeColors = {'Thesis':'var(--color-purple)','Sourcing':'var(--color-blue)','Market View':'var(--color-teal)','Capital':'var(--color-gold)','Relationship':'var(--color-pink)','IC Narrative':'var(--color-orange)','Other':'var(--color-slate)'};
+  const subtypeDims = {'Thesis':'var(--color-purple-dim)','Sourcing':'var(--color-blue-dim)','Market View':'var(--color-teal-dim)','Capital':'var(--color-gold-dim)','Relationship':'var(--color-pink-dim)','IC Narrative':'var(--color-orange-dim)','Other':'var(--color-slate-dim)'};
+  const c = subtypeColors[subtype] || 'var(--color-slate)';
+  const d = subtypeDims[subtype] || 'var(--color-slate-dim)';
+  const date = idea.created_at ? new Date(idea.created_at).toLocaleString('en-AU', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  document.getElementById('ideaDetail').innerHTML = `
+    <div style="max-width:600px; width:100%;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+        <span style="background:${d};color:${c};border:1px solid ${c}33;padding:3px 10px;border-radius:4px;font-size:var(--text-xs);font-weight:500;">${subtype}</span>
+        <span style="font-size:var(--text-xs);color:var(--text-tertiary);">${date}</span>
+      </div>
+      <div style="font-size:var(--text-base);color:var(--text-primary);line-height:var(--lh-loose);white-space:pre-wrap;">${idea.content || ''}</div>
+    </div>
+  `;
+}
+
+// KNOWLEDGE VIEW
+function renderKnowledgeView() {
+  const inner = document.getElementById('contentInner');
+  inner.classList.add('full-width');
+  inner.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Knowledge Base - coming soon</div>';
+}
+
+// CONTACT DETAIL
+function showContactDetail(contactId) {
+  const contact = S.contacts.find(c => c.id === contactId);
+  if (!contact) return;
+
+  const interactionsList = S.interactions.filter(i => i.contact_id === contactId).sort((a, b) => new Date(b.interaction_date) - new Date(a.interaction_date)).slice(0, 10);
+
+  const html = `
+    <div class="modal-overlay center" onclick="if(event.target === this) this.remove();">
+      <div class="modal center">
+        <div class="modal-header">
+          <h2>${contact.name || 'Contact'}</h2>
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove();" style="padding:0;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" fill="none"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <div class="input-label">Firm</div>
+            <div style="color: var(--text-primary); font-size: var(--text-base);">${contact.firm || '—'}</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Role</div>
+            <div style="color: var(--text-primary); font-size: var(--text-base);">${contact.role_title || '—'}</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Email</div>
+            <div style="color: var(--accent); font-size: var(--text-base);"><a href="mailto:${contact.email}" style="text-decoration: none; color: inherit;">${contact.email || '—'}</a></div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Mobile</div>
+            <div style="color: var(--accent); font-size: var(--text-base);"><a href="tel:${contact.mobile}" style="text-decoration: none; color: inherit;">${contact.mobile || '—'}</a></div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">City / State</div>
+            <div style="color: var(--text-primary); font-size: var(--text-base);">${contact.city || '—'}${contact.state ? ', ' + contact.state : ''}</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Tier</div>
+            <div style="color: var(--text-primary); font-size: var(--text-base);">Tier ${contact.relationship_tier || '—'}</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Relationship Notes</div>
+            <div style="color: var(--text-primary); font-size: var(--text-base); white-space: pre-wrap;">${contact.relationship_notes || '—'}</div>
+          </div>
+          <div class="input-group" style="margin-top: 20px;">
+            <div class="input-label">Interaction History</div>
+            ${interactionsList.length === 0 ? '<div style="color: var(--text-tertiary); font-size: var(--text-sm); padding: 12px 0;">No interactions recorded</div>' : interactionsList.map(i => `
+              <div style="padding: 8px 0; border-bottom: 1px solid var(--bg-border); font-size: var(--text-sm);">
+                <div style="color: var(--text-secondary);">${new Date(i.interaction_date).toLocaleDateString()} • ${i.medium || 'Unknown'}</div>
+                <div style="color: var(--text-primary); margin-top: 4px;">${i.summary || ''}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" onclick="showContactEdit('${contactId}')">Edit</button>
+          <button class="btn" onclick="this.closest('.modal-overlay').remove();">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function showContactEdit(contactId) {
+  const contact = S.contacts.find(c => c.id === contactId) || {};
+
+  const html = `
+    <div class="modal-overlay center" onclick="if(event.target === this) this.remove();">
+      <div class="modal center">
+        <div class="modal-header">
+          <h2>Edit Contact</h2>
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove();" style="padding:0;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" fill="none"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <label class="input-label">Name</label>
+            <input type="text" id="contactName" value="${contact.name || ''}" placeholder="Full name" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Email</label>
+            <input type="email" id="contactEmail" value="${contact.email || ''}" placeholder="email@example.com" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Mobile</label>
+            <input type="tel" id="contactMobile" value="${contact.mobile || ''}" placeholder="+61 2 1234 5678" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Firm</label>
+            <input type="text" id="contactFirm" value="${contact.firm || ''}" placeholder="Company name" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Role Title</label>
+            <input type="text" id="contactRole" value="${contact.role_title || ''}" placeholder="Director, Head of..." style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">City</label>
+            <input type="text" id="contactCity" value="${contact.city || ''}" placeholder="Melbourne" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">State</label>
+            <input type="text" id="contactState" value="${contact.state || ''}" placeholder="VIC" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Relationship Tier</label>
+            <select id="contactTier">
+              <option value="1" ${contact.relationship_tier === 1 ? 'selected' : ''}>Tier 1 — Core</option>
+              <option value="2" ${contact.relationship_tier === 2 ? 'selected' : ''}>Tier 2 — Active</option>
+              <option value="3" ${contact.relationship_tier === 3 ? 'selected' : ''}>Tier 3 — Peripheral</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Contact Type</label>
+            <select id="contactType" style="font-size: var(--text-base);">
+              <option value="">— Select type —</option>
+              ${['Agent','Valuer','Investor','Financier (Debt)','Financier (Equity)','Lawyer','Advisor','Consultant','Government / Approvals','Former Employer','Personal'].map(t => `<option value="${t}" ${(contact.contact_type === t) ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Cadence</label>
+            <select id="contactCadence" style="font-size: var(--text-base);">
+              <option value="1" ${contact.cadence_weeks === 1 ? 'selected' : ''}>Weekly</option>
+              <option value="2" ${contact.cadence_weeks === 2 ? 'selected' : ''}>Fortnightly</option>
+              <option value="4" ${contact.cadence_weeks === 4 ? 'selected' : ''}>Monthly</option>
+              <option value="13" ${contact.cadence_weeks === 13 ? 'selected' : ''}>Quarterly</option>
+              <option value="26" ${contact.cadence_weeks === 26 ? 'selected' : ''}>Half-Yearly</option>
+              <option value="52" ${contact.cadence_weeks === 52 ? 'selected' : ''}>Annual</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">How Known</label>
+            <input type="text" id="contactHowKnown" value="${contact.how_known || ''}" placeholder="e.g. Agent — Colliers, met at CBRE lunch" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Relationship Notes</label>
+            <textarea id="contactNotes" placeholder="Background, context, relationship history...">${contact.relationship_notes || ''}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" onclick="saveContact('${contactId || 'new'}')">Save</button>
+          <button class="btn" onclick="this.closest('.modal-overlay').remove();">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function saveContact(contactId) {
+  const data = {
+    name: document.getElementById('contactName').value,
+    email: document.getElementById('contactEmail').value,
+    mobile: document.getElementById('contactMobile').value,
+    firm: document.getElementById('contactFirm').value,
+    role_title: document.getElementById('contactRole').value,
+    city: document.getElementById('contactCity').value,
+    state: document.getElementById('contactState').value,
+    relationship_tier: parseInt(document.getElementById('contactTier').value),
+    contact_type: document.getElementById('contactType').value || null,
+    cadence_weeks: parseInt(document.getElementById('contactCadence').value) || null,
+    how_known: document.getElementById('contactHowKnown').value,
+    relationship_notes: document.getElementById('contactNotes').value,
+  };
+
+  try {
+    if (contactId === 'new') {
+      const { error } = await S.supabase.from('contacts').insert([data]);
+      if (error) throw error;
+    } else {
+      const { error } = await S.supabase.from('contacts').update(data).eq('id', contactId);
+      if (error) throw error;
+    }
+    document.querySelector('.modal-overlay').remove();
+    await loadAll();
+  } catch (e) {
+    alert('Error saving contact: ' + e.message);
+  }
+}
+
+// DEAL DETAIL
+function showDealDetail(dealId) {
+  const deal = S.deals.find(d => d.id === dealId);
+  if (!deal) return;
+
+  const linkedTasks = S.tasks.filter(t => t.deal_id === dealId);
+
+  const html = `
+    <div class="modal-overlay center" onclick="if(event.target === this) this.remove();">
+      <div class="modal center">
+        <div class="modal-header">
+          <h2>${deal.deal_name || 'Deal'}</h2>
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove();" style="padding:0;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" fill="none"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <div class="input-label">Asset Address</div>
+            <div style="color: var(--text-primary); font-size: var(--text-base);">${deal.asset_address || '—'}</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Stage</div>
+            <div class="row-badge" style="background: ${getDealStageColor(deal.deal_stage).dim}; color: ${getDealStageColor(deal.deal_stage).color}; border: 1px solid ${getDealStageColor(deal.deal_stage).color}33; display: inline-block;">${deal.deal_stage || 'Unknown'}</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Asset Strategy</div>
+            <div class="pill-group">
+              ${(deal.asset_strategy || []).map(s => `<span class="pill" style="background: ${getStrategyColor(s).dim}; color: ${getStrategyColor(s).color}; border: 1px solid ${getStrategyColor(s).color}33;">${s}</span>`).join('')}
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Linked Tasks</div>
+            ${linkedTasks.length === 0 ? '<div style="color: var(--text-tertiary); font-size: var(--text-sm);">No tasks linked</div>' : linkedTasks.map(t => `
+              <div style="padding: 8px; background: var(--bg-elevated); border-radius: 4px; margin-bottom: 4px; cursor: pointer;" onclick="showTaskEdit('${t.id}')">
+                <div style="color: var(--text-primary); font-size: var(--text-base);">${t.task}</div>
+                <div style="color: var(--text-secondary); font-size: var(--text-xs);">${t.importance || 'Low'} • ${t.deadline_date ? new Date(t.deadline_date).toLocaleDateString() : 'No date'}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" onclick="showDealEdit('${dealId}')">Edit</button>
+          <button class="btn" onclick="this.closest('.modal-overlay').remove();">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function showDealEdit(dealId) {
+  const deal = S.deals.find(d => d.id === dealId) || {};
+
+  const html = `
+    <div class="modal-overlay center" onclick="if(event.target === this) this.remove();">
+      <div class="modal center">
+        <div class="modal-header">
+          <h2>Edit Deal</h2>
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove();" style="padding:0;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" fill="none"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <label class="input-label">Deal Name</label>
+            <input type="text" id="dealName" value="${deal.deal_name || ''}" placeholder="Deal name" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Asset Address</label>
+            <input type="text" id="dealAddr" value="${deal.asset_address || ''}" placeholder="123 Street, City, State" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Deal Stage</label>
+            <select id="dealStage" style="font-size: var(--text-base);">
+              ${['Monitoring', 'In Pursuit', 'In DD', 'IC Stage', 'Completed', 'Settled', 'Dead', 'Withdrawn', 'On Hold'].map(s => `<option value="${s}" ${deal.deal_stage === s ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Status</label>
+            <select id="dealStatus" style="font-size: var(--text-base);">
+              ${['Active', 'On Hold', 'Closed'].map(s => `<option value="${s}" ${deal.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Confidence</label>
+            <select id="dealConfidence" style="font-size: var(--text-base);">
+              ${['Confirmed', 'Reported', 'Indicative', 'Speculated'].map(c => `<option value="${c}" ${deal.confidence === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Asset Class</label>
+            <select id="dealAssetClass" style="font-size: var(--text-base);">
+              ${['Office', 'Industrial', 'Retail', 'Mixed-Use', 'Other'].map(a => `<option value="${a}" ${deal.asset_class === a ? 'selected' : ''}>${a}</option>`).join('')}
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Geography</label>
+            <select id="dealGeography" style="font-size: var(--text-base);">
+              ${['Melbourne CBD', 'Melbourne Fringe', 'Melbourne Metro', 'Sydney CBD', 'Sydney Metro', 'Brisbane CBD', 'Perth CBD', 'National', 'Other'].map(g => `<option value="${g}" ${deal.geography === g ? 'selected' : ''}>${g}</option>`).join('')}
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Headline Price</label>
+            <input type="text" id="dealPrice" value="${deal.headline_price || ''}" placeholder="$XXm" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">GLA sqm</label>
+            <input type="number" id="dealGLA" value="${deal.gla_sqm || ''}" placeholder="0" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Site Area sqm</label>
+            <input type="number" id="dealSiteArea" value="${deal.site_area_sqm || ''}" placeholder="0" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Passing Income ($/yr)</label>
+            <input type="number" id="dealPassingIncome" value="${deal.passing_income || ''}" placeholder="0" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Yield %</label>
+            <input type="number" id="dealYield" value="${deal.yield_pct || ''}" placeholder="0" step="0.01" style="font-size: var(--text-base);">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Asset Strategy</label>
+            <div id="dealStrategyPills" style="display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0;">
+              ${['Core','Core+','Value-Add','Development','Opportunistic','Special Situation','M&A'].map(s => {
+                const sel = (deal.asset_strategy || []).includes(s);
+                const c = getStrategyColor(s);
+                return `<button type="button" class="strategy-pill" data-strategy="${s}" onclick="toggleStrategyPill(this)" style="padding: 4px 10px; border-radius: 20px; cursor: pointer; font-size: var(--text-xs); font-weight: 500; border: 1px solid ${c.color}33; background: ${sel ? c.color : c.dim}; color: ${sel ? '#fff' : c.color}; transition: all 0.14s;">${s}</button>`;
+              }).join('')}
+            </div>
+            <input type="hidden" id="dealStrategy" value="${(deal.asset_strategy || []).join(',')}">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Key Terms / Notes</label>
+            <textarea id="dealTerms" placeholder="Key terms and notes..." style="font-size: var(--text-base);">${deal.key_terms || ''}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" onclick="saveDeal('${dealId}')">Save</button>
+          <button class="btn" onclick="this.closest('.modal-overlay').remove();">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function toggleStrategyPill(btn) {
+  const strategy = btn.dataset.strategy;
+  const c = getStrategyColor(strategy);
+  const hiddenInput = document.getElementById('dealStrategy');
+  let selected = hiddenInput.value ? hiddenInput.value.split(',').filter(Boolean) : [];
+  if (selected.includes(strategy)) {
+    selected = selected.filter(s => s !== strategy);
+    btn.style.background = c.dim;
+    btn.style.color = c.color;
+  } else {
+    selected.push(strategy);
+    btn.style.background = c.color;
+    btn.style.color = '#fff';
+  }
+  hiddenInput.value = selected.join(',');
+}
+
+async function saveDeal(dealId) {
+  const strategyVal = document.getElementById('dealStrategy').value;
+  const assetStrategy = strategyVal ? strategyVal.split(',').filter(Boolean) : [];
+  const data = {
+    deal_name: document.getElementById('dealName').value,
+    asset_address: document.getElementById('dealAddr').value,
+    deal_stage: document.getElementById('dealStage').value,
+    status: document.getElementById('dealStatus').value,
+    confidence: document.getElementById('dealConfidence').value,
+    asset_class: document.getElementById('dealAssetClass').value,
+    geography: document.getElementById('dealGeography').value,
+    headline_price: document.getElementById('dealPrice').value,
+    gla_sqm: parseFloat(document.getElementById('dealGLA').value) || null,
+    site_area_sqm: parseFloat(document.getElementById('dealSiteArea').value) || null,
+    passing_income: parseFloat(document.getElementById('dealPassingIncome').value) || null,
+    yield_pct: parseFloat(document.getElementById('dealYield').value) || null,
+    asset_strategy: assetStrategy.length > 0 ? assetStrategy : null,
+    key_terms: document.getElementById('dealTerms').value,
+  };
+
+  try {
+    const { error } = await S.supabase.from('deals').update(data).eq('id', dealId);
+    if (error) throw error;
+    document.querySelector('.modal-overlay').remove();
+    await loadAll();
+  } catch (e) {
+    alert('Error saving deal: ' + e.message);
+  }
+}
+
+// TASK EDIT
+function showTaskEdit(taskId) {
+  const task = S.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const panel = document.getElementById('task-edit-' + taskId);
+  if (!panel) return;
+
+  if (panel.innerHTML) {
+    panel.innerHTML = '';
+    S.editingTaskId = null;
+    return;
+  }
+
+  S.editingTaskId = taskId;
+  const deal = task.deal_id ? S.deals.find(d => d.id === task.deal_id) : null;
+
+  const html = `
+    <div class="inline-edit-panel">
+      <div class="input-group">
+        <label class="input-label">Task</label>
+        <input type="text" value="${task.task || ''}" id="taskText" style="font-size: var(--text-base);">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Priority</label>
+        <div class="pill-group">
+          <button class="pill" style="background: ${task.importance === 'High' ? 'var(--color-red)' : 'var(--color-red-dim)'}; color: ${task.importance === 'High' ? '#fff' : 'var(--color-red)'}; border: none; cursor: pointer; padding: 6px 10px;" onclick="document.getElementById('taskPrio').value = 'High'; updatePriorityButtons('High');">High</button>
+          <button class="pill" style="background: ${task.importance === 'Medium' ? 'var(--color-amber)' : 'var(--color-amber-dim)'}; color: ${task.importance === 'Medium' ? '#fff' : 'var(--color-amber)'}; border: none; cursor: pointer; padding: 6px 10px;" onclick="document.getElementById('taskPrio').value = 'Medium'; updatePriorityButtons('Medium');">Medium</button>
+          <button class="pill" style="background: ${task.importance === 'Low' ? 'var(--color-slate)' : 'var(--color-slate-dim)'}; color: ${task.importance === 'Low' ? '#fff' : 'var(--color-slate)'}; border: none; cursor: pointer; padding: 6px 10px;" onclick="document.getElementById('taskPrio').value = 'Low'; updatePriorityButtons('Low');">Low</button>
+        </div>
+        <input type="hidden" id="taskPrio" value="${task.importance || 'Low'}">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Due Date</label>
+        <input type="date" id="taskDue" value="${task.deadline_date ? task.deadline_date.split('T')[0] : ''}" style="font-size: var(--text-base);">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Linked Deal</label>
+        <input type="text" id="taskDealSearch" placeholder="Search deals..." value="${deal ? deal.deal_name : ''}" style="font-size: var(--text-base);">
+        <div id="taskDealDropdown" style="margin-top: 4px; display: none; background: var(--bg-base); border: 1px solid var(--bg-border); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
+        <input type="hidden" id="taskDealId" value="${task.deal_id || ''}">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Notes</label>
+        <textarea id="taskNotes" placeholder="Additional notes..." style="font-size: var(--text-base);">${task.notes || ''}</textarea>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button class="btn primary" onclick="saveTask('${taskId}')">Save</button>
+        <button class="btn" onclick="markTaskComplete('${taskId}')">Complete</button>
+        <button class="btn danger" onclick="if(confirm('Delete this task?')) deleteTask('${taskId}')">Delete</button>
+      </div>
+    </div>
+  `;
+
+  panel.innerHTML = html;
+
+  const dealSearch = document.getElementById('taskDealSearch');
+  const dealDropdown = document.getElementById('taskDealDropdown');
+
+  dealSearch.oninput = () => {
+    const q = dealSearch.value.toLowerCase();
+    const matches = S.deals.filter(d => d.deal_name && d.deal_name.toLowerCase().includes(q)).slice(0, 5);
+
+    if (q.length > 0 && matches.length > 0) {
+      dealDropdown.innerHTML = matches.map(d => `
+        <div style="padding: 8px; cursor: pointer; border-bottom: 1px solid var(--bg-border);" onclick="document.getElementById('taskDealId').value = '${d.id}'; document.getElementById('taskDealSearch').value = '${d.deal_name}'; document.getElementById('taskDealDropdown').style.display = 'none';">
+          ${d.deal_name}
+        </div>
+      `).join('');
+      dealDropdown.style.display = 'block';
+    } else {
+      dealDropdown.style.display = 'none';
+    }
+  };
+}
+
+function updatePriorityButtons(selected) {
+  const buttons = document.querySelectorAll('.inline-edit-panel .pill');
+  buttons.forEach(btn => {
+    const text = btn.textContent.trim();
+    if (text === selected) {
+      if (selected === 'High') {
+        btn.style.background = 'var(--color-red)';
+        btn.style.color = '#fff';
+      } else if (selected === 'Medium') {
+        btn.style.background = 'var(--color-amber)';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.background = 'var(--color-slate)';
+        btn.style.color = '#fff';
+      }
+    } else {
+      if (text === 'High') {
+        btn.style.background = 'var(--color-red-dim)';
+        btn.style.color = 'var(--color-red)';
+      } else if (text === 'Medium') {
+        btn.style.background = 'var(--color-amber-dim)';
+        btn.style.color = 'var(--color-amber)';
+      } else {
+        btn.style.background = 'var(--color-slate-dim)';
+        btn.style.color = 'var(--color-slate)';
+      }
+    }
+  });
+}
+
+async function saveTask(taskId) {
+  const data = {
+    task: document.getElementById('taskText').value,
+    importance: document.getElementById('taskPrio').value,
+    deadline_date: document.getElementById('taskDue').value || null,
+    deal_id: document.getElementById('taskDealId').value || null,
+    notes: document.getElementById('taskNotes').value,
+    status: 'Active',
+  };
+
+  try {
+    const { error } = await S.supabase.from('tasks').update(data).eq('id', taskId);
+    if (error) throw error;
+    document.getElementById('task-edit-' + taskId).innerHTML = '';
+    S.editingTaskId = null;
+    await loadAll();
+  } catch (e) {
+    alert('Error saving task: ' + e.message);
+  }
+}
+
+async function markTaskComplete(taskId) {
+  try {
+    const { error } = await S.supabase.from('tasks').update({ status: 'Completed' }).eq('id', taskId);
+    if (error) throw error;
+    document.getElementById('task-edit-' + taskId).innerHTML = '';
+    S.editingTaskId = null;
+    await loadAll();
+  } catch (e) {
+    alert('Error completing task: ' + e.message);
+  }
+}
+
+async function deleteTask(taskId) {
+  try {
+    const { error } = await S.supabase.from('tasks').delete().eq('id', taskId);
+    if (error) throw error;
+    await loadAll();
+  } catch (e) {
+    alert('Error deleting task: ' + e.message);
+  }
+}
+
+// CAPTURE MODAL
+function showCaptureModal() {
+  const html = `
+    <div class="modal-overlay" onclick="if(event.target === this) this.remove();">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Quick Capture</h2>
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove();" style="padding:0;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" fill="none"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <input type="text" id="captureInput" placeholder="New task, note, or interaction..." style="font-size: var(--text-base); padding: 12px 13px;">
+          </div>
+          <button onclick="toggleMoreOptions()" style="width: 100%; text-align: left; padding: 8px 0; background: none; border: none; color: var(--accent); font-size: var(--text-sm); cursor: pointer; font-weight: 500;">More options ▾</button>
+          <div id="moreOptions" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bg-border);">
+            <div class="input-group">
+              <label class="input-label">Type</label>
+              <select id="captureType" style="font-size: var(--text-base);">
+                <option value="task">Task</option>
+                <option value="note">Note</option>
+                <option value="interaction">Interaction</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label">Priority (for tasks)</label>
+              <select id="capturePrio" style="font-size: var(--text-base);">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label">Due Date</label>
+              <input type="date" id="captureDue" style="font-size: var(--text-base);">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" onclick="submitCapture()">Save</button>
+          <button class="btn" onclick="this.closest('.modal-overlay').remove();">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('captureInput').focus();
+  document.getElementById('captureInput').onkeypress = (e) => {
+    if (e.key === 'Enter') submitCapture();
+  };
+}
+
+function toggleMoreOptions() {
+  const opts = document.getElementById('moreOptions');
+  opts.style.display = opts.style.display === 'none' ? 'block' : 'none';
+}
+
+async function submitCapture() {
+  const text = document.getElementById('captureInput').value.trim();
+  if (!text) return;
+
+  const type = document.getElementById('captureType').value;
+
+  try {
+    if (type === 'task') {
+      const { error } = await S.supabase.from('tasks').insert([{
+        task: text,
+        status: 'Active',
+        importance: document.getElementById('capturePrio').value,
+        deadline_date: document.getElementById('captureDue').value || null,
+        date_logged: new Date().toISOString(),
+      }]);
+      if (error) throw error;
+    } else if (type === 'note') {
+      const { error } = await S.supabase.from('intel_records').insert([{
+        summary: text,
+        source: 'Capture',
+        confidence: 'Reported',
+        intel_date: new Date().toISOString(),
+      }]);
+      if (error) throw error;
+    }
+    document.querySelector('.modal-overlay').remove();
+    await loadAll();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// BRIEFING
+function showBriefingModal() {
+  const html = `
+    <div class="modal-overlay center" onclick="if(event.target === this) this.remove();">
+      <div class="modal center" style="max-width: 400px;">
+        <div class="modal-header">
+          <h2>Morning Briefing</h2>
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove();" style="padding:0;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" fill="none"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-secondary); margin-bottom: 12px;">Select 3 must-do tasks or priorities for today:</p>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            ${S.tasks.filter(t => t.status !== 'Completed').slice(0, 10).map(t => `
+              <label style="display: flex; align-items: center; padding: 8px; border-radius: 4px; cursor: pointer; background: var(--bg-elevated);">
+                <input type="checkbox" class="briefing-check" value="${t.id}" style="margin-right: 8px; cursor: pointer; width: 16px; height: 16px;">
+                <span style="flex: 1; color: var(--text-primary); font-size: var(--text-base);">${t.task}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" onclick="saveBriefing()">Save Briefing</button>
+          <button class="btn" onclick="this.closest('.modal-overlay').remove();">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function saveBriefing() {
+  const checked = document.querySelectorAll('.briefing-check:checked');
+  if (checked.length !== 3) {
+    alert('Please select exactly 3 must-dos');
+    return;
+  }
+
+  const selected = Array.from(checked).map(c => c.value);
+  localStorage.setItem('briefing-' + new Date().toISOString().split('T')[0], JSON.stringify(selected));
+  document.getElementById('briefingPill').style.display = 'flex';
+  document.querySelector('.modal-overlay').remove();
+  render();
+}
+
+// SECTION COLLAPSE / EXPAND
+function toggleSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  const body = section.querySelector('.section-body');
+  const btn = section.querySelector('.toggle-btn');
+  if (!body) return;
+  const isNowCollapsed = body.style.display !== 'none';
+  body.style.display = isNowCollapsed ? 'none' : '';
+  if (btn) btn.classList.toggle('collapsed', isNowCollapsed);
+  try {
+    const st = JSON.parse(sessionStorage.getItem('vantage_sections') || '{}');
+    st[sectionId] = isNowCollapsed;
+    sessionStorage.setItem('vantage_sections', JSON.stringify(st));
+  } catch(e) {}
+}
+
+function initSectionState(sectionId, defaultCollapsed) {
+  if (defaultCollapsed === undefined) defaultCollapsed = false;
+  try {
+    const st = JSON.parse(sessionStorage.getItem('vantage_sections') || '{}');
+    return sectionId in st ? st[sectionId] : defaultCollapsed;
+  } catch(e) { return defaultCollapsed; }
+}
+
+// COLORS
+function getPriorityColor(priority) {
+  switch(priority) {
+    case 'High': return { color: 'var(--color-red)', dim: 'var(--color-red-dim)' };
+    case 'Medium': return { color: 'var(--color-amber)', dim: 'var(--color-amber-dim)' };
+    default: return { color: 'var(--color-slate)', dim: 'var(--color-slate-dim)' };
+  }
+}
+
+function getDealStageColor(stage) {
+  const colors = {
+    'Monitoring': { color: 'var(--color-slate)', dim: 'var(--color-slate-dim)' },
+    'Watching': { color: 'var(--color-slate)', dim: 'var(--color-slate-dim)' },
+    'Identified': { color: 'var(--color-slate)', dim: 'var(--color-slate-dim)' },
+    'In Pursuit': { color: 'var(--color-blue)', dim: 'var(--color-blue-dim)' },
+    'In DD': { color: 'var(--color-orange)', dim: 'var(--color-orange-dim)' },
+    'IC Stage': { color: 'var(--color-purple)', dim: 'var(--color-purple-dim)' },
+    'Completed': { color: 'var(--color-green)', dim: 'var(--color-green-dim)' },
+    'Settled': { color: 'var(--color-green)', dim: 'var(--color-green-dim)' },
+    'Dead': { color: 'var(--color-red)', dim: 'var(--color-red-dim)' },
+    'Withdrawn': { color: 'var(--color-red)', dim: 'var(--color-red-dim)' },
+    'On Hold': { color: 'var(--color-amber)', dim: 'var(--color-amber-dim)' },
+  };
+  return colors[stage] || { color: 'var(--color-slate)', dim: 'var(--color-slate-dim)' };
+}
+
+function getConfidenceColor(confidence) {
+  switch(confidence) {
+    case 'Confirmed': return { color: 'var(--color-green)', dim: 'var(--color-green-dim)' };
+    case 'Reported': return { color: 'var(--color-blue)', dim: 'var(--color-blue-dim)' };
+    case 'Indicative': return { color: 'var(--color-amber)', dim: 'var(--color-amber-dim)' };
+    case 'Speculated': return { color: 'var(--color-orange)', dim: 'var(--color-orange-dim)' };
+    default: return { color: 'var(--color-slate)', dim: 'var(--color-slate-dim)' };
+  }
+}
+
+function getStrategyColor(strategy) {
+  const colors = {
+    'Core': { color: 'var(--color-green)', dim: 'var(--color-green-dim)' },
+    'Core+': { color: 'var(--color-cyan)', dim: 'var(--color-cyan-dim)' },
+    'Value-Add': { color: 'var(--color-orange)', dim: 'var(--color-orange-dim)' },
+    'Development': { color: 'var(--color-purple)', dim: 'var(--color-purple-dim)' },
+    'Opportunistic': { color: 'var(--color-pink)', dim: 'var(--color-pink-dim)' },
+    'Special Situation': { color: 'var(--color-teal)', dim: 'var(--color-teal-dim)' },
+    'M&A': { color: 'var(--color-gold)', dim: 'var(--color-gold-dim)' },
+  };
+  return colors[strategy] || { color: 'var(--color-slate)', dim: 'var(--color-slate-dim)' };
+}
+
+// INIT
+init();
+</script>
+</body>
+</html>
