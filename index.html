@@ -152,8 +152,12 @@ tr.done-row .task-name{text-decoration:line-through;}
 .intel-item{padding:13px 16px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background 0.1s;}
 .intel-item:last-child{border-bottom:none;}
 .intel-item:hover{background:#FAFAFA;}
-.intel-row{display:flex;align-items:flex-start;gap:10px;}
-.intel-summary{font-size:12px;font-weight:500;line-height:1.4;flex:1;}
+.intel-row{display:flex;align-items:flex-start;gap:10px;padding:14px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .15s;}
+.intel-row:hover{background:#f8fafc;border-radius:8px;}
+.intel-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.intel-body{flex:1;min-width:0;}
+.intel-summary{font-size:13px;font-weight:500;line-height:1.4;color:#0f172a;}
+.intel-tags{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;}
 .intel-meta{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap;}
 .intel-source{font-size:11px;color:var(--text-secondary);}
 .intel-source .src-link{color:var(--accent);text-decoration:none;cursor:pointer;}
