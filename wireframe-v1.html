@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vantage — Wireframe v1</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F6F8;
+    --surface: #FFFFFF;
+    --border: #E5E7EB;
+    --border-light: #F0F1F3;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --text-tertiary: #9CA3AF;
+    --sidebar-bg: #FFFFFF;
+    --sidebar-width: 220px;
+    --topbar-h: 56px;
+    --accent: #C9A84C;
+    --accent-light: #FDF6E3;
+
+    /* Sector colours */
+    --office: #3B82F6;
+    --office-bg: #EFF6FF;
+    --retail: #F59E0B;
+    --retail-bg: #FFFBEB;
+    --industrial: #10B981;
+    --industrial-bg: #ECFDF5;
+    --alternatives: #8B5CF6;
+    --alternatives-bg: #F5F3FF;
+    --mixed: #06B6D4;
+    --mixed-bg: #ECFEFF;
+    --residential: #EC4899;
+    --residential-bg: #FDF2F8;
+
+    /* Status / importance */
+    --high: #EF4444;
+    --high-bg: #FEF2F2;
+    --medium: #F59E0B;
+    --medium-bg: #FFFBEB;
+    --low: #10B981;
+    --low-bg: #ECFDF5;
+
+    /* Tier colours */
+    --tier1: #D97706;
+    --tier1-bg: #FEF3C7;
+    --tier2: #3B82F6;
+    --tier2-bg: #DBEAFE;
+    --tier3: #6B7280;
+    --tier3-bg: #F3F4F6;
+
+    /* Confidence */
+    --confirmed: #10B981;
+    --confirmed-bg: #ECFDF5;
+    --reported: #F59E0B;
+    --reported-bg: #FFFBEB;
+    --rumoured: #9CA3AF;
+    --rumoured-bg: #F9FAFB;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .logo-text {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-section {
+    padding: 16px 12px 8px;
+  }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 0 8px;
+    margin-bottom: 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-weight: 400;
+    transition: all 0.12s;
+    margin-bottom: 1px;
+    position: relative;
+  }
+
+  .nav-item:hover { background: var(--bg); color: var(--text-primary); }
+
+  .nav-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .nav-icon {
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--high);
+    color: white;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .nav-badge.amber { background: var(--medium); }
+  .nav-badge.neutral { background: var(--text-tertiary); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .user-chip:hover { background: var(--bg); }
+
+  .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent);
+    color: white; font-weight: 600; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Main ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    height: var(--topbar-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .topbar-date {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-left: 2px;
+  }
+
+  .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; border: none;
+    transition: all 0.12s;
+  }
+
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #b8923f; }
+  .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg); color: var(--text-primary); }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  /* ── Module panels ── */
+  .module { display: none; }
+  .module.active { display: block; }
+
+  /* ── Pill / Tag ── */
+  .pill {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 99px;
+    font-size: 11px; font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .pill.office { background: var(--office-bg); color: var(--office); }
+  .pill.retail { background: var(--retail-bg); color: var(--retail); }
+  .pill.industrial { background: var(--industrial-bg); color: var(--industrial); }
+  .pill.alternatives { background: var(--alternatives-bg); color: var(--alternatives); }
+  .pill.mixed { background: var(--mixed-bg); color: var(--mixed); }
+  .pill.residential { background: var(--residential-bg); color: var(--residential); }
+
+  .pill.high { background: var(--high-bg); color: var(--high); }
+  .pill.medium { background: var(--medium-bg); color: var(--medium); }
+  .pill.low { background: var(--low-bg); color: var(--low); }
+
+  .pill.tier1 { background: var(--tier1-bg); color: var(--tier1); }
+  .pill.tier2 { background: var(--tier2-bg); color: var(--tier2); }
+  .pill.tier3 { background: var(--tier3-bg); color: var(--tier3); }
+
+  .pill.confirmed { background: var(--confirmed-bg); color: var(--confirmed); }
+  .pill.reported { background: var(--reported-bg); color: var(--reported); }
+  .pill.rumoured { background: var(--rumoured-bg); color: var(--rumoured); }
+
+  .pill.open { background: #EFF6FF; color: #2563EB; }
+  .pill.done { background: #ECFDF5; color: #059669; }
+  .pill.overdue { background: #FEF2F2; color: #DC2626; }
+
+  /* ── Summary cards ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+  }
+
+  .summary-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+  .summary-card.alert { border-left: 3px solid var(--high); }
+  .summary-card.warn { border-left: 3px solid var(--medium); }
+  .summary-card.good { border-left: 3px solid var(--low); }
+  .summary-card.gold { border-left: 3px solid var(--accent); }
+
+  .summary-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+  }
+
+  .summary-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .summary-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .section-link {
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  /* ── Table ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: #FAFBFC; }
+
+  .td-name { font-weight: 500; }
+  .td-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+
+  /* ── Cadence dot ── */
+  .cadence-bar {
+    display: flex; gap: 3px; align-items: center;
+  }
+
+  .cadence-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  .cadence-dot.done { background: var(--low); }
+  .cadence-dot.due { background: var(--high); }
+  .cadence-dot.upcoming { background: var(--border); }
+
+  /* ── Deal card grid ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .deal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+  }
+
+  .deal-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+
+  .deal-card-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .deal-card-header.office-h { border-top: 3px solid var(--office); }
+  .deal-card-header.retail-h { border-top: 3px solid var(--retail); }
+  .deal-card-header.industrial-h { border-top: 3px solid var(--industrial); }
+  .deal-card-header.alternatives-h { border-top: 3px solid var(--alternatives); }
+  .deal-card-header.mixed-h { border-top: 3px solid var(--mixed); }
+  .deal-card-header.residential-h { border-top: 3px solid var(--residential); }
+
+  .deal-card-address {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .deal-card-suburb {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .deal-card-body {
+    padding: 12px 14px;
+  }
+
+  .deal-stat-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .deal-stat {
+    flex: 1;
+  }
+
+  .deal-stat-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
+  }
+
+  .deal-stat-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .deal-card-footer {
+    padding: 8px 14px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  /* ── Intel feed ── */
+  .intel-feed { margin-bottom: 20px; }
+
+  .intel-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 14px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+  }
+
+  .intel-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+  .intel-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .intel-dot.office { background: var(--office); }
+  .intel-dot.retail { background: var(--retail); }
+  .intel-dot.industrial { background: var(--industrial); }
+  .intel-dot.alternatives { background: var(--alternatives); }
+
+  .intel-body { flex: 1; }
+
+  .intel-title {
+    font-weight: 500;
+    font-size: 13px;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .intel-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .intel-date {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  /* ── Ideas / Strategy ── */
+  .idea-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .idea-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+    position: relative;
+  }
+
+  .idea-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+
+  .idea-theme-bar {
+    height: 3px;
+    border-radius: 99px;
+    margin-bottom: 12px;
+  }
+
+  .idea-title {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+
+  .idea-body {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .idea-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ── Filter tabs ── */
+  .filter-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+
+  .filter-tab {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .filter-tab.active {
+    background: var(--surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* ── Search bar ── */
+  .search-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+
+  .search-input {
+    flex: 1;
+    max-width: 300px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    background: var(--surface);
+    color: var(--text-primary);
+    outline: none;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+
+  /* ── Library list ── */
+  .library-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .library-item:hover { background: #FAFBFC; }
+
+  .library-icon {
+    width: 32px; height: 32px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .library-meta { flex: 1; }
+  .library-title { font-weight: 500; font-size: 13px; }
+  .library-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+  /* ── Briefing note ── */
+  .briefing-note {
+    background: var(--accent-light);
+    border: 1px solid #E8D5A3;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+  }
+
+  .briefing-note-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .briefing-note-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-tertiary);
+  }
+
+  .empty-state-icon { font-size: 32px; margin-bottom: 8px; }
+  .empty-state-text { font-size: 13px; }
+
+  /* ── Wireframe label ── */
+  .wf-label {
+    position: fixed;
+    bottom: 16px;
+    right: 20px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── CRM contact row overdue indicator ── */
+  .overdue-text { color: var(--high); font-weight: 500; }
+  .due-soon-text { color: var(--medium); font-weight: 500; }
+
+  /* ── Responsive note bar ── */
+  .responsive-note {
+    background: #EFF6FF;
+    border-bottom: 1px solid #BFDBFE;
+    padding: 6px 24px;
+    font-size: 11px;
+    color: #1D4ED8;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .rn-icon { font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">V</div>
+    <div>
+      <div class="logo-text">Vantage</div>
+      <div class="logo-sub">PKA Intelligence</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Daily</div>
+    <div class="nav-item active" onclick="switchModule('briefing', this)">
+      <span class="nav-icon">☀️</span> Morning Briefing
+    </div>
+    <div class="nav-item" onclick="switchModule('tasks', this)">
+      <span class="nav-icon">✅</span> Actions
+      <span class="nav-badge">3</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Relationships</div>
+    <div class="nav-item" onclick="switchModule('crm', this)">
+      <span class="nav-icon">👥</span> CRM
+      <span class="nav-badge amber">7</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Deals & Leasing</div>
+    <div class="nav-item" onclick="switchModule('deal-cards', this)">
+      <span class="nav-icon">🏢</span> Deal Cards
+    </div>
+    <div class="nav-item" onclick="switchModule('leasing-cards', this)">
+      <span class="nav-icon">📋</span> Leasing Cards
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Intelligence</div>
+    <div class="nav-item" onclick="switchModule('intel', this)">
+      <span class="nav-icon">📡</span> Market Intel
+    </div>
+    <div class="nav-item" onclick="switchModule('strategy', this)">
+      <span class="nav-icon">💡</span> Strategy & Ideas
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Archive</div>
+    <div class="nav-item" onclick="switchModule('knowledge', this)">
+      <span class="nav-icon">📚</span> Knowledge Base
+    </div>
+    <div class="nav-item" onclick="switchModule('outputs', this)">
+      <span class="nav-icon">🗂</span> Output Archive
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar">R</div>
+      <div>
+        <div style="font-size:12px;font-weight:500;">Ric Maydom</div>
+        <div style="font-size:10px;color:var(--text-tertiary);">Quintessential Equity</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN
+═══════════════════════════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <span class="topbar-title" id="topbar-title">Morning Briefing</span>
+      <span class="topbar-date" id="topbar-date">— Sunday, 19 April 2026</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="topbar-btn-secondary">Filter</button>
+      <button class="btn btn-primary" id="topbar-btn-primary">+ Add</button>
+    </div>
+  </div>
+
+  <div class="responsive-note">
+    <span class="rn-icon">💻</span> Full view — PC Chrome
+    <span style="color:#93C5FD;">|</span>
+    <span class="rn-icon">📱</span> iPad: full visual &nbsp;
+    <span class="rn-icon">📱</span> iPhone: capture only
+    <span style="margin-left:auto;color:#93C5FD;font-weight:600;">WIREFRAME v1 — Uma × Roland</span>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════════════════════════════
+         MODULE 1: MORNING BRIEFING
+    ══════════════════════════════════════ -->
+    <div class="module active" id="mod-briefing">
+
+      <div class="briefing-note">
+        <div class="briefing-note-label">Leo — Today's Focus</div>
+        <div class="briefing-note-text">3 actions overdue · 7 contacts due for touchpoint this week · 2 deal cards need updating · Strong office market intel from last 48hrs. Suggested priority: call James Whitfield (Tier 1, 18 days overdue).</div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card alert" onclick="switchModule('tasks', document.querySelector('[onclick*=tasks]'))">
+          <div class="summary-label">Actions Overdue</div>
+          <div class="summary-number">3</div>
+          <div class="summary-sub">2 high priority</div>
+        </div>
+        <div class="summary-card warn" onclick="switchModule('crm', document.querySelector('[onclick*=crm]'))">
+          <div class="summary-label">Contacts Due</div>
+          <div class="summary-number">7</div>
+          <div class="summary-sub">2 Tier 1 overdue</div>
+        </div>
+        <div class="summary-card gold" onclick="switchModule('intel', document.querySelector('[onclick*=intel]'))">
+          <div class="summary-label">New Intel</div>
+          <div class="summary-number">4</div>
+          <div class="summary-sub">Since Thursday</div>
+        </div>
+        <div class="summary-card good">
+          <div class="summary-label">Cards Active</div>
+          <div class="summary-number">11</div>
+          <div class="summary-sub">6 deal · 5 leasing</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <div>
+          <div class="section-header">
+            <div class="section-title">⚠️ Overdue Actions</div>
+            <div class="section-link" onclick="switchModule('tasks', document.querySelector('[onclick*=tasks]'))">View all →</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Action</th><th>Due</th><th>Priority</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="td-name">Send IM to Dexus re 1 Bligh St</div></td>
+                  <td><span class="overdue-text">Apr 15</span></td>
+                  <td><span class="pill high">High</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Review CBRE valuation report</div></td>
+                  <td><span class="overdue-text">Apr 16</span></td>
+                  <td><span class="pill high">High</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Update Q pipeline — Parramatta site</div></td>
+                  <td><span class="overdue-text">Apr 17</span></td>
+                  <td><span class="pill medium">Medium</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-header">
+            <div class="section-title">📞 Contacts Due This Week</div>
+            <div class="section-link" onclick="switchModule('crm', document.querySelector('[onclick*=crm]'))">View all →</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Contact</th><th>Firm</th><th>Overdue</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="td-name">James Whitfield</div></td>
+                  <td><span class="td-sub">Charter Hall</span></td>
+                  <td><span class="overdue-text">18 days</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Sarah Chen</div><div class="td-sub"><span class="pill tier1">Tier 1</span></div></td>
+                  <td><span class="td-sub">CBRE Capital</span></td>
+                  <td><span class="overdue-text">14 days</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Mark Oates</div></td>
+                  <td><span class="td-sub">Mirvac</span></td>
+                  <td><span class="due-soon-text">Due today</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Priya Mehta</div></td>
+                  <td><span class="td-sub">Dexus</span></td>
+                  <td><span class="due-soon-text">Due tomorrow</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-header">
+            <div class="section-title">📡 Recent Intel</div>
+            <div class="section-link" onclick="switchModule('intel', document.querySelector('[onclick*=intel]'))">View all →</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Summary</th><th>Sector</th><th>Confidence</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="td-name">Lendlease selling 200 George St Sydney</div></td>
+                  <td><span class="pill office">Office</span></td>
+                  <td><span class="pill reported">Reported</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Coles Group acquiring DCs in VIC</div></td>
+                  <td><span class="pill industrial">Industrial</span></td>
+                  <td><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">GPT reviewing CBD retail exposure</div></td>
+                  <td><span class="pill retail">Retail</span></td>
+                  <td><span class="pill rumoured">Rumoured</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-header">
+            <div class="section-title">💡 Strategy Threads Active</div>
+            <div class="section-link" onclick="switchModule('strategy', document.querySelector('[onclick*=strategy]'))">View all →</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Idea</th><th>Theme</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="td-name">CBD office repricing thesis</div></td>
+                  <td><span class="pill office">Office</span></td>
+                  <td><span class="pill open">Developing</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Industrial land banking — outer MEL</div></td>
+                  <td><span class="pill industrial">Industrial</span></td>
+                  <td><span class="pill open">Raw Idea</span></td>
+                </tr>
+                <tr>
+                  <td><div class="td-name">Alternatives: data centre entry timing</div></td>
+                  <td><span class="pill alternatives">Alternatives</span></td>
+                  <td><span class="pill done">Filed</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 2: ACTIONS / TASKS
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-tasks">
+
+      <div class="filter-tabs">
+        <div class="filter-tab active">All Tasks</div>
+        <div class="filter-tab">Open</div>
+        <div class="filter-tab">Due Today</div>
+        <div class="filter-tab">Overdue</div>
+        <div class="filter-tab">Done</div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32px;"></th>
+              <th>Task / Action</th>
+              <th>Due Date</th>
+              <th>Importance</th>
+              <th>Reminder</th>
+              <th>Linked To</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>⬜</td>
+              <td><div class="td-name">Send IM to Dexus re 1 Bligh St</div><div class="td-sub">Notes: Follow up from Wed call with Priya</div></td>
+              <td><span class="overdue-text">Apr 15</span></td>
+              <td><span class="pill high">High</span></td>
+              <td style="color:var(--text-tertiary)">—</td>
+              <td><span class="pill office" style="font-size:10px;">Deal: 1 Bligh St</span></td>
+              <td><span class="pill overdue">Overdue</span></td>
+            </tr>
+            <tr>
+              <td>⬜</td>
+              <td><div class="td-name">Review CBRE valuation report</div></td>
+              <td><span class="overdue-text">Apr 16</span></td>
+              <td><span class="pill high">High</span></td>
+              <td style="color:var(--text-tertiary)">—</td>
+              <td><span class="pill tier2" style="font-size:10px;">Sarah Chen</span></td>
+              <td><span class="pill overdue">Overdue</span></td>
+            </tr>
+            <tr>
+              <td>⬜</td>
+              <td><div class="td-name">Update Q pipeline — Parramatta site</div></td>
+              <td><span class="overdue-text">Apr 17</span></td>
+              <td><span class="pill medium">Medium</span></td>
+              <td>Apr 16</td>
+              <td><span class="pill industrial" style="font-size:10px;">Deal: Parramatta</span></td>
+              <td><span class="pill overdue">Overdue</span></td>
+            </tr>
+            <tr>
+              <td>⬜</td>
+              <td><div class="td-name">Call James Whitfield — catch up overdue</div></td>
+              <td>Apr 21</td>
+              <td><span class="pill high">High</span></td>
+              <td>Apr 20</td>
+              <td><span class="pill tier1" style="font-size:10px;">James Whitfield</span></td>
+              <td><span class="pill open">Open</span></td>
+            </tr>
+            <tr>
+              <td>⬜</td>
+              <td><div class="td-name">Prepare Q IC memo — retail fund update</div></td>
+              <td>Apr 25</td>
+              <td><span class="pill medium">Medium</span></td>
+              <td>Apr 23</td>
+              <td style="color:var(--text-tertiary)">—</td>
+              <td><span class="pill open">Open</span></td>
+            </tr>
+            <tr>
+              <td>✅</td>
+              <td><div class="td-name" style="text-decoration:line-through;color:var(--text-tertiary)">Book Colliers breakfast event</div></td>
+              <td style="color:var(--text-tertiary)">Apr 14</td>
+              <td><span class="pill low">Low</span></td>
+              <td style="color:var(--text-tertiary)">—</td>
+              <td style="color:var(--text-tertiary)">—</td>
+              <td><span class="pill done">Done</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 3: CRM
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-crm">
+
+      <div class="search-row">
+        <input class="search-input" type="text" placeholder="Search contacts...">
+        <div class="filter-tabs" style="margin-bottom:0;">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Tier 1</div>
+          <div class="filter-tab">Tier 2</div>
+          <div class="filter-tab">Tier 3</div>
+          <div class="filter-tab">Overdue</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Firm</th>
+              <th>Profession</th>
+              <th>Tier</th>
+              <th>Cadence</th>
+              <th>Last Contact</th>
+              <th>Next Due</th>
+              <th>City</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="td-name">James Whitfield</div></td>
+              <td>Charter Hall</td>
+              <td style="color:var(--text-secondary)">Fund Manager</td>
+              <td><span class="pill tier1">Tier 1</span></td>
+              <td>Monthly</td>
+              <td>Mar 2</td>
+              <td><span class="overdue-text">Apr 2 ← 18d overdue</span></td>
+              <td>Sydney</td>
+            </tr>
+            <tr>
+              <td><div class="td-name">Sarah Chen</div></td>
+              <td>CBRE Capital Markets</td>
+              <td style="color:var(--text-secondary)">Agent</td>
+              <td><span class="pill tier1">Tier 1</span></td>
+              <td>Fortnightly</td>
+              <td>Mar 22</td>
+              <td><span class="overdue-text">Apr 5 ← 14d overdue</span></td>
+              <td>Sydney</td>
+            </tr>
+            <tr>
+              <td><div class="td-name">Mark Oates</div></td>
+              <td>Mirvac</td>
+              <td style="color:var(--text-secondary)">Developer</td>
+              <td><span class="pill tier2">Tier 2</span></td>
+              <td>Monthly</td>
+              <td>Mar 19</td>
+              <td><span class="due-soon-text">Apr 19 ← due today</span></td>
+              <td>Melbourne</td>
+            </tr>
+            <tr>
+              <td><div class="td-name">Priya Mehta</div></td>
+              <td>Dexus</td>
+              <td style="color:var(--text-secondary)">Asset Manager</td>
+              <td><span class="pill tier1">Tier 1</span></td>
+              <td>Fortnightly</td>
+              <td>Apr 5</td>
+              <td><span class="due-soon-text">Apr 19 ← due today</span></td>
+              <td>Sydney</td>
+            </tr>
+            <tr>
+              <td><div class="td-name">Tom Kirchner</div></td>
+              <td>Cushman & Wakefield</td>
+              <td style="color:var(--text-secondary)">Agent</td>
+              <td><span class="pill tier2">Tier 2</span></td>
+              <td>Quarterly</td>
+              <td>Feb 10</td>
+              <td><span class="due-soon-text">May 10</span></td>
+              <td>Melbourne</td>
+            </tr>
+            <tr>
+              <td><div class="td-name">Natalie Ross</div></td>
+              <td>Qualitas</td>
+              <td style="color:var(--text-secondary)">Fund Manager</td>
+              <td><span class="pill tier2">Tier 2</span></td>
+              <td>Monthly</td>
+              <td>Mar 28</td>
+              <td>Apr 28</td>
+              <td>Melbourne</td>
+            </tr>
+            <tr>
+              <td><div class="td-name">Ben Aldridge</div></td>
+              <td>JLL Capital Markets</td>
+              <td style="color:var(--text-secondary)">Agent</td>
+              <td><span class="pill tier3">Tier 3</span></td>
+              <td>Annually</td>
+              <td>Jan 15</td>
+              <td>Jan 2027</td>
+              <td>Brisbane</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 4: DEAL CARDS
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-deal-cards">
+
+      <div class="search-row">
+        <input class="search-input" type="text" placeholder="Search deals...">
+        <div class="filter-tabs" style="margin-bottom:0;">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Office</div>
+          <div class="filter-tab">Industrial</div>
+          <div class="filter-tab">Retail</div>
+          <div class="filter-tab">Alternatives</div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+
+        <div class="deal-card">
+          <div class="deal-card-header office-h">
+            <div>
+              <div class="deal-card-address">200 George Street</div>
+              <div class="deal-card-suburb">CBD, Sydney NSW</div>
+            </div>
+            <span class="pill reported">Reported</span>
+          </div>
+          <div class="deal-card-body">
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Price</div><div class="deal-stat-value">$380M</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Yield</div><div class="deal-stat-value">5.50%</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">NLA</div><div class="deal-stat-value">28,400 sqm</div></div>
+            </div>
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">WALE</div><div class="deal-stat-value">4.2 yrs</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Process</div><div class="deal-stat-value">EOI</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Vendor</div><div class="deal-stat-value">Lendlease</div></div>
+            </div>
+          </div>
+          <div class="deal-card-footer">
+            <span class="pill office">Office</span>
+            <span class="pill" style="background:#F3F4F6;color:#374151;">Core Plus</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">Apr 14</span>
+          </div>
+        </div>
+
+        <div class="deal-card">
+          <div class="deal-card-header industrial-h">
+            <div>
+              <div class="deal-card-address">Lots 5–8 Freight Rd</div>
+              <div class="deal-card-suburb">Truganina, VIC</div>
+            </div>
+            <span class="pill confirmed">Confirmed</span>
+          </div>
+          <div class="deal-card-body">
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Price</div><div class="deal-stat-value">$142M</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Yield</div><div class="deal-stat-value">4.85%</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">GLA</div><div class="deal-stat-value">62,000 sqm</div></div>
+            </div>
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">WALE</div><div class="deal-stat-value">7.1 yrs</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Process</div><div class="deal-stat-value">Off-market</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Vendor</div><div class="deal-stat-value">GIC</div></div>
+            </div>
+          </div>
+          <div class="deal-card-footer">
+            <span class="pill industrial">Industrial</span>
+            <span class="pill" style="background:#F3F4F6;color:#374151;">Core</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">Apr 10</span>
+          </div>
+        </div>
+
+        <div class="deal-card">
+          <div class="deal-card-header retail-h">
+            <div>
+              <div class="deal-card-address">Highpoint Shopping Ctr</div>
+              <div class="deal-card-suburb">Maribyrnong, VIC</div>
+            </div>
+            <span class="pill rumoured">Rumoured</span>
+          </div>
+          <div class="deal-card-body">
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Price</div><div class="deal-stat-value">~$800M</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Yield</div><div class="deal-stat-value">est. 6.2%</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">GLA</div><div class="deal-stat-value">97,500 sqm</div></div>
+            </div>
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">WALE</div><div class="deal-stat-value">—</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Process</div><div class="deal-stat-value">TBC</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Vendor</div><div class="deal-stat-value">GPT Group</div></div>
+            </div>
+          </div>
+          <div class="deal-card-footer">
+            <span class="pill retail">Retail</span>
+            <span class="pill" style="background:#F3F4F6;color:#374151;">Value Add</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">Apr 17</span>
+          </div>
+        </div>
+
+        <div class="deal-card">
+          <div class="deal-card-header alternatives-h">
+            <div>
+              <div class="deal-card-address">Western Sydney DC Campus</div>
+              <div class="deal-card-suburb">Rydalmere, NSW</div>
+            </div>
+            <span class="pill reported">Reported</span>
+          </div>
+          <div class="deal-card-body">
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Price</div><div class="deal-stat-value">$220M</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Yield</div><div class="deal-stat-value">5.10%</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">GLA</div><div class="deal-stat-value">18,000 sqm</div></div>
+            </div>
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">WALE</div><div class="deal-stat-value">12.0 yrs</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Process</div><div class="deal-stat-value">EOI</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Vendor</div><div class="deal-stat-value">AMP Capital</div></div>
+            </div>
+          </div>
+          <div class="deal-card-footer">
+            <span class="pill alternatives">Alternatives</span>
+            <span class="pill" style="background:#F3F4F6;color:#374151;">Core</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">Apr 12</span>
+          </div>
+        </div>
+
+        <div class="deal-card">
+          <div class="deal-card-header office-h">
+            <div>
+              <div class="deal-card-address">1 Bligh Street</div>
+              <div class="deal-card-suburb">CBD, Sydney NSW</div>
+            </div>
+            <span class="pill confirmed">Confirmed</span>
+          </div>
+          <div class="deal-card-body">
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Price</div><div class="deal-stat-value">$680M</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Yield</div><div class="deal-stat-value">4.75%</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">NLA</div><div class="deal-stat-value">45,100 sqm</div></div>
+            </div>
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">WALE</div><div class="deal-stat-value">6.8 yrs</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Process</div><div class="deal-stat-value">Auction</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Vendor</div><div class="deal-stat-value">Dexus</div></div>
+            </div>
+          </div>
+          <div class="deal-card-footer">
+            <span class="pill office">Office</span>
+            <span class="pill" style="background:#F3F4F6;color:#374151;">Core</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">Apr 8</span>
+          </div>
+        </div>
+
+        <div class="deal-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:180px;cursor:pointer;background:var(--bg);">
+          <div style="text-align:center;color:var(--text-tertiary);">
+            <div style="font-size:24px;margin-bottom:8px;">＋</div>
+            <div style="font-size:12px;font-weight:500;">New Deal Card</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 5: LEASING CARDS
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-leasing-cards">
+
+      <div class="search-row">
+        <input class="search-input" type="text" placeholder="Search leasing deals...">
+        <div class="filter-tabs" style="margin-bottom:0;">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Office</div>
+          <div class="filter-tab">Industrial</div>
+          <div class="filter-tab">Retail</div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+
+        <div class="deal-card">
+          <div class="deal-card-header office-h">
+            <div>
+              <div class="deal-card-address">Exchange Tower L12</div>
+              <div class="deal-card-suburb">Perth CBD, WA</div>
+            </div>
+            <span class="pill confirmed">Confirmed</span>
+          </div>
+          <div class="deal-card-body">
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Tenant</div><div class="deal-stat-value">Deloitte</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Area</div><div class="deal-stat-value">3,200 sqm</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Term</div><div class="deal-stat-value">7 yrs</div></div>
+            </div>
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Face Rent</div><div class="deal-stat-value">$785/sqm</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Incentive</div><div class="deal-stat-value">22%</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Eff. Rent</div><div class="deal-stat-value">$612/sqm</div></div>
+            </div>
+          </div>
+          <div class="deal-card-footer">
+            <span class="pill office">Office</span>
+            <span class="pill" style="background:#F3F4F6;color:#374151;">Gross</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">Apr 11</span>
+          </div>
+        </div>
+
+        <div class="deal-card">
+          <div class="deal-card-header industrial-h">
+            <div>
+              <div class="deal-card-address">45 Foundation Rd</div>
+              <div class="deal-card-suburb">Truganina, VIC</div>
+            </div>
+            <span class="pill confirmed">Confirmed</span>
+          </div>
+          <div class="deal-card-body">
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Tenant</div><div class="deal-stat-value">Amazon</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Area</div><div class="deal-stat-value">28,500 sqm</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Term</div><div class="deal-stat-value">10 yrs</div></div>
+            </div>
+            <div class="deal-stat-row">
+              <div class="deal-stat"><div class="deal-stat-label">Face Rent</div><div class="deal-stat-value">$118/sqm</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Incentive</div><div class="deal-stat-value">8%</div></div>
+              <div class="deal-stat"><div class="deal-stat-label">Eff. Rent</div><div class="deal-stat-value">$109/sqm</div></div>
+            </div>
+          </div>
+          <div class="deal-card-footer">
+            <span class="pill industrial">Industrial</span>
+            <span class="pill" style="background:#F3F4F6;color:#374151;">Net</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">Mar 28</span>
+          </div>
+        </div>
+
+        <div class="deal-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:180px;cursor:pointer;background:var(--bg);">
+          <div style="text-align:center;color:var(--text-tertiary);">
+            <div style="font-size:24px;margin-bottom:8px;">＋</div>
+            <div style="font-size:12px;font-weight:500;">New Leasing Card</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 6: MARKET INTEL
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-intel">
+
+      <div class="search-row">
+        <input class="search-input" type="text" placeholder="Search intel...">
+        <div class="filter-tabs" style="margin-bottom:0;">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Office</div>
+          <div class="filter-tab">Industrial</div>
+          <div class="filter-tab">Retail</div>
+          <div class="filter-tab">Alternatives</div>
+        </div>
+      </div>
+
+      <div class="intel-feed">
+
+        <div class="intel-item">
+          <div class="intel-dot office"></div>
+          <div class="intel-body">
+            <div class="intel-title">Lendlease exploring sale of 200 George St, Sydney — EOI expected Q2. Understood to be driven by capital recycling into build-to-rent pipeline.</div>
+            <div class="intel-meta">
+              <span class="pill office">Office</span>
+              <span class="pill reported">Reported</span>
+              <span class="pill" style="background:#F3F4F6;color:#374151;">Transaction</span>
+              <span class="intel-date">Apr 14 · Source: James Whitfield</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="intel-item">
+          <div class="intel-dot industrial"></div>
+          <div class="intel-body">
+            <div class="intel-title">Coles Group acquiring two distribution centres in Truganina and Dandenong South — combined ~$280M. Off-market, CBRE acting.</div>
+            <div class="intel-meta">
+              <span class="pill industrial">Industrial</span>
+              <span class="pill confirmed">Confirmed</span>
+              <span class="pill" style="background:#F3F4F6;color:#374151;">Transaction</span>
+              <span class="intel-date">Apr 13 · Source: Sarah Chen</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="intel-item">
+          <div class="intel-dot retail"></div>
+          <div class="intel-body">
+            <div class="intel-title">GPT Group internally reviewing CBD retail exposure — Highpoint and Rouse Hill flagged. No formal process yet but board paper tabled.</div>
+            <div class="intel-meta">
+              <span class="pill retail">Retail</span>
+              <span class="pill rumoured">Rumoured</span>
+              <span class="pill" style="background:#F3F4F6;color:#374151;">Strategy</span>
+              <span class="intel-date">Apr 12 · Source: Tom Kirchner</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="intel-item">
+          <div class="intel-dot alternatives"></div>
+          <div class="intel-body">
+            <div class="intel-title">AMP Capital seeking buyer for Western Sydney data centre campus — preferred equity structure likely. WALE 12yrs, hyperscaler anchor tenant.</div>
+            <div class="intel-meta">
+              <span class="pill alternatives">Alternatives</span>
+              <span class="pill reported">Reported</span>
+              <span class="pill" style="background:#F3F4F6;color:#374151;">Transaction</span>
+              <span class="intel-date">Apr 11 · Source: Natalie Ross</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="intel-item">
+          <div class="intel-dot office"></div>
+          <div class="intel-body">
+            <div class="intel-title">Melbourne CBD office vacancy stabilising at ~15% — sublease space absorbing faster than primary. JLL research note citing net effective rent growth of ~3% YoY for premium grade.</div>
+            <div class="intel-meta">
+              <span class="pill office">Office</span>
+              <span class="pill confirmed">Confirmed</span>
+              <span class="pill" style="background:#F3F4F6;color:#374151;">Market Data</span>
+              <span class="intel-date">Apr 10 · Source: JLL Research</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 7: STRATEGY & IDEAS
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-strategy">
+
+      <div class="filter-tabs">
+        <div class="filter-tab active">All</div>
+        <div class="filter-tab">Raw Idea</div>
+        <div class="filter-tab">Developing</div>
+        <div class="filter-tab">Filed</div>
+      </div>
+
+      <div class="idea-grid">
+
+        <div class="idea-card">
+          <div class="idea-theme-bar" style="background:var(--office);"></div>
+          <div class="idea-title">CBD Office Repricing Thesis</div>
+          <div class="idea-body">Premium CBD office in SYD/MEL approaching cyclical trough. Spread compression likely as institutional buyers return H2 2026. Entry window may be Q2–Q3 before sentiment shifts.</div>
+          <div class="idea-footer">
+            <span class="pill office">Office</span>
+            <span class="pill open">Developing</span>
+          </div>
+        </div>
+
+        <div class="idea-card">
+          <div class="idea-theme-bar" style="background:var(--industrial);"></div>
+          <div class="idea-title">Industrial Land Banking — Outer Melbourne</div>
+          <div class="idea-body">Outer ring supply constrained by planning controls. Truganina / Ravenhall corridor demand remains structural. Q mandate may suit early-stage land position. Needs feasibility.</div>
+          <div class="idea-footer">
+            <span class="pill industrial">Industrial</span>
+            <span class="pill high" style="background:#FEF2F2;color:#DC2626;">Raw Idea</span>
+          </div>
+        </div>
+
+        <div class="idea-card">
+          <div class="idea-theme-bar" style="background:var(--alternatives);"></div>
+          <div class="idea-title">Data Centre Entry Timing</div>
+          <div class="idea-body">Hyperscaler demand driving yield compression below 4.5%. Q unlikely to compete at scale against sovereign wealth. Better angle: early development JV with smaller operator seeking equity partner.</div>
+          <div class="idea-footer">
+            <span class="pill alternatives">Alternatives</span>
+            <span class="pill done">Filed</span>
+          </div>
+        </div>
+
+        <div class="idea-card">
+          <div class="idea-theme-bar" style="background:var(--retail);"></div>
+          <div class="idea-title">Sub-Regional Retail Re-rating</div>
+          <div class="idea-body">Sub-regional Woolworths/Coles anchored centres trading at 7%+ in QLD — defensive income, low capex. Worth screening for off-market stock below $50M that won't attract the big REITs.</div>
+          <div class="idea-footer">
+            <span class="pill retail">Retail</span>
+            <span class="pill high" style="background:#FEF2F2;color:#DC2626;">Raw Idea</span>
+          </div>
+        </div>
+
+        <div class="idea-card" style="border-style:dashed;min-height:160px;display:flex;align-items:center;justify-content:center;background:var(--bg);">
+          <div style="text-align:center;color:var(--text-tertiary);">
+            <div style="font-size:24px;margin-bottom:8px;">＋</div>
+            <div style="font-size:12px;font-weight:500;">New Idea</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 8: KNOWLEDGE BASE
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-knowledge">
+
+      <div class="search-row">
+        <input class="search-input" type="text" placeholder="Search documents...">
+        <div class="filter-tabs" style="margin-bottom:0;">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Research</div>
+          <div class="filter-tab">Valuations</div>
+          <div class="filter-tab">Legal</div>
+          <div class="filter-tab">Templates</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div class="library-item">
+          <div class="library-icon" style="background:#EFF6FF;">📊</div>
+          <div class="library-meta">
+            <div class="library-title">JLL Australian Office Market — Q1 2026</div>
+            <div class="library-sub">Research · JLL · Apr 2026</div>
+          </div>
+          <span class="pill office">Office</span>
+          <span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">Current</span>
+        </div>
+        <div class="library-item">
+          <div class="library-icon" style="background:#ECFDF5;">🏭</div>
+          <div class="library-meta">
+            <div class="library-title">Industrial Vacancy Report — Greater Melbourne</div>
+            <div class="library-sub">Research · CBRE · Mar 2026</div>
+          </div>
+          <span class="pill industrial">Industrial</span>
+          <span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">Current</span>
+        </div>
+        <div class="library-item">
+          <div class="library-icon" style="background:#F5F3FF;">💼</div>
+          <div class="library-meta">
+            <div class="library-title">Q IC Paper — Retail Fund Strategy 2026</div>
+            <div class="library-sub">IC Document · Quintessential Equity · Feb 2026</div>
+          </div>
+          <span class="pill" style="background:#F3F4F6;color:#374151;">Internal</span>
+          <span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">Confidential</span>
+        </div>
+        <div class="library-item">
+          <div class="library-icon" style="background:#FFFBEB;">🏪</div>
+          <div class="library-meta">
+            <div class="library-title">Sub-Regional Retail Investment Market — Savills</div>
+            <div class="library-sub">Research · Savills · Jan 2026</div>
+          </div>
+          <span class="pill retail">Retail</span>
+          <span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">Current</span>
+        </div>
+        <div class="library-item">
+          <div class="library-icon" style="background:#F5F3FF;">⚖️</div>
+          <div class="library-meta">
+            <div class="library-title">Standard Asset Purchase Agreement — Template</div>
+            <div class="library-sub">Legal · Baker McKenzie · 2025</div>
+          </div>
+          <span class="pill" style="background:#F3F4F6;color:#374151;">Template</span>
+          <span style="font-size:11px;color:var(--text-secondary);margin-left:8px;">Reference</span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         MODULE 9: OUTPUT ARCHIVE
+    ══════════════════════════════════════ -->
+    <div class="module" id="mod-outputs">
+
+      <div class="search-row">
+        <input class="search-input" type="text" placeholder="Search outputs...">
+        <div class="filter-tabs" style="margin-bottom:0;">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Memos</div>
+          <div class="filter-tab">Analysis</div>
+          <div class="filter-tab">Correspondence</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div class="library-item">
+          <div class="library-icon" style="background:#EFF6FF;">📝</div>
+          <div class="library-meta">
+            <div class="library-title">IM — 200 George Street Acquisition Assessment</div>
+            <div class="library-sub">Investment Memo · Apr 14, 2026 · v1.0</div>
+          </div>
+          <span class="pill office">Office</span>
+          <span style="font-size:11px;color:var(--low);font-weight:500;margin-left:8px;">Current</span>
+        </div>
+        <div class="library-item">
+          <div class="library-icon" style="background:#ECFDF5;">📊</div>
+          <div class="library-meta">
+            <div class="library-title">Industrial Portfolio Comparables — VIC & NSW</div>
+            <div class="library-sub">Analysis · Mar 28, 2026 · v2.1</div>
+          </div>
+          <span class="pill industrial">Industrial</span>
+          <span style="font-size:11px;color:var(--low);font-weight:500;margin-left:8px;">Current</span>
+        </div>
+        <div class="library-item">
+          <div class="library-icon" style="background:#FFFBEB;">✉️</div>
+          <div class="library-meta">
+            <div class="library-title">Correspondence — Charter Hall re Parramatta Site</div>
+            <div class="library-sub">Email Thread Summary · Mar 15, 2026</div>
+          </div>
+          <span class="pill" style="background:#F3F4F6;color:#374151;">Mixed Use</span>
+          <span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">Archived</span>
+        </div>
+        <div class="library-item">
+          <div class="library-icon" style="background:#FDF2F8;">📋</div>
+          <div class="library-meta">
+            <div class="library-title">Q Fund Strategy Presentation — Board Update</div>
+            <div class="library-sub">Presentation · Feb 10, 2026 · v3.0</div>
+          </div>
+          <span class="pill" style="background:#F3F4F6;color:#374151;">Internal</span>
+          <span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">Archived</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<div class="wf-label">Wireframe v1</div>
+
+<script>
+  const modules = {
+    'briefing':      { title: 'Morning Briefing',  date: '— Sunday, 19 April 2026', primaryBtn: 'Add Note',    secondaryBtn: 'Refresh' },
+    'tasks':         { title: 'Actions',            date: '',                        primaryBtn: '+ New Task',  secondaryBtn: 'Filter' },
+    'crm':           { title: 'CRM',                date: '2,559 contacts',          primaryBtn: '+ Add Contact', secondaryBtn: 'Import' },
+    'deal-cards':    { title: 'Deal Cards',         date: '6 active',                primaryBtn: '+ Deal Card', secondaryBtn: 'Filter' },
+    'leasing-cards': { title: 'Leasing Cards',      date: '5 active',                primaryBtn: '+ Leasing Card', secondaryBtn: 'Filter' },
+    'intel':         { title: 'Market Intel',       date: '',                        primaryBtn: '+ Add Intel', secondaryBtn: 'Filter' },
+    'strategy':      { title: 'Strategy & Ideas',   date: '',                        primaryBtn: '+ New Idea',  secondaryBtn: 'Filter' },
+    'knowledge':     { title: 'Knowledge Base',     date: '',                        primaryBtn: '+ Add Doc',   secondaryBtn: 'Filter' },
+    'outputs':       { title: 'Output Archive',     date: '',                        primaryBtn: '+ Add Output', secondaryBtn: 'Filter' },
+  };
+
+  function switchModule(key, el) {
+    // Hide all modules
+    document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+    // Deactivate all nav items
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+    // Show target module
+    const mod = document.getElementById('mod-' + key);
+    if (mod) mod.classList.add('active');
+
+    // Find nav item by onclick
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + key + "'")) {
+        n.classList.add('active');
+      }
+    });
+
+    // Update topbar
+    const cfg = modules[key] || {};
+    document.getElementById('topbar-title').textContent = cfg.title || key;
+    document.getElementById('topbar-date').textContent = cfg.date ? '— ' + cfg.date : '';
+    document.getElementById('topbar-btn-primary').textContent = cfg.primaryBtn || '+ Add';
+    document.getElementById('topbar-btn-secondary').textContent = cfg.secondaryBtn || 'Filter';
+  }
+</script>
+</body>
+</html>
