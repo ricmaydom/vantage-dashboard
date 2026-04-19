@@ -511,6 +511,11 @@ function sectorColor(s) {
   const m = {Office:'office',Industrial:'industrial',Retail:'retail',Alternatives:'alternatives'};
   return m[s] || 'office';
 }
+// Returns a hex colour for use in inline styles (e.g. dots, tag backgrounds)
+function sectorHex(s) {
+  const m = {Office:'#3B82F6',Industrial:'#10B981',Retail:'#F59E0B',Alternatives:'#8B5CF6'};
+  return m[s] || '#94a3b8';
+}
 
 function statusBadge(s, dd) {
   const today = new Date().toDateString();
@@ -652,8 +657,12 @@ async function drawerSave() {
   if (!drawerTable || !drawerRecord) return;
   const form = document.getElementById('drawerBody');
   const updates = {};
+  const boolFields = ['is_comparable','is_archived'];
   form.querySelectorAll('[data-field]').forEach(el => {
-    updates[el.dataset.field] = el.value || null;
+    const f = el.dataset.field;
+    let v = el.value || null;
+    if (boolFields.includes(f) && v !== null) v = (v === 'true');
+    updates[f] = v;
   });
   const { error } = await sb.from(drawerTable).update(updates).eq('id', drawerRecord.id);
   if (error) { snack('Error: ' + error.message); return; }
@@ -941,17 +950,21 @@ async function openContactDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">Tier</div><select class="fi" data-field="relationship_tier"><option value="1" ${c.relationship_tier===1?'selected':''}>Tier 1</option><option value="2" ${c.relationship_tier===2?'selected':''}>Tier 2</option><option value="3" ${c.relationship_tier===3?'selected':''}>Tier 3</option></select></div><div class="fg"><div class="fl">Cadence</div><select class="fi" data-field="cadence_weeks">${cadenceOpts}</select></div></div>
     </div>
     <div class="ds"><div class="dst">Last Contact</div>
-      <div class="fr"><div class="fg"><div class="fl">Date</div><input class="fi" type="date" data-field="last_contact_date" value="${c.last_contact_date||''}" onchange="updateNextContact(this,'${c.cadence_weeks}')"></div><div class="fg"><div class="fl">Next Due</div><div style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--border-light);color:${dateClass(c.next_contact_date)?'var(--high)':'var(--text-primary)'}">${dateLbl(c.next_contact_date)||'Not set'}</div></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Date</div><input class="fi" type="date" data-field="last_contact_date" value="${c.last_contact_date||''}" onchange="updateNextContact(this,'${c.cadence_weeks}')"></div><div class="fg"><div class="fl">Next Due</div><div id="nextDueDisplay" style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--border-light);color:${dateClass(c.next_contact_date)?'var(--high)':'var(--text-primary)'}">${dateLbl(c.next_contact_date)||'Not set'}</div><input type="hidden" data-field="next_contact_date" id="nextContactDateHidden" value="${c.next_contact_date||''}"></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="relationship_notes">${c.relationship_notes||''}</textarea></div></div>
     </div>`;
   openDrawer(c.name||'Contact', html, 'contacts', c);
 }
 
 function updateNextContact(el, cadenceWeeks) {
-  // Update next_contact_date field in form when last_contact_date changes
   const newNext = new Date(el.value + 'T00:00:00');
   newNext.setDate(newNext.getDate() + Number(cadenceWeeks) * 7);
-  if (drawerRecord) drawerRecord.next_contact_date = newNext.toISOString().split('T')[0];
+  const iso = newNext.toISOString().split('T')[0];
+  if (drawerRecord) drawerRecord.next_contact_date = iso;
+  const hidden = document.getElementById('nextContactDateHidden');
+  if (hidden) hidden.value = iso;
+  const display = document.getElementById('nextDueDisplay');
+  if (display) display.textContent = fmtDate(iso);
 }
 
 // ── Deal Cards ──
@@ -979,7 +992,7 @@ async function loadDeals() {
         </div>
         <div class="card-footer">
           <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector||'—'}</span>${d.conviction?'<span class="card-tag" style="background:var(--bg);color:var(--text-secondary)">'+d.conviction+'</span>':''}</div>
-          ${clarifyCount>0?`<span class="card-clarify">⚡ ${clarifyCount} clarification${clarifyCount>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.deal_date)||''}</span>`}
+          ${clarifyCount>0?`<span class="card-clarify">⚡ ${clarifyCount} clarification${clarifyCount>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.date_logged)||''}</span>`}
         </div>
       </div>
     </div>`;
@@ -1034,7 +1047,7 @@ async function loadLeasing() {
         </div>
         <div class="card-footer">
           <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector}</span>${d.is_comparable?'<span class="card-tag" style="background:var(--bg);color:var(--text-secondary)">Comp</span>':''}</div>
-          ${clarify>0?`<span class="card-clarify">⚡ ${clarify} clarification${clarify>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.deal_date)||''}</span>`}
+          ${clarify>0?`<span class="card-clarify">⚡ ${clarify} clarification${clarify>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.date_logged)||''}</span>`}
         </div>
       </div>
     </div>`;
@@ -1066,14 +1079,17 @@ async function openLeasingDrawer(id) {
 
 // ── Market Intel ──
 async function loadIntel() {
-  const main = document.getElementById('main');
-  main.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><h2 style="font-size:18px;font-weight:700;color:#0f172a">Market Intel</h2><div style="display:flex;gap:8px"><button class="btn-outline" id="intelFilterAll" onclick="filterIntel('all')">All</button><button class="btn-outline" id="intelFilterRumoured" onclick="filterIntel('Rumoured')">Rumoured</button><button class="btn-outline" id="intelFilterReported" onclick="filterIntel('Reported')">Reported</button><button class="btn-outline" id="intelFilterConfirmed" onclick="filterIntel('Confirmed')">Confirmed</button><button class="btn-outline" id="intelFilterArchived" onclick="filterIntel('archived')">Archived</button></div><button class="btn-primary" onclick="openAddIntel()">+ Add Intel</button></div><div id="intel-tabs-bar" style="display:flex;gap:8px;margin-bottom:16px"></div><div id="intel-list"></div>`;
+  const ca = document.getElementById('contentArea');
+  ca.innerHTML = `<div style="margin-bottom:16px"><div class="tabs"><div class="tab active" id="itab-all" onclick="filterIntel('all')">All</div><div class="tab" id="itab-Rumoured" onclick="filterIntel('Rumoured')">Rumoured</div><div class="tab" id="itab-Reported" onclick="filterIntel('Reported')">Reported</div><div class="tab" id="itab-Confirmed" onclick="filterIntel('Confirmed')">Confirmed</div><div class="tab" id="itab-archived" onclick="filterIntel('archived')">Archived</div></div></div><div id="intel-list"></div>`;
   await renderIntelList('all');
 }
 
 let intelCurrentFilter = 'all';
 async function filterIntel(f) {
   intelCurrentFilter = f;
+  document.querySelectorAll('[id^="itab-"]').forEach(t => t.classList.remove('active'));
+  const active = document.getElementById('itab-' + f);
+  if (active) active.classList.add('active');
   await renderIntelList(f);
 }
 
@@ -1093,18 +1109,19 @@ async function renderIntelList(filter) {
   list.innerHTML = records.map(r => {
     const src = r.source_contact_name || (r.contacts && r.contacts.name) || '';
     const reviewDue = r.review_by_date && new Date(r.review_by_date) < today && r.confidence === 'Rumoured';
-    const sectorCol = sectorColor(r.sector);
+    const hex = sectorHex(r.sector);
+    const tagStyle = `display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;`;
     return `<div class="intel-row" onclick="openIntelDrawer('${r.id}')">
-      <div class="intel-dot" style="background:${sectorCol}"></div>
+      <div class="intel-dot" style="background:${hex}"></div>
       <div class="intel-body">
         <div class="intel-summary">${r.summary||''}</div>
         <div class="intel-tags">
-          ${r.sector ? `<span class="tag" style="background:${sectorCol}22;color:${sectorCol}">${r.sector}</span>` : ''}
+          ${r.sector ? `<span style="${tagStyle}background:${hex}22;color:${hex}">${r.sector}</span>` : ''}
           ${confBadge(r.confidence)}
-          ${r.intel_type ? `<span class="tag" style="background:#f1f5f9;color:#64748b">${r.intel_type}</span>` : ''}
-          ${src ? `<span class="tag" style="background:#f1f5f9;color:#334155">📎 ${src}</span>` : ''}
-          ${r.meeting_label ? `<span class="tag" style="background:#eff6ff;color:#3b82f6">🎙 ${r.meeting_label}</span>` : ''}
-          ${reviewDue ? `<span class="tag" style="background:#fff7ed;color:#f97316">⚡ review due</span>` : ''}
+          ${r.intel_type ? `<span style="${tagStyle}background:#f1f5f9;color:#64748b">${r.intel_type}</span>` : ''}
+          ${src ? `<span style="${tagStyle}background:#f1f5f9;color:#334155">📎 ${src}</span>` : ''}
+          ${r.meeting_label ? `<span style="${tagStyle}background:#eff6ff;color:#3b82f6">🎙 ${r.meeting_label}</span>` : ''}
+          ${reviewDue ? `<span style="${tagStyle}background:#fff7ed;color:#f97316">⚡ review due</span>` : ''}
           <span style="font-size:11px;color:#94a3b8;margin-left:4px">${fmtDate(r.date_logged)}</span>
         </div>
       </div>
@@ -1113,7 +1130,7 @@ async function renderIntelList(filter) {
 }
 
 function openAddIntel() {
-  drawerRecord = null; drawerTable = 'intel_records';
+  drawerTable = 'intel_records'; drawerRecord = { id: 'NEW' };
   const html = `<div class="ds">
     <div class="fr"><div class="fg full"><div class="fl">Summary</div><textarea class="fta" data-field="summary" placeholder="What's the intel?"></textarea></div></div>
     <div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option value="">—</option><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option><option>Mixed</option></select></div><div class="fg"><div class="fl">Confidence</div><select class="fi" data-field="confidence"><option>Rumoured</option><option>Reported</option><option>Confirmed</option></select></div></div>
@@ -1121,7 +1138,17 @@ function openAddIntel() {
     <div class="fr"><div class="fg"><div class="fl">Meeting Label</div><input class="fi" data-field="meeting_label" placeholder="e.g. Transactions Meeting, 14 Apr"></div><div class="fg"><div class="fl">Review By</div><input class="fi" type="date" data-field="review_by_date"></div></div>
     <div class="fr"><div class="fg full"><div class="fl">Attachment URL (Drive link)</div><input class="fi" data-field="attachment_url" placeholder="https://drive.google.com/..."></div></div>
   </div>`;
-  openDrawer('New Intel Record', html, 'intel_records', null);
+  openDrawer('New Intel Record', html, 'intel_records', { id: 'NEW' });
+  document.getElementById('drawerSaveBtn').onclick = async function() {
+    const rec = {};
+    document.getElementById('drawerBody').querySelectorAll('[data-field]').forEach(el => { if (el.value) rec[el.dataset.field] = el.value; });
+    if (!rec.summary) { snack('Summary is required'); return; }
+    const { error } = await sb.from('intel_records').insert(rec);
+    if (error) { snack('Error: ' + error.message); return; }
+    snack('Intel saved');
+    closeDrawer();
+    renderIntelList(intelCurrentFilter);
+  };
 }
 
 async function openIntelDrawer(id) {
@@ -1151,21 +1178,18 @@ async function archiveIntel(id, currently) {
 
 // ── Strategy & Ideas ──
 async function loadStrategy() {
-  const main = document.getElementById('main');
-  main.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><h2 style="font-size:18px;font-weight:700;color:#0f172a">Strategy & Ideas</h2><div style="display:flex;gap:8px">
-    <button class="btn-outline" onclick="filterStrategy('all')">All</button>
-    <button class="btn-outline" onclick="filterStrategy('Raw Idea')">Raw Ideas</button>
-    <button class="btn-outline" onclick="filterStrategy('Developing')">Developing</button>
-    <button class="btn-outline" onclick="filterStrategy('Active')">Active</button>
-    <button class="btn-outline" onclick="filterStrategy('Filed')">Filed</button>
-  </div><button class="btn-primary" onclick="openAddStrategy()">+ Add Idea</button></div>
-  <div id="strategy-grid" class="grid3"></div>`;
+  const ca = document.getElementById('contentArea');
+  ca.innerHTML = `<div style="margin-bottom:16px"><div class="tabs"><div class="tab active" id="stab-all" onclick="filterStrategy('all')">All</div><div class="tab" id="stab-RawIdea" onclick="filterStrategy('Raw Idea')">Raw Ideas</div><div class="tab" id="stab-Developing" onclick="filterStrategy('Developing')">Developing</div><div class="tab" id="stab-Active" onclick="filterStrategy('Active')">Active</div><div class="tab" id="stab-Filed" onclick="filterStrategy('Filed')">Filed</div></div></div><div id="strategy-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>`;
   await renderStrategyGrid('all');
 }
 
 let strategyFilter = 'all';
 async function filterStrategy(f) {
   strategyFilter = f;
+  document.querySelectorAll('[id^="stab-"]').forEach(t => t.classList.remove('active'));
+  const key = f.replace(' ','');
+  const active = document.getElementById('stab-' + key);
+  if (active) active.classList.add('active');
   await renderStrategyGrid(f);
 }
 
@@ -1181,25 +1205,39 @@ async function renderStrategyGrid(filter) {
     const title = s.title || s.entry || 'Untitled';
     const status = s.status || 'Raw Idea';
     const col = statusColor[status] || '#94a3b8';
-    return `<div class="card" onclick="openStrategyDrawer('${s.id}')">
-      <div class="card-head"><span class="card-addr">${title}</span><span class="badge" style="background:${col}22;color:${col};padding:2px 8px;border-radius:20px;font-size:11px">${status}</span></div>
-      <div style="font-size:12px;color:#64748b;margin-top:6px;line-height:1.5;overflow:hidden;max-height:60px">${s.body||''}</div>
-      <div class="card-foot" style="margin-top:12px">
-        ${s.sector ? `<span class="tag" style="background:${sectorColor(s.sector)}22;color:${sectorColor(s.sector)}">${s.sector}</span>` : ''}
-        <span style="font-size:11px;color:#94a3b8">${fmtDate(s.created_at)}</span>
+    const hex = sectorHex(s.sector);
+    return `<div class="deal-card" onclick="openStrategyDrawer('${s.id}')">
+      <div class="card-top" style="height:4px;background:${col}"></div>
+      <div class="card-body">
+        <div class="card-header"><div class="card-address">${title}</div><span class="badge" style="background:${col}22;color:${col}">${status}</span></div>
+        <div style="font-size:12px;color:#64748b;margin-top:6px;line-height:1.5;overflow:hidden;max-height:54px">${s.body||''}</div>
+        <div class="card-footer" style="margin-top:10px">
+          ${s.sector ? `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;background:${hex}22;color:${hex}">${s.sector}</span>` : '<span></span>'}
+          <span class="card-date">${fmtDate(s.created_at)}</span>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 
 function openAddStrategy() {
-  drawerRecord = null; drawerTable = 'strategy_ideas';
+  drawerTable = 'strategy_ideas'; drawerRecord = { id: 'NEW' };
   const html = `<div class="ds">
     <div class="fr"><div class="fg full"><div class="fl">Title</div><input class="fi" data-field="title" placeholder="One-line idea title"></div></div>
     <div class="fr"><div class="fg full"><div class="fl">Body</div><textarea class="fta" data-field="body" placeholder="Expand on the idea..."></textarea></div></div>
     <div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option value="">—</option><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option><option>Mixed</option></select></div><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status"><option>Raw Idea</option><option>Developing</option><option>Active</option><option>Filed</option></select></div></div>
   </div>`;
-  openDrawer('New Idea', html, 'strategy_ideas', null);
+  openDrawer('New Idea', html, 'strategy_ideas', { id: 'NEW' });
+  document.getElementById('drawerSaveBtn').onclick = async function() {
+    const rec = {};
+    document.getElementById('drawerBody').querySelectorAll('[data-field]').forEach(el => { if (el.value) rec[el.dataset.field] = el.value; });
+    if (!rec.title) { snack('Title is required'); return; }
+    const { error } = await sb.from('strategy_ideas').insert(rec);
+    if (error) { snack('Error: ' + error.message); return; }
+    snack('Idea saved');
+    closeDrawer();
+    renderStrategyGrid(strategyFilter);
+  };
 }
 
 async function openStrategyDrawer(id) {
@@ -1229,7 +1267,7 @@ function loadOutputs() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeDrawer();
   if ((e.metaKey||e.ctrlKey) && e.key === 'b') { e.preventDefault(); openBriefing(); }
-  if ((e.metaKey||e.ctrlKey) && e.shiftKey && e.key === 'C') { e.preventDefault(); document.getElementById('modal-capture').style.display='flex'; }
+  if ((e.metaKey||e.ctrlKey) && e.shiftKey && e.key === 'C') { e.preventDefault(); openModal('captureModal'); }
   if ((e.metaKey||e.ctrlKey) && e.shiftKey && e.key === 'E') { e.preventDefault(); openEOD(); }
 });
 
