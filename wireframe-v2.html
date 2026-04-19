@@ -310,6 +310,7 @@ tr.done .task-name{text-decoration:line-through;}
 /* ── Priority items in Morning Briefing ── */
 .priority-item{border-left:3px solid var(--accent);background:var(--accent-light);border-radius:0 8px 8px 0;padding:8px 12px;margin-bottom:5px;}
 .priority-num{width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.modal-item[onclick]:hover{background:rgba(0,0,0,0.035);border-radius:6px;}
 /* ── EOD note dump ── */
 .eod-dump{width:100%;min-height:130px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;line-height:1.6;color:var(--text-primary);resize:vertical;}
 .eod-dump:focus{outline:none;border-color:var(--accent);}
@@ -367,17 +368,17 @@ tr.done .task-name{text-decoration:line-through;}
     <div class="modal-body">
       <div class="modal-section">
         <div class="modal-section-title">⭐ Today's Priorities <span style="font-size:10px;font-weight:400;color:var(--text-secondary);text-transform:none;letter-spacing:0">Leo selected 3 of 9 flagged items</span></div>
-        <div class="modal-item priority-item">
+        <div class="modal-item priority-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('actions');setTimeout(()=>openTaskDrawer('Send IM to Dexus re 1 Bligh St','Apr 15','High','Overdue','Deal: 1 Bligh St'),120)">
           <div class="priority-num">1</div>
           <div class="modal-item-text"><b>Send IM to Dexus re 1 Bligh St</b> — 4 days overdue, High priority. Priya Mehta is expecting follow-up from Wednesday call.</div>
           <div class="modal-item-meta overdue-red">Actions →</div>
         </div>
-        <div class="modal-item priority-item">
+        <div class="modal-item priority-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('crm');setTimeout(()=>openContactDrawer('James Whitfield','Charter Hall','Fund Manager','Tier 1','Monthly','18 days overdue'),120)">
           <div class="priority-num">2</div>
           <div class="modal-item-text"><b>Call James Whitfield (Charter Hall)</b> — 18 days overdue, Tier 1. Last contact was re Metro North mandate.</div>
           <div class="modal-item-meta overdue-red">CRM →</div>
         </div>
-        <div class="modal-item priority-item">
+        <div class="modal-item priority-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('actions');setTimeout(()=>openTaskDrawer('Review CBRE valuation report','Apr 16','High','Overdue',''),120)">
           <div class="priority-num">3</div>
           <div class="modal-item-text"><b>Review CBRE valuation report</b> — due Apr 16, still open. Needed before IC call Thursday.</div>
           <div class="modal-item-meta overdue-red">Actions →</div>
@@ -385,32 +386,32 @@ tr.done .task-name{text-decoration:line-through;}
       </div>
       <div class="modal-section">
         <div class="modal-section-title">📋 Also Flagged <span style="font-size:10px;font-weight:400;color:var(--text-secondary);text-transform:none;letter-spacing:0">6 more items</span></div>
-        <div class="modal-item">
+        <div class="modal-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('crm');setTimeout(()=>openContactDrawer('Sarah Chen','CBRE Capital Markets','Agent','Tier 1','Fortnightly','14 days overdue'),120)">
           <div class="modal-item-icon">👤</div>
           <div class="modal-item-text">Sarah Chen (CBRE Capital Markets) — 14 days overdue, Tier 1. Worth a call around 200 George St EOI.</div>
           <div class="modal-item-meta">CRM →</div>
         </div>
-        <div class="modal-item">
+        <div class="modal-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('crm');setTimeout(()=>openContactDrawer('Mark Oates','Mirvac','Developer','Tier 2','Monthly','Due today'),120)">
           <div class="modal-item-icon">👤</div>
           <div class="modal-item-text">Mark Oates (Mirvac) — due today, monthly cadence. Check in on Parramatta pipeline.</div>
           <div class="modal-item-meta">CRM →</div>
         </div>
-        <div class="modal-item">
+        <div class="modal-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('dealcards')">
           <div class="modal-item-icon">🏢</div>
           <div class="modal-item-text">83 Pirie Street (15 Apr) — Highpoint card has 2 missing fields (WALE, Process). Needs completing.</div>
           <div class="modal-item-meta"><span class="clarify-flag">⚡ 2 clarifications</span></div>
         </div>
-        <div class="modal-item">
+        <div class="modal-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('intel')">
           <div class="modal-item-icon">📝</div>
           <div class="modal-item-text">Transactions Meeting (14 Apr) — GPT intel item has no linked deal card and Rumoured confidence with no review date.</div>
           <div class="modal-item-meta"><span class="clarify-flag">⚡ 1 clarification</span></div>
         </div>
-        <div class="modal-item">
+        <div class="modal-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('actions');setTimeout(()=>openTaskDrawer('Update Q pipeline — Parramatta site','Apr 17','Medium','In Progress','Deal: Parramatta'),120)">
           <div class="modal-item-icon">📋</div>
           <div class="modal-item-text">Update Q pipeline — Parramatta site (In Progress, Apr 17). Slipping.</div>
           <div class="modal-item-meta">Actions →</div>
         </div>
-        <div class="modal-item">
+        <div class="modal-item" style="cursor:pointer" onclick="closeModal('briefingModal');showModule('strategy');setTimeout(()=>openStrategyDrawer('CBD Office Repricing Thesis','Office','Developing'),120)">
           <div class="modal-item-icon">💡</div>
           <div class="modal-item-text">CBD Office Repricing Thesis — you added notes last week. Hannah suggests advancing to Developing status.</div>
           <div class="modal-item-meta">Strategy →</div>
