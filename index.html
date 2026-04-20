@@ -868,9 +868,10 @@ async function loadActions(filter='all') {
     const isOverdue = !done && diff !== null && diff > 0;
     const dClass = done ? 'text-muted' : (isOverdue ? 'overdue-red' : diff === 0 ? 'due-amber' : 'text-muted');
     const missingDeadline = !t.deadline_date && !done;
-    html += `<tr class="clickable ${done?'done-row':''} ${isOverdue?'row-overdue':''}" data-id="${t.id}" onclick="openTaskDrawer('${t.id}')">
+    const clarifyChip = '<span style="font-size:10px;background:#FEF3C7;color:#D97706;border:1px solid #FCD34D;border-radius:6px;padding:1px 6px;font-weight:600;white-space:nowrap;flex-shrink:0">⚡ No date</span>';
+    html += `<tr class="clickable ${done?'done-row':''} ${isOverdue?'row-overdue':''}" style="${missingDeadline?'background:#FFFBEB;':''}" data-id="${t.id}" onclick="openTaskDrawer('${t.id}')">
       <td class="task-check-wrap" onclick="toggleDone('${t.id}',this);event.stopPropagation()"><div class="task-check" style="${done?'background:var(--confirmed);border-color:var(--confirmed);color:#fff;':''}">${done?'✓':''}</div></td>
-      <td><div style="display:flex;align-items:center;gap:6px">${missingDeadline?'<span class="clarify-dot" title="No due date set"></span>':''}<div class="task-name" style="${isOverdue?'font-weight:600;':''}">${t.title||t.task}</div></div></td>
+      <td><div style="display:flex;align-items:center;gap:7px">${missingDeadline?clarifyChip:''}<div class="task-name" style="${isOverdue?'font-weight:600;':''}">${t.title||t.task}</div></div></td>
       <td class="inline-date-cell ${dClass}" onclick="event.stopPropagation()">
         <span>${t.deadline_date?fmtDate(t.deadline_date):'—'}</span>
         <input type="date" value="${t.deadline_date||''}" onchange="updateTaskDate('${t.id}',this.value);this.previousElementSibling.textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'—'">
@@ -992,8 +993,8 @@ function renderCRMRows() {
     const missingInfo = !c.email || !c.mobile;
     const cadenceLabel = {2:'Fortnightly',4:'Monthly',6:'6-weekly',12:'Quarterly',52:'Annually'}[c.cadence_weeks]||`${c.cadence_weeks}w`;
     const sectorHexC = c.asset_class_coverage ? sectorHex(c.asset_class_coverage) : null;
-    return `<tr class="clickable" onclick="openContactDrawer('${c.id}')">
-      <td><div style="display:flex;align-items:center;gap:6px">${missingInfo?'<span class="clarify-dot"></span>':''}<b>${c.name||''}</b></div></td>
+    return `<tr class="clickable" style="${missingInfo?'background:#FFFBEB;':''}" onclick="openContactDrawer('${c.id}')">
+      <td><div style="display:flex;align-items:center;gap:7px">${missingInfo?'<span style="font-size:10px;background:#FEF3C7;color:#D97706;border:1px solid #FCD34D;border-radius:6px;padding:1px 6px;font-weight:600;white-space:nowrap;flex-shrink:0">⚡ Incomplete</span>':''}<b>${c.name||''}</b></div></td>
       <td class="text-muted">${c.firm||'—'}</td>
       <td>${c.asset_class_coverage?`<span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:${sectorHexC}22;color:${sectorHexC}">${c.asset_class_coverage}</span>`:'<span class="text-muted">—</span>'}</td>
       <td>${tierBadge(c.relationship_tier)}</td>
@@ -1235,10 +1236,10 @@ async function renderIntelList(filter) {
     const hex = sectorHex(r.sector);
     const tagStyle = `display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;`;
     const intelMissingClarify = !src || !r.sector;
-    return `<div class="intel-row" onclick="openIntelDrawer('${r.id}')">
+    return `<div class="intel-row" style="${intelMissingClarify?'background:#FFFBEB;border-radius:8px;margin:0 -8px;padding:14px 8px;':''}" onclick="openIntelDrawer('${r.id}')">
       <div class="intel-dot" style="background:${hex}"></div>
       <div class="intel-body">
-        <div class="intel-summary" style="display:flex;align-items:center;gap:6px">${intelMissingClarify?'<span class="clarify-dot" style="flex-shrink:0" title="Missing source or sector"></span>':''}<span>${r.summary||''}</span></div>
+        <div class="intel-summary" style="display:flex;align-items:center;gap:7px">${intelMissingClarify?'<span style="font-size:10px;background:#FEF3C7;color:#D97706;border:1px solid #FCD34D;border-radius:6px;padding:1px 6px;font-weight:600;white-space:nowrap;flex-shrink:0">⚡ Incomplete</span>':''}<span>${r.summary||''}</span></div>
         <div class="intel-tags">
           ${r.sector ? `<span style="${tagStyle}background:${hex}22;color:${hex}">${r.sector}</span>` : ''}
           ${confBadge(r.confidence)}
