@@ -188,7 +188,6 @@ tr.done-row .task-name{text-decoration:line-through;}
 .fl{font-size:11px;color:var(--text-secondary);font-weight:500;}
 .fi{font-size:13px;color:var(--text-primary);padding:7px 9px;border:1px solid var(--border);border-radius:5px;width:100%;font-family:inherit;}
 .fi:focus{outline:none;border-color:var(--accent);}
-.fi.needs-clarify{border-color:var(--medium);background:#FFFBEB;}
 .fta{font-size:12px;padding:8px;border:1px solid var(--border);border-radius:5px;width:100%;min-height:80px;resize:vertical;font-family:inherit;line-height:1.5;}
 .fta:focus{outline:none;border-color:var(--accent);}
 .granola-ref{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;}
@@ -818,7 +817,13 @@ async function loadActions(filter='all') {
   else if (filter === 'overdue') { const today = new Date().toISOString().split('T')[0]; query = query.neq('status','Done').lt('deadline_date',today); }
   const { data, error } = await query;
   if (error) { document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error loading tasks</div>'; return; }
-  const rows = data||[];
+  // Done tasks always sink to the bottom; within each group sort by deadline_date asc
+  const rows = (data||[]).sort((a,b) => {
+    const aDone = a.status==='Done'||a.status==='done';
+    const bDone = b.status==='Done'||b.status==='done';
+    if (aDone !== bDone) return aDone ? 1 : -1;
+    return (a.deadline_date||'9999') < (b.deadline_date||'9999') ? -1 : 1;
+  });
   const today = new Date().toISOString().split('T')[0];
   let html = `
   <div class="tabs">
@@ -975,7 +980,7 @@ async function openContactDrawer(id) {
     <div class="ds">
       <div class="fr"><div class="fg"><div class="fl">Name</div><input class="fi" data-field="name" value="${(c.name||'').replace(/"/g,'&quot;')}"></div><div class="fg"><div class="fl">Role / Title</div><input class="fi" data-field="role_title" value="${c.role_title||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Firm</div><input class="fi" data-field="firm" value="${c.firm||''}"></div><div class="fg"><div class="fl">Sector Coverage</div><select class="fi" data-field="asset_class_coverage"><option value="">—</option><option ${c.asset_class_coverage==='Office'?'selected':''}>Office</option><option ${c.asset_class_coverage==='Industrial'?'selected':''}>Industrial</option><option ${c.asset_class_coverage==='Retail'?'selected':''}>Retail</option><option ${c.asset_class_coverage==='Alternatives'?'selected':''}>Alternatives</option><option ${c.asset_class_coverage==='Diversified'?'selected':''}>Diversified</option></select></div></div>
-      <div class="fr"><div class="fg"><div class="fl">Mobile ${missMobile?'<span class="clarify-dot" title="Missing"></span>':''}</div><input class="fi ${missMobile?'needs-clarify':''}" type="tel" data-field="mobile" value="${c.mobile||''}"></div><div class="fg"><div class="fl">Email ${missEmail?'<span class="clarify-dot" title="Missing"></span>':''}</div><input class="fi ${missEmail?'needs-clarify':''}" type="email" data-field="email" value="${c.email||''}"></div></div>
+      <div class="fr"><div class="${missMobile?'fg cfw needs-clarify':'fg'}"><div class="fl">Mobile${missMobile?' <span class="clarify-dot"></span>':''}</div><input class="fi" type="tel" data-field="mobile" value="${c.mobile||''}"></div><div class="${missEmail?'fg cfw needs-clarify':'fg'}"><div class="fl">Email${missEmail?' <span class="clarify-dot"></span>':''}</div><input class="fi" type="email" data-field="email" value="${c.email||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">City</div><input class="fi" data-field="city" value="${c.city||''}"></div><div class="fg"><div class="fl">LinkedIn</div><input class="fi" data-field="linkedin_url" value="${c.linkedin_url||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Tier</div><select class="fi" data-field="relationship_tier"><option value="1" ${c.relationship_tier===1?'selected':''}>Tier 1</option><option value="2" ${c.relationship_tier===2?'selected':''}>Tier 2</option><option value="3" ${c.relationship_tier===3?'selected':''}>Tier 3</option></select></div><div class="fg"><div class="fl">Cadence</div><select class="fi" data-field="cadence_weeks">${cadenceOpts}</select></div></div>
     </div>
