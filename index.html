@@ -1585,13 +1585,13 @@ async function syncGranola() {
   try {
     const { data, error } = await sb.functions.invoke('granola-sync');
     if (error) throw new Error(error.message || 'Sync failed');
+    if (data && data.error) { snack('Sync error: ' + data.error); console.error('Granola sync error detail:', data); return; }
     snack(data.message || 'Granola synced');
     if (data.synced > 0) {
-      // Brief pause then reload current module so new pending_captures are visible
       setTimeout(() => showModule(currentModule), 800);
     }
   } catch (e) {
-    snack('Granola sync failed — credentials may need setup');
+    snack('Sync failed: ' + (e.message || 'unknown error'));
     console.error('Granola sync error:', e);
   } finally {
     if (btn) { btn.innerHTML = origHTML; btn.disabled = false; }
