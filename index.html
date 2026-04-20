@@ -997,7 +997,7 @@ async function openTaskDrawer(id) {
       <div class="fg"><div class="fl">Category</div><input class="fi" data-field="category" value="${t.category||''}"></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${t.notes||''}</textarea></div></div>
     </div>
-    ${t.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a>${t.meeting_label}</a></div></div></div>`:''}`;
+    ${t.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${t.meeting_label}</span></div></div></div>`:''}`;
   openDrawer(t.title||t.task, html, 'tasks', t);
   document.getElementById('drawerSaveBtn').onclick = drawerSave;
 }
@@ -1184,7 +1184,7 @@ async function openDealDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">Purchaser</div><input class="fi" data-field="purchaser" value="${d.purchaser||''}"></div><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a>${d.meeting_label}</a></div></div></div>`:''}`;
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}`;
   openDrawer(d.address, html, 'deal_cards', d);
 }
 
@@ -1257,7 +1257,7 @@ async function openLeasingDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div><div class="fg"><div class="fl">Is Comparable</div><select class="fi" data-field="is_comparable"><option value="false" ${!d.is_comparable?'selected':''}>No</option><option value="true" ${d.is_comparable?'selected':''}>Yes — Comp</option></select></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a>${d.meeting_label}</a></div></div></div>`:''}`;
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}`;
   openDrawer(d.address, html, 'leasing_cards', d);
 }
 
@@ -1355,7 +1355,7 @@ async function openIntelDrawer(id) {
     <div class="fr"><div class="fg"><div class="fl">Type</div><select class="fi" data-field="intel_type"><option value="">—</option><option ${d.intel_type==='Transaction'?'selected':''}>Transaction</option><option ${d.intel_type==='Strategy'?'selected':''}>Strategy</option><option ${d.intel_type==='Market Data'?'selected':''}>Market Data</option><option ${d.intel_type==='Other'?'selected':''}>Other</option></select></div><div class="fg"><div class="fl">Source</div><input class="fi" data-field="source_contact_name" value="${d.source_contact_name||''}"></div></div>
     <div class="fr"><div class="fg"><div class="fl">Meeting Label</div><input class="fi" data-field="meeting_label" value="${d.meeting_label||''}"></div><div class="fg"><div class="fl">Review By</div><input class="fi" type="date" data-field="review_by_date" value="${d.review_by_date||''}"></div></div>
     ${d.attachment_url ? `<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px">${d.attachment_name||d.attachment_url}</a></div>` : ''}
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a>${d.meeting_label}</a></div></div></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
   </div>
   <div style="padding:20px 24px 0">
     <button class="btn-outline" style="color:#ef4444;border-color:#ef4444" onclick="archiveIntel('${d.id}',${d.is_archived})">${d.is_archived?'Unarchive':'Archive'}</button>
@@ -1565,7 +1565,7 @@ async function openPipelineDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">Date</div><input class="fi" type="date" data-field="deal_date" value="${d.deal_date||''}"></div><div class="fg"></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes / Next Steps</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a>${d.meeting_label}</a></div></div></div>`:''}`;
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}`;
   openDrawer(d.address||'Pipeline Deal', html, 'pipeline_cards', d);
 }
 
