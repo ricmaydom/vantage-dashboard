@@ -298,49 +298,54 @@ tr.row-overdue .task-name{color:var(--high);}
 }
 /* ── iPhone / Mobile (≤768px) ── */
 @media(max-width:768px){
+  /* Switch to body-level scrolling — most reliable on iOS Safari */
+  body{overflow-y:auto;height:auto;}
+  .app{height:auto;min-height:100%;overflow:visible;}
   .sidebar{display:none;}
+  .main{overflow:visible;height:auto;}
+  /* Topbar: sticky at top of scroll */
+  .topbar{position:sticky;top:0;z-index:40;padding:0 12px;gap:5px;}
+  .topbar-title{font-size:14px;}
+  /* Topbar: icon-only buttons free up space */
+  .btn-label{display:none;}
+  /* Content: natural flow, pad bottom clear of fixed nav */
+  .content{overflow:visible;height:auto;padding:12px;padding-bottom:calc(84px + env(safe-area-inset-bottom));}
+  /* Mobile nav */
   .mobile-nav{display:block;}
-  /* Layout */
-  .content{padding:12px;padding-bottom:84px;}
+  /* Drawer: full-width bottom sheet */
+  .drawer{width:100%;top:auto;bottom:0;height:92vh;border-radius:16px 16px 0 0;}
+  /* Form fields: stack vertically */
+  .fr{grid-template-columns:1fr;}
+  /* Grids */
   .dash-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
   .card-grid{grid-template-columns:1fr;}
   .strategy-grid{grid-template-columns:1fr;}
   .dash-cols{grid-template-columns:1fr;}
-  /* Drawer as bottom sheet */
-  .drawer{width:100%;top:auto;bottom:0;height:92vh;border-radius:16px 16px 0 0;}
-  /* Form fields: stack vertically */
-  .fr{grid-template-columns:1fr;}
-  /* Topbar: icon-only buttons */
-  .btn-label{display:none;}
-  .topbar{padding:0 12px;gap:5px;}
-  .topbar-title{font-size:14px;}
-  /* Tables: show fewer columns, tighter padding */
+  /* Tables: fewer columns, tighter padding */
   table th:nth-child(n+5),table td:nth-child(n+5){display:none;}
   th{font-size:10px;padding:8px 10px;}
   td{padding:9px 10px;}
-  /* Card fields: 2-column grid on mobile */
+  /* Card fields: 2-column on mobile */
   .card-fields{grid-template-columns:1fr 1fr;}
-  /* Filter chips: horizontal scroll, no wrap */
+  /* Filter chips: horizontal scroll */
   .filter-bar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:12px;}
   .filter-bar::-webkit-scrollbar{display:none;}
   .fchip{white-space:nowrap;flex-shrink:0;}
-  /* Search row: stack vertically */
+  /* Search row: stack */
   .search-row{flex-direction:column;align-items:stretch;gap:8px;}
   .search-wrap{max-width:100%;}
-  /* Mobile nav: horizontal scroll for 6+ items */
+  /* Mobile nav: horizontal scroll for 6 items */
   .mobile-nav-items{justify-content:flex-start;overflow-x:auto;padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
   .mobile-nav-items::-webkit-scrollbar{display:none;}
   .mobile-nav-item{min-width:58px;flex-shrink:0;padding:5px 6px;}
-  /* Card sizes */
-  .card-address{font-size:12px;}
-  .card-suburb{font-size:11px;}
-  /* Tabs: scroll on mobile */
+  /* Tabs: horizontal scroll */
   .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;width:100%;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab{white-space:nowrap;flex-shrink:0;}
-  /* Intel rows: tighter padding */
+  /* Typography tightening */
+  .card-address{font-size:12px;}
+  .card-suburb{font-size:11px;}
   .intel-row{padding:10px 0;}
-  /* Dashboard tiles: tighter */
   .dash-tile{padding:14px;}
   .dash-stat{font-size:28px;}
 }
