@@ -666,7 +666,7 @@ async function showModule(mod) {
   const titles = {dashboard:'Dashboard',actions:'Actions',crm:'CRM',pipeline:'Pipeline',deals:'Deal Cards',leasing:'Leasing Cards',intel:'Market Intel',strategy:'Strategy & Ideas'};
   document.getElementById('pageTitle').textContent = titles[mod] || mod;
   document.getElementById('addBtn').style.display = mod !== 'dashboard' ? '' : 'none';
-  document.getElementById('filterBtn').style.display = ['actions','crm','pipeline','deals','leasing','intel'].includes(mod) ? '' : 'none';
+  document.getElementById('filterBtn').style.display = 'none';
   const addLabels = {actions:'+ Task',crm:'+ Contact',pipeline:'+ Deal',deals:'+ Deal',leasing:'+ Leasing',intel:'+ Intel',strategy:'+ Idea'};
   document.getElementById('addBtn').textContent = addLabels[mod] || '+ Add';
   const content = document.getElementById('contentArea');
@@ -780,6 +780,7 @@ async function drawerSave() {
   document.getElementById('saveStatus').textContent = 'Saved ✓';
   setTimeout(() => { document.getElementById('saveStatus').textContent = ''; }, 2000);
   snack('Saved');
+  updateBadges();
   showModule(currentModule);
 }
 
@@ -1368,7 +1369,7 @@ async function archiveIntel(id, currently) {
 // ── Strategy & Ideas ──
 async function loadStrategy() {
   const ca = document.getElementById('contentArea');
-  ca.innerHTML = `<div style="margin-bottom:16px"><div class="tabs"><div class="tab active" id="stab-all" onclick="filterStrategy('all')">All</div><div class="tab" id="stab-RawIdea" onclick="filterStrategy('Raw Idea')">Raw Ideas</div><div class="tab" id="stab-Developing" onclick="filterStrategy('Developing')">Developing</div><div class="tab" id="stab-Active" onclick="filterStrategy('Active')">Active</div><div class="tab" id="stab-Filed" onclick="filterStrategy('Filed')">Filed</div></div></div><div id="strategy-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>`;
+  ca.innerHTML = `<div style="margin-bottom:16px"><div class="tabs"><div class="tab active" id="stab-all" onclick="filterStrategy('all')">All</div><div class="tab" id="stab-RawIdea" onclick="filterStrategy('Raw Idea')">Raw Ideas</div><div class="tab" id="stab-Developing" onclick="filterStrategy('Developing')">Developing</div><div class="tab" id="stab-Active" onclick="filterStrategy('Active')">Active</div><div class="tab" id="stab-Filed" onclick="filterStrategy('Filed')">Filed</div></div></div><div id="strategy-grid" class="card-grid"></div>`;
   await renderStrategyGrid('all');
 }
 
