@@ -69,6 +69,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text-primar
 .search-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
 .search-input{flex:1;max-width:300px;padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text-primary);font-family:inherit;}
 .search-input:focus{outline:none;border-color:var(--accent);}
+.search-wrap{position:relative;display:inline-flex;align-items:center;flex:1;max-width:300px;}
+.search-wrap .search-input{width:100%;max-width:unset;padding-right:26px;}
+.search-clear{position:absolute;right:8px;cursor:pointer;color:var(--text-tertiary);font-size:17px;line-height:1;user-select:none;font-weight:300;transition:color 0.1s;}
+.search-clear:hover{color:var(--text-primary);}
+.badge-pipeline-live{background:#ECFDF5;color:#10B981;}
+.badge-pipeline-coming{background:#EFF6FF;color:#3B82F6;}
+.badge-pipeline-monitor{background:#FFFBEB;color:#F59E0B;}
+.badge-pipeline-closed{background:#F9FAFB;color:#9CA3AF;}
+.phase-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;background:#F1F5F9;color:#475569;}
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
 table{width:100%;border-collapse:collapse;}
 th{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.4px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
@@ -368,6 +377,7 @@ tr.row-overdue .task-name{color:var(--high);}
       <div class="ssl">Relationships</div>
       <div class="nav-item" onclick="showModule('crm')" id="nav-crm"><div class="nav-icon">👤</div><div class="nav-label">CRM</div><div class="nav-badge amber" id="badge-crm" style="display:none">0</div></div>
       <div class="ssl">Deals &amp; Leasing</div>
+      <div class="nav-item" onclick="showModule('pipeline')" id="nav-pipeline"><div class="nav-icon">🎯</div><div class="nav-label">Pipeline</div></div>
       <div class="nav-item" onclick="showModule('deals')" id="nav-deals"><div class="nav-icon">🏢</div><div class="nav-label">Deal Cards</div></div>
       <div class="nav-item" onclick="showModule('leasing')" id="nav-leasing"><div class="nav-icon">📄</div><div class="nav-label">Leasing Cards</div></div>
       <div class="ssl">Intelligence</div>
@@ -398,6 +408,7 @@ tr.row-overdue .task-name{color:var(--high);}
     <div class="mobile-nav-item active" onclick="showModule('dashboard')"><div class="mobile-nav-icon">⊡</div>Home</div>
     <div class="mobile-nav-item" onclick="showModule('actions')"><div class="mobile-nav-icon">✓</div>Actions</div>
     <div class="mobile-nav-item" onclick="showModule('crm')"><div class="mobile-nav-icon">👤</div>CRM</div>
+    <div class="mobile-nav-item" onclick="showModule('pipeline')"><div class="mobile-nav-icon">🎯</div>Pipeline</div>
     <div class="mobile-nav-item" onclick="showModule('deals')"><div class="mobile-nav-icon">🏢</div>Deals</div>
     <div class="mobile-nav-item" onclick="showModule('intel')"><div class="mobile-nav-icon">📡</div>Intel</div>
   </div>
@@ -561,7 +572,7 @@ function setActiveNav(mod) {
   document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
   const el = document.getElementById('nav-' + mod);
   if (el) el.classList.add('active');
-  const mobileMap = {dashboard:0,actions:1,crm:2,deals:3,intel:4};
+  const mobileMap = {dashboard:0,actions:1,crm:2,pipeline:3,deals:4,intel:5};
   const mItems = document.querySelectorAll('.mobile-nav-item');
   if (mobileMap[mod] !== undefined) mItems[mobileMap[mod]].classList.add('active');
 }
@@ -585,15 +596,15 @@ async function updateBadges() {
 async function showModule(mod) {
   currentModule = mod;
   setActiveNav(mod);
-  const titles = {dashboard:'Dashboard',actions:'Actions',crm:'CRM',deals:'Deal Cards',leasing:'Leasing Cards',intel:'Market Intel',strategy:'Strategy & Ideas'};
+  const titles = {dashboard:'Dashboard',actions:'Actions',crm:'CRM',pipeline:'Pipeline',deals:'Deal Cards',leasing:'Leasing Cards',intel:'Market Intel',strategy:'Strategy & Ideas'};
   document.getElementById('pageTitle').textContent = titles[mod] || mod;
   document.getElementById('addBtn').style.display = mod !== 'dashboard' ? '' : 'none';
-  document.getElementById('filterBtn').style.display = ['actions','crm','deals','leasing','intel'].includes(mod) ? '' : 'none';
-  const addLabels = {actions:'+ New Task',crm:'+ Add Contact',deals:'+ Deal Card',leasing:'+ Leasing Card',intel:'+ Add Intel',strategy:'+ New Idea'};
+  document.getElementById('filterBtn').style.display = ['actions','crm','pipeline','deals','leasing','intel'].includes(mod) ? '' : 'none';
+  const addLabels = {actions:'+ New Task',crm:'+ Add Contact',pipeline:'+ Add Deal',deals:'+ Deal Card',leasing:'+ Leasing Card',intel:'+ Add Intel',strategy:'+ New Idea'};
   document.getElementById('addBtn').textContent = addLabels[mod] || '+ Add';
   const content = document.getElementById('contentArea');
   content.innerHTML = '<div class="empty-state"><div style="font-size:24px">⏳</div><div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">Loading...</div></div>';
-  const loaders = {dashboard:loadDashboard,actions:loadActions,crm:loadCRM,deals:loadDeals,leasing:loadLeasing,intel:loadIntel,strategy:loadStrategy};
+  const loaders = {dashboard:loadDashboard,actions:loadActions,crm:loadCRM,pipeline:loadPipeline,deals:loadDeals,leasing:loadLeasing,intel:loadIntel,strategy:loadStrategy};
   if (loaders[mod]) await loaders[mod]();
 }
 
@@ -703,7 +714,8 @@ function openAddForm() {
     leasing: {title:'New Leasing Card', table:'leasing_cards', fields:`<div class="ds"><div class="fr"><div class="fg"><div class="fl">Address</div><input class="fi" data-field="address"></div><div class="fg"><div class="fl">Suburb / State</div><input class="fi" data-field="suburb"></div></div><div class="fr"><div class="fg"><div class="fl">Tenant</div><input class="fi" data-field="tenant"></div><div class="fg"><div class="fl">Landlord</div><input class="fi" data-field="landlord"></div></div><div class="fr"><div class="fg"><div class="fl">Area (sqm)</div><input class="fi" type="number" data-field="area_sqm"></div><div class="fg"><div class="fl">Term (yrs)</div><input class="fi" type="number" data-field="term_years"></div></div><div class="fr"><div class="fg"><div class="fl">Face Rent ($/sqm)</div><input class="fi" type="number" data-field="face_rent"></div><div class="fg"><div class="fl">Eff. Rent ($/sqm)</div><input class="fi" type="number" data-field="effective_rent"></div></div><div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes"></textarea></div></div></div>`},
     intel: {title:'New Intel Record', table:'intel_records', fields:`<div class="ds"><div class="fr full"><div class="fg"><div class="fl">Summary</div><textarea class="fta" data-field="summary" style="min-height:100px" placeholder="What did you hear?"></textarea></div></div><div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option></select></div><div class="fg"><div class="fl">Confidence</div><select class="fi" data-field="confidence"><option>Rumoured</option><option>Reported</option><option>Confirmed</option></select></div></div><div class="fr"><div class="fg"><div class="fl">Type</div><select class="fi" data-field="intel_type"><option>Transaction</option><option>Strategy</option><option>Market Data</option></select></div><div class="fg"><div class="fl">Source Contact</div><input class="fi" data-field="source_contact_name" placeholder="Name..."></div></div></div>`},
     crm: {title:'New Contact', table:'contacts', fields:`<div class="ds"><div class="fr"><div class="fg"><div class="fl">Full Name</div><input class="fi" data-field="name" placeholder="e.g. James Chen"></div><div class="fg"><div class="fl">Role / Title</div><input class="fi" data-field="role_title"></div></div><div class="fr"><div class="fg"><div class="fl">Firm</div><input class="fi" data-field="firm"></div><div class="fg"><div class="fl">Sector Coverage</div><select class="fi" data-field="asset_class_coverage"><option value="">—</option><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option><option>Diversified</option></select></div></div><div class="fr"><div class="fg"><div class="fl">Mobile</div><input class="fi" type="tel" data-field="mobile"></div><div class="fg"><div class="fl">Email</div><input class="fi" type="email" data-field="email"></div></div><div class="fr"><div class="fg"><div class="fl">Tier</div><select class="fi" data-field="relationship_tier"><option value="1">Tier 1</option><option value="2" selected>Tier 2</option><option value="3">Tier 3</option></select></div><div class="fg"><div class="fl">Cadence</div><select class="fi" data-field="cadence_weeks"><option value="2">Fortnightly</option><option value="4" selected>Monthly</option><option value="6">6-weekly</option><option value="12">Quarterly</option><option value="52">Annually</option></select></div></div></div>`},
-    strategy: {title:'New Idea', table:'strategy_ideas', fields:`<div class="ds"><div class="fr full"><div class="fg"><div class="fl">Title</div><input class="fi" data-field="title" placeholder="e.g. Sub-Regional Retail Opportunity"></div></div><div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option></select></div><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status"><option>raw idea</option><option>Developing</option><option>Active</option></select></div></div><div class="fr full"><div class="fg"><div class="fl">Body</div><textarea class="fta" data-field="body" style="min-height:120px" placeholder="Thesis, rationale, evidence..."></textarea></div></div></div>`}
+    strategy: {title:'New Idea', table:'strategy_ideas', fields:`<div class="ds"><div class="fr full"><div class="fg"><div class="fl">Title</div><input class="fi" data-field="title" placeholder="e.g. Sub-Regional Retail Opportunity"></div></div><div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option></select></div><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status"><option>raw idea</option><option>Developing</option><option>Active</option></select></div></div><div class="fr full"><div class="fg"><div class="fl">Body</div><textarea class="fta" data-field="body" style="min-height:120px" placeholder="Thesis, rationale, evidence..."></textarea></div></div></div>`},
+    pipeline: {title:'New Pipeline Deal', table:'pipeline_cards', fields:`<div class="ds"><div class="fr"><div class="fg"><div class="fl">Address</div><input class="fi" data-field="address" placeholder="e.g. 200 George Street"></div><div class="fg"><div class="fl">Suburb / State</div><input class="fi" data-field="suburb" placeholder="CBD, NSW"></div></div><div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option></select></div><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status"><option>Live</option><option>Coming to Market</option><option>Monitor</option><option>Closed / DNP</option></select></div></div><div class="fr"><div class="fg"><div class="fl">Phase</div><select class="fi" data-field="phase"><option>Identified</option><option>Initial Analysis</option><option>Detailed Analysis</option><option>Bid Submitted</option><option>Entered DD</option><option>Asset Secured</option></select></div><div class="fg"><div class="fl">Price ($)</div><input class="fi" type="number" data-field="headline_price" placeholder="e.g. 180000000"></div></div><div class="fr"><div class="fg"><div class="fl">Yield (%)</div><input class="fi" type="number" step="0.01" data-field="reported_yield"></div><div class="fg"><div class="fl">Process Type</div><input class="fi" data-field="process_type" placeholder="EOI / Auction etc."></div></div><div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes" placeholder="Key observations, thesis, next steps..."></textarea></div></div></div>`}
   };
   const f = forms[currentModule];
   if (!f) return;
@@ -921,23 +933,21 @@ function setDrawerStatus(s, el) {
 }
 
 // ── CRM ──
-let crmSearch = ''; let crmTier = 'all';
+let crmSearch = ''; let crmTier = 'all'; let crmAllData = [];
 async function loadCRM() {
   let query = sb.from('contacts').select('*').order('next_contact_date',{nullsFirst:false});
   if (crmTier !== 'all') query = query.eq('relationship_tier', parseInt(crmTier));
   const { data, error } = await query;
   if (error) { document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error loading contacts</div>'; return; }
-  let rows = data||[];
-  if (crmSearch) {
-    const q = crmSearch.toLowerCase();
-    rows = rows.filter(c => (c.name||'').toLowerCase().includes(q) || (c.firm||'').toLowerCase().includes(q));
-  }
-  const today = new Date().toISOString().split('T')[0];
-  let html = `
+  crmAllData = data||[];
+  document.getElementById('contentArea').innerHTML = `
   <div class="search-row">
-    <input class="search-input" placeholder="Search contacts..." value="${crmSearch}" oninput="crmSearch=this.value;loadCRM()">
+    <div class="search-wrap">
+      <input class="search-input" id="crmSearchInput" placeholder="Search contacts..." value="${crmSearch}" oninput="crmSearch=this.value;renderCRMRows()">
+      <span class="search-clear" id="crmClearBtn" onclick="clearCRMSearch()" style="display:${crmSearch?'':'none'}">×</span>
+    </div>
     <div class="tabs" style="margin-bottom:0">
-      <div class="tab ${crmTier==='all'?'active':''}" onclick="crmTier='all';loadCRM()">All (${(data||[]).length})</div>
+      <div class="tab ${crmTier==='all'?'active':''}" onclick="crmTier='all';loadCRM()">All (${crmAllData.length})</div>
       <div class="tab ${crmTier==='1'?'active':''}" onclick="crmTier='1';loadCRM()">Tier 1</div>
       <div class="tab ${crmTier==='2'?'active':''}" onclick="crmTier='2';loadCRM()">Tier 2</div>
       <div class="tab ${crmTier==='3'?'active':''}" onclick="crmTier='3';loadCRM()">Tier 3</div>
@@ -945,17 +955,31 @@ async function loadCRM() {
   </div>
   <div class="table-wrap"><table>
     <thead><tr><th>Name</th><th>Firm</th><th>Sector</th><th>Tier</th><th>Cadence</th><th>Last Contact</th><th>Next Due</th><th>City</th></tr></thead>
-    <tbody>`;
-  if (!rows.length) {
-    html += `<tr><td colspan="8"><div class="empty-state" style="padding:24px">No contacts found</div></td></tr>`;
+    <tbody id="crmTbody"></tbody>
+  </table></div>`;
+  renderCRMRows();
+}
+
+function renderCRMRows() {
+  const tbody = document.getElementById('crmTbody');
+  if (!tbody) return;
+  const clearBtn = document.getElementById('crmClearBtn');
+  if (clearBtn) clearBtn.style.display = crmSearch ? '' : 'none';
+  let rows = crmAllData;
+  if (crmSearch) {
+    const q = crmSearch.toLowerCase();
+    rows = rows.filter(c => (c.name||'').toLowerCase().includes(q) || (c.firm||'').toLowerCase().includes(q));
   }
-  rows.forEach(c => {
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="padding:24px">No contacts found</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(c => {
     const dClass = dateClass(c.next_contact_date);
-    const isOverdue = c.next_contact_date && daysDiff(c.next_contact_date) > 0;
     const missingInfo = !c.email || !c.mobile;
     const cadenceLabel = {2:'Fortnightly',4:'Monthly',6:'6-weekly',12:'Quarterly',52:'Annually'}[c.cadence_weeks]||`${c.cadence_weeks}w`;
     const sectorHexC = c.asset_class_coverage ? sectorHex(c.asset_class_coverage) : null;
-    html += `<tr class="clickable" onclick="openContactDrawer('${c.id}')">
+    return `<tr class="clickable" onclick="openContactDrawer('${c.id}')">
       <td><div style="display:flex;align-items:center;gap:6px">${missingInfo?'<span class="clarify-dot"></span>':''}<b>${c.name||''}</b></div></td>
       <td class="text-muted">${c.firm||'—'}</td>
       <td>${c.asset_class_coverage?`<span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:${sectorHexC}22;color:${sectorHexC}">${c.asset_class_coverage}</span>`:'<span class="text-muted">—</span>'}</td>
@@ -965,9 +989,14 @@ async function loadCRM() {
       <td class="${dClass}">${dateLbl(c.next_contact_date)}</td>
       <td class="text-muted">${c.city||'—'}</td>
     </tr>`;
-  });
-  html += `</tbody></table></div>`;
-  document.getElementById('contentArea').innerHTML = html;
+  }).join('');
+}
+
+function clearCRMSearch() {
+  crmSearch = '';
+  const si = document.getElementById('crmSearchInput');
+  if (si) { si.value = ''; si.focus(); }
+  renderCRMRows();
 }
 
 async function openContactDrawer(id) {
@@ -1341,6 +1370,109 @@ async function openStrategyDrawer(id) {
     ${s.filed_date?`<div class="fr"><div class="fg"><div class="fl">Filed Date</div><span style="font-size:13px;color:#64748b">${fmtDate(s.filed_date)}</span></div></div>`:''}
   </div>`;
   openDrawer(title, html, 'strategy_ideas', s);
+}
+
+// ── Pipeline ──
+function pipelineStatusColor(s) {
+  return {'Live':'#10B981','Coming to Market':'#3B82F6','Monitor':'#F59E0B','Closed / DNP':'#9CA3AF'}[s]||'#9CA3AF';
+}
+function pipelineStatusBg(s) {
+  return {'Live':'#ECFDF5','Coming to Market':'#EFF6FF','Monitor':'#FFFBEB','Closed / DNP':'#F9FAFB'}[s]||'#F9FAFB';
+}
+function phaseNum(p) {
+  return {'Identified':1,'Initial Analysis':2,'Detailed Analysis':3,'Bid Submitted':4,'Entered DD':5,'Asset Secured':6}[p]||'—';
+}
+
+let pipelineStatusFilter = 'all'; let pipelineSectorFilter = 'all';
+async function loadPipeline(sf, stf) {
+  if (sf !== undefined) pipelineSectorFilter = sf;
+  if (stf !== undefined) pipelineStatusFilter = stf;
+  let q = sb.from('pipeline_cards').select('*').order('created_at',{ascending:false});
+  if (pipelineSectorFilter !== 'all') q = q.eq('sector', pipelineSectorFilter);
+  if (pipelineStatusFilter !== 'all') q = q.eq('status', pipelineStatusFilter);
+  const { data, error } = await q;
+  if (error) { document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error loading pipeline</div>'; return; }
+  const deals = data||[];
+  const sectors = ['Office','Industrial','Retail','Alternatives'];
+  const statuses = ['Live','Coming to Market','Monitor','Closed / DNP'];
+  const sChip = (v) => `<span class="fchip ${pipelineSectorFilter===v?'active-'+v.toLowerCase():''}${pipelineSectorFilter===v?' active':''}" onclick="loadPipeline('${v}','${pipelineStatusFilter}')">${v}</span>`;
+  const stChip = (v,label) => {
+    const col = pipelineStatusFilter===v ? pipelineStatusColor(v) : '';
+    const bg = pipelineStatusFilter===v ? pipelineStatusBg(v) : '';
+    return `<span class="fchip ${pipelineStatusFilter===v?'active':''}" style="${pipelineStatusFilter===v?'background:'+bg+';color:'+col+';border-color:'+col:''}" onclick="loadPipeline('${pipelineSectorFilter}','${v}')">${label||v}</span>`;
+  };
+  let html = `<div class="filter-bar">
+    <span class="fchip ${pipelineSectorFilter==='all'?'active':''}" onclick="loadPipeline('all','${pipelineStatusFilter}')">All Sectors</span>
+    ${sectors.map(s=>sChip(s)).join('')}
+    <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></span>
+    <span class="fchip ${pipelineStatusFilter==='all'?'active':''}" onclick="loadPipeline('${pipelineSectorFilter}','all')">All Status</span>
+    ${statuses.map(s=>stChip(s)).join('')}
+  </div><div class="card-grid">`;
+  deals.forEach(d => {
+    const sc = sectorColor(d.sector);
+    const priceOk = d.headline_price !== null && d.headline_price !== undefined;
+    const phaseOk = !!d.phase;
+    const clarifyCount = (!priceOk?1:0)+(!phaseOk?1:0);
+    const sCol = pipelineStatusColor(d.status);
+    const sBg = pipelineStatusBg(d.status);
+    html += `<div class="deal-card" onclick="openPipelineDrawer('${d.id}')">
+      <div class="card-top card-top-${d.sector}"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <div><div class="card-address">${d.address||'Untitled'}</div><div class="card-suburb">${d.suburb||''}${d.state?', '+d.state:''}</div></div>
+          <span class="badge" style="background:${sBg};color:${sCol}">${d.status||'—'}</span>
+        </div>
+        <div class="card-fields">
+          <div class="${!priceOk?'cfw needs-clarify':'cfw'}"><div class="cfl">Price</div><div class="cfv ${!priceOk?'missing':''}">${priceOk?fmtPrice(d.headline_price):'—'}</div></div>
+          <div class="cfw"><div class="cfl">Yield</div><div class="cfv ${!d.reported_yield?'missing':''}">${d.reported_yield?d.reported_yield+'%':'—'}</div></div>
+          <div class="cfw"><div class="cfl">Cap Val/sqm</div><div class="cfv ${(!d.headline_price||!d.nla_sqm)?'missing':''}">${(d.headline_price&&d.nla_sqm)?'$'+Math.round(d.headline_price/d.nla_sqm).toLocaleString():'—'}</div></div>
+          <div class="cfw"><div class="cfl">WALE</div><div class="cfv ${!d.wale?'missing':''}">${d.wale?d.wale+' yrs':'—'}</div></div>
+          <div class="${!phaseOk?'cfw needs-clarify':'cfw'}"><div class="cfl">Phase</div><div class="cfv ${!phaseOk?'missing':''}">${phaseOk?phaseNum(d.phase)+'. '+d.phase:'—'}</div></div>
+          <div class="cfw"><div class="cfl">Process</div><div class="cfv ${!d.process_type?'missing':''}">${d.process_type||'—'}</div></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector||'—'}</span></div>
+          ${clarifyCount>0?`<span class="card-clarify">⚡ ${clarifyCount} clarification${clarifyCount>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.deal_date)||''}</span>`}
+        </div>
+      </div>
+    </div>`;
+  });
+  if (!deals.length) {
+    html += `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text-tertiary)">No pipeline deals</div>`;
+  }
+  html += `<div class="new-card" onclick="openAddForm()"><div style="font-size:22px">＋</div><div style="font-size:12px">New Deal</div></div></div>`;
+  document.getElementById('contentArea').innerHTML = html;
+}
+
+async function openPipelineDrawer(id) {
+  const { data: d } = await sb.from('pipeline_cards').select('*').eq('id',id).single();
+  if (!d) return;
+  drawerRecord = d; drawerTable = 'pipeline_cards';
+  const statuses = ['Live','Coming to Market','Monitor','Closed / DNP'];
+  const phases = ['Identified','Initial Analysis','Detailed Analysis','Bid Submitted','Entered DD','Asset Secured'];
+  const sCol = pipelineStatusColor(d.status); const sBg = pipelineStatusBg(d.status);
+  const html = `
+    <div class="ds">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span class="badge" style="background:${sBg};color:${sCol};font-size:12px">${d.status||'—'}</span>
+        ${d.phase?`<span class="phase-badge">Phase ${phaseNum(d.phase)}: ${d.phase}</span>`:''}
+      </div>
+      <div class="fr"><div class="fg"><div class="fl">Address</div><input class="fi" data-field="address" value="${(d.address||'').replace(/"/g,'&quot;')}"></div><div class="fg"><div class="fl">Suburb</div><input class="fi" data-field="suburb" value="${d.suburb||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">State</div><input class="fi" data-field="state" value="${d.state||''}"></div><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option ${d.sector==='Office'?'selected':''}>Office</option><option ${d.sector==='Industrial'?'selected':''}>Industrial</option><option ${d.sector==='Retail'?'selected':''}>Retail</option><option ${d.sector==='Alternatives'?'selected':''}>Alternatives</option></select></div></div>
+    </div>
+    <div class="ds"><div class="dst">Deal Status &amp; Phase</div>
+      <div class="fr"><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status">${statuses.map(s=>`<option ${d.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="fg"><div class="fl">Phase</div><select class="fi" data-field="phase">${phases.map(p=>`<option ${d.phase===p?'selected':''}>${p}</option>`).join('')}</select></div></div>
+    </div>
+    <div class="ds"><div class="dst">Deal Metrics</div>
+      <div class="fr"><div class="fg"><div class="fl">Pricing ($)</div><input class="fi" type="number" data-field="headline_price" value="${d.headline_price||''}"></div><div class="fg"><div class="fl">Yield (%)</div><input class="fi" type="number" step="0.01" data-field="reported_yield" value="${d.reported_yield||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">NLA/GLA (sqm)</div><input class="fi" type="number" data-field="nla_sqm" value="${d.nla_sqm||''}"></div><div class="fg"><div class="fl">Capital Value ($/sqm)</div><div class="fi" style="background:var(--bg);color:var(--text-secondary);display:flex;align-items:center">${(d.headline_price&&d.nla_sqm)?'$'+Math.round(d.headline_price/d.nla_sqm).toLocaleString()+'/sqm':'Auto-calculated'}</div></div></div>
+      <div class="fr"><div class="fg"><div class="fl">WALE (yrs)</div><input class="fi" type="number" step="0.1" data-field="wale" value="${d.wale||''}"></div><div class="fg"><div class="fl">Process Type</div><input class="fi" data-field="process_type" value="${d.process_type||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Vendor</div><input class="fi" data-field="vendor" value="${d.vendor||''}"></div><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Date</div><input class="fi" type="date" data-field="deal_date" value="${d.deal_date||''}"></div><div class="fg"></div></div>
+      <div class="fr full"><div class="fg"><div class="fl">Notes / Next Steps</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
+    </div>
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a>${d.meeting_label}</a></div></div></div>`:''}`;
+  openDrawer(d.address||'Pipeline Deal', html, 'pipeline_cards', d);
 }
 
 // ── Knowledge Base / Output Archive placeholders ──
