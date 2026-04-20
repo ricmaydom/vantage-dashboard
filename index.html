@@ -135,7 +135,7 @@ tr.done-row .task-name{text-decoration:line-through;}
 .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .deal-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:box-shadow 0.12s;}
 .deal-card:hover{box-shadow:0 3px 10px rgba(0,0,0,0.08);}
-.card-top{height:4px;}
+.card-top{height:4px;background:var(--border);}
 .card-top-Office{background:var(--office);}
 .card-top-Industrial{background:var(--industrial);}
 .card-top-Retail{background:var(--retail);}
@@ -145,6 +145,7 @@ tr.done-row .task-name{text-decoration:line-through;}
 .card-address{font-weight:600;font-size:13px;line-height:1.3;}
 .card-suburb{font-size:11px;color:var(--text-secondary);margin-top:2px;}
 .card-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.cfw{padding:4px 6px;border-radius:6px;}
 .cfl{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;}
 .cfv{font-size:12px;font-weight:500;}
 .cfv.missing{color:var(--text-tertiary);font-style:italic;font-weight:400;}
@@ -156,7 +157,7 @@ tr.done-row .task-name{text-decoration:line-through;}
 .deal-card.has-clarify{border-left:3px solid #F59E0B;}
 .new-card{background:var(--bg);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;min-height:180px;color:var(--text-tertiary);transition:all 0.12s;}
 .new-card:hover{border-color:var(--accent);color:var(--accent);}
-.cfw.needs-clarify{background:#FFFBEB;border-radius:6px;padding:4px 8px;border-left:3px solid #F59E0B;outline:1px solid #FCD34D;}
+.cfw.needs-clarify{background:#FFFBEB;border-left:3px solid #F59E0B;outline:1px solid #FCD34D;}
 .cfw.needs-clarify .cfl{color:#D97706;font-weight:600;}
 .cfw.needs-clarify .cfv.missing,.fi.needs-clarify,.fg.needs-clarify .fi{background:#FFFBEB;}
 .drawer-clarify-banner{background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#D97706;}
