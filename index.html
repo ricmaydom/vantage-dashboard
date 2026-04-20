@@ -188,6 +188,7 @@ tr.done-row .task-name{text-decoration:line-through;}
 .fl{font-size:11px;color:var(--text-secondary);font-weight:500;}
 .fi{font-size:13px;color:var(--text-primary);padding:7px 9px;border:1px solid var(--border);border-radius:5px;width:100%;font-family:inherit;}
 .fi:focus{outline:none;border-color:var(--accent);}
+.fi.needs-clarify{border-color:var(--medium);background:#FFFBEB;}
 .fta{font-size:12px;padding:8px;border:1px solid var(--border);border-radius:5px;width:100%;min-height:80px;resize:vertical;font-family:inherit;line-height:1.5;}
 .fta:focus{outline:none;border-color:var(--accent);}
 .granola-ref{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;}
@@ -201,9 +202,31 @@ tr.done-row .task-name{text-decoration:line-through;}
 .sopt.sel-inprogress{background:var(--medium-bg);color:var(--medium);border-color:var(--medium);}
 .sopt.sel-done{background:var(--low-bg);color:var(--low);border-color:var(--low);}
 .task-check-wrap{width:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.task-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:11px;color:transparent;}
+.task-check{width:18px;height:18px;border-radius:4px;border:2px solid #D1D5DB;background:#fff;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:12px;line-height:1;color:transparent;flex-shrink:0;}
 .task-check:hover{border-color:var(--confirmed);background:var(--low-bg);}
 tr.done-row .task-check{background:var(--confirmed);border-color:var(--confirmed);color:#fff;}
+tr.row-overdue td{background:#FFF5F5;}
+tr.row-overdue:hover td{background:#FEE2E2;}
+tr.row-overdue .task-name{color:var(--high);}
+.filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.fchip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);transition:all 0.12s;}
+.fchip:hover{background:var(--bg);}
+.fchip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.fchip.active-office{background:var(--office);color:#fff;border-color:var(--office);}
+.fchip.active-industrial{background:var(--industrial);color:#fff;border-color:var(--industrial);}
+.fchip.active-retail{background:var(--retail);color:#fff;border-color:var(--retail);}
+.fchip.active-alternatives{background:var(--alternatives);color:#fff;border-color:var(--alternatives);}
+.fchip.active-confirmed{background:var(--confirmed);color:#fff;border-color:var(--confirmed);}
+.fchip.active-reported{background:var(--retail);color:#fff;border-color:var(--retail);}
+.fchip.active-rumoured{background:var(--text-tertiary);color:#fff;border-color:var(--text-tertiary);}
+.clarify-dot{width:8px;height:8px;border-radius:50%;background:var(--medium);display:inline-block;margin-right:4px;flex-shrink:0;}
+.clarify-dot.urgent{background:var(--high);}
+.lease-type-row{display:flex;gap:6px;margin-top:4px;}
+.lt-btn{padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid var(--border);background:var(--surface);color:var(--text-secondary);transition:all 0.12s;}
+.lt-btn.sel{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+.inline-edit-cell{cursor:pointer;}
+.inline-edit-cell:hover{background:rgba(201,168,76,0.06);border-radius:4px;}
+.ie-input{font-size:12px;padding:2px 5px;border:1px solid var(--accent);border-radius:4px;font-family:inherit;width:100%;background:#fff;}
 .inline-imp{cursor:pointer;user-select:none;}
 .inline-imp:hover{opacity:0.75;}
 .inline-date-cell{position:relative;cursor:pointer;font-size:12px;white-space:nowrap;}
@@ -450,7 +473,9 @@ function fmtPrice(v) {
 
 function fmtDate(d) {
   if (!d) return null;
-  const dt = new Date(d + 'T00:00:00');
+  const ds = String(d).substring(0, 10); // strip time portion from timestamps
+  const dt = new Date(ds + 'T00:00:00');
+  if (isNaN(dt)) return null;
   return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: dt.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
 }
 
@@ -678,7 +703,7 @@ function openAddForm() {
     deals: {title:'New Deal Card', table:'deal_cards', fields:`<div class="ds"><div class="fr"><div class="fg"><div class="fl">Address</div><input class="fi" data-field="address" placeholder="e.g. 200 George Street"></div><div class="fg"><div class="fl">Suburb / State</div><input class="fi" data-field="suburb" placeholder="CBD, NSW"></div></div><div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option></select></div><div class="fg"><div class="fl">Confidence</div><select class="fi" data-field="confidence"><option>Rumoured</option><option>Reported</option><option>Confirmed</option></select></div></div><div class="fr"><div class="fg"><div class="fl">Price ($M)</div><input class="fi" type="number" data-field="headline_price" placeholder="380000000"></div><div class="fg"><div class="fl">Yield %</div><input class="fi" type="number" step="0.01" data-field="reported_yield"></div></div><div class="fr"><div class="fg"><div class="fl">Vendor</div><input class="fi" data-field="vendor"></div><div class="fg"><div class="fl">Process</div><input class="fi" data-field="process_type"></div></div><div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes"></textarea></div></div></div>`},
     leasing: {title:'New Leasing Card', table:'leasing_cards', fields:`<div class="ds"><div class="fr"><div class="fg"><div class="fl">Address</div><input class="fi" data-field="address"></div><div class="fg"><div class="fl">Suburb / State</div><input class="fi" data-field="suburb"></div></div><div class="fr"><div class="fg"><div class="fl">Tenant</div><input class="fi" data-field="tenant"></div><div class="fg"><div class="fl">Landlord</div><input class="fi" data-field="landlord"></div></div><div class="fr"><div class="fg"><div class="fl">Area (sqm)</div><input class="fi" type="number" data-field="area_sqm"></div><div class="fg"><div class="fl">Term (yrs)</div><input class="fi" type="number" data-field="term_years"></div></div><div class="fr"><div class="fg"><div class="fl">Face Rent ($/sqm)</div><input class="fi" type="number" data-field="face_rent"></div><div class="fg"><div class="fl">Eff. Rent ($/sqm)</div><input class="fi" type="number" data-field="effective_rent"></div></div><div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes"></textarea></div></div></div>`},
     intel: {title:'New Intel Record', table:'intel_records', fields:`<div class="ds"><div class="fr full"><div class="fg"><div class="fl">Summary</div><textarea class="fta" data-field="summary" style="min-height:100px" placeholder="What did you hear?"></textarea></div></div><div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option></select></div><div class="fg"><div class="fl">Confidence</div><select class="fi" data-field="confidence"><option>Rumoured</option><option>Reported</option><option>Confirmed</option></select></div></div><div class="fr"><div class="fg"><div class="fl">Type</div><select class="fi" data-field="intel_type"><option>Transaction</option><option>Strategy</option><option>Market Data</option></select></div><div class="fg"><div class="fl">Source Contact</div><input class="fi" data-field="source_contact_name" placeholder="Name..."></div></div></div>`},
-    crm: {title:'New Contact', table:'contacts', fields:`<div class="ds"><div class="fr"><div class="fg"><div class="fl">First Name</div><input class="fi" data-field="first_name"></div><div class="fg"><div class="fl">Last Name</div><input class="fi" data-field="last_name"></div></div><div class="fr"><div class="fg"><div class="fl">Firm</div><input class="fi" data-field="firm"></div><div class="fg"><div class="fl">Role / Title</div><input class="fi" data-field="role_title"></div></div><div class="fr"><div class="fg"><div class="fl">Mobile</div><input class="fi" type="tel" data-field="mobile"></div><div class="fg"><div class="fl">Email</div><input class="fi" type="email" data-field="email"></div></div><div class="fr"><div class="fg"><div class="fl">Tier</div><select class="fi" data-field="relationship_tier"><option value="1">Tier 1</option><option value="2" selected>Tier 2</option><option value="3">Tier 3</option></select></div><div class="fg"><div class="fl">Cadence (weeks)</div><select class="fi" data-field="cadence_weeks"><option value="2">Fortnightly</option><option value="4" selected>Monthly</option><option value="12">Quarterly</option><option value="52">Annually</option></select></div></div></div>`},
+    crm: {title:'New Contact', table:'contacts', fields:`<div class="ds"><div class="fr"><div class="fg"><div class="fl">Full Name</div><input class="fi" data-field="name" placeholder="e.g. James Chen"></div><div class="fg"><div class="fl">Role / Title</div><input class="fi" data-field="role_title"></div></div><div class="fr"><div class="fg"><div class="fl">Firm</div><input class="fi" data-field="firm"></div><div class="fg"><div class="fl">Sector Coverage</div><select class="fi" data-field="asset_class_coverage"><option value="">—</option><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option><option>Diversified</option></select></div></div><div class="fr"><div class="fg"><div class="fl">Mobile</div><input class="fi" type="tel" data-field="mobile"></div><div class="fg"><div class="fl">Email</div><input class="fi" type="email" data-field="email"></div></div><div class="fr"><div class="fg"><div class="fl">Tier</div><select class="fi" data-field="relationship_tier"><option value="1">Tier 1</option><option value="2" selected>Tier 2</option><option value="3">Tier 3</option></select></div><div class="fg"><div class="fl">Cadence</div><select class="fi" data-field="cadence_weeks"><option value="2">Fortnightly</option><option value="4" selected>Monthly</option><option value="6">6-weekly</option><option value="12">Quarterly</option><option value="52">Annually</option></select></div></div></div>`},
     strategy: {title:'New Idea', table:'strategy_ideas', fields:`<div class="ds"><div class="fr full"><div class="fg"><div class="fl">Title</div><input class="fi" data-field="title" placeholder="e.g. Sub-Regional Retail Opportunity"></div></div><div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option>Office</option><option>Industrial</option><option>Retail</option><option>Alternatives</option></select></div><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status"><option>raw idea</option><option>Developing</option><option>Active</option></select></div></div><div class="fr full"><div class="fg"><div class="fl">Body</div><textarea class="fta" data-field="body" style="min-height:120px" placeholder="Thesis, rationale, evidence..."></textarea></div></div></div>`}
   };
   const f = forms[currentModule];
@@ -809,18 +834,19 @@ async function loadActions(filter='all') {
     html += `<tr><td colspan="6"><div class="empty-state" style="padding:24px">No tasks here</div></td></tr>`;
   }
   rows.forEach(t => {
-    const done = t.status === 'Done';
+    const done = t.status === 'Done' || t.status === 'done';
     const diff = daysDiff(t.deadline_date);
-    const dClass = done ? 'text-muted' : (diff !== null && diff > 0 ? 'overdue-red' : diff === 0 ? 'due-amber' : 'text-muted');
-    html += `<tr class="clickable ${done?'done-row':''}" data-id="${t.id}" onclick="openTaskDrawer('${t.id}')">
-      <td class="task-check-wrap" onclick="toggleDone('${t.id}',this);event.stopPropagation()"><div class="task-check">${done?'✓':''}</div></td>
-      <td><div class="task-name">${t.title||t.task}</div></td>
+    const isOverdue = !done && diff !== null && diff > 0;
+    const dClass = done ? 'text-muted' : (isOverdue ? 'overdue-red' : diff === 0 ? 'due-amber' : 'text-muted');
+    html += `<tr class="clickable ${done?'done-row':''} ${isOverdue?'row-overdue':''}" data-id="${t.id}" onclick="openTaskDrawer('${t.id}')">
+      <td class="task-check-wrap" onclick="toggleDone('${t.id}',this);event.stopPropagation()"><div class="task-check" style="${done?'background:var(--confirmed);border-color:var(--confirmed);color:#fff;':''}">${done?'✓':''}</div></td>
+      <td><div class="task-name" style="${isOverdue?'font-weight:600;':''}">${t.title||t.task}</div></td>
       <td class="inline-date-cell ${dClass}" onclick="event.stopPropagation()">
         <span>${t.deadline_date?fmtDate(t.deadline_date):'—'}</span>
         <input type="date" value="${t.deadline_date||''}" onchange="updateTaskDate('${t.id}',this.value);this.previousElementSibling.textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'—'">
       </td>
-      <td onclick="event.stopPropagation()">${impBadge(t.importance)}</td>
-      <td class="text-muted">${t.reminder_date?fmtDate(t.reminder_date):'—'}</td>
+      <td onclick="event.stopPropagation()">${impBadge(t.importance||'Medium')}</td>
+      <td class="text-muted">${t.reminder_date?fmtDate(t.reminder_date):'<span style="font-size:11px;color:var(--text-tertiary)">Set reminder</span>'}</td>
       <td>${statusBadge(t.status,t.deadline_date)}</td>
     </tr>`;
   });
@@ -913,18 +939,21 @@ async function loadCRM() {
     </div>
   </div>
   <div class="table-wrap"><table>
-    <thead><tr><th>Name</th><th>Firm</th><th>Profession</th><th>Tier</th><th>Cadence</th><th>Last Contact</th><th>Next Due</th><th>City</th></tr></thead>
+    <thead><tr><th>Name</th><th>Firm</th><th>Sector</th><th>Tier</th><th>Cadence</th><th>Last Contact</th><th>Next Due</th><th>City</th></tr></thead>
     <tbody>`;
   if (!rows.length) {
     html += `<tr><td colspan="8"><div class="empty-state" style="padding:24px">No contacts found</div></td></tr>`;
   }
   rows.forEach(c => {
     const dClass = dateClass(c.next_contact_date);
+    const isOverdue = c.next_contact_date && daysDiff(c.next_contact_date) > 0;
+    const missingInfo = !c.email || !c.mobile;
     const cadenceLabel = {2:'Fortnightly',4:'Monthly',6:'6-weekly',12:'Quarterly',52:'Annually'}[c.cadence_weeks]||`${c.cadence_weeks}w`;
+    const sectorHexC = c.asset_class_coverage ? sectorHex(c.asset_class_coverage) : null;
     html += `<tr class="clickable" onclick="openContactDrawer('${c.id}')">
-      <td><b>${c.name||''}</b></td>
+      <td><div style="display:flex;align-items:center;gap:6px">${missingInfo?'<span class="clarify-dot"></span>':''}<b>${c.name||''}</b></div></td>
       <td class="text-muted">${c.firm||'—'}</td>
-      <td class="text-muted">${c.profession||c.role_title||'—'}</td>
+      <td>${c.asset_class_coverage?`<span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:${sectorHexC}22;color:${sectorHexC}">${c.asset_class_coverage}</span>`:'<span class="text-muted">—</span>'}</td>
       <td>${tierBadge(c.relationship_tier)}</td>
       <td class="text-muted">${cadenceLabel}</td>
       <td class="text-muted">${c.last_contact_date?fmtDate(c.last_contact_date):'—'}</td>
@@ -941,11 +970,12 @@ async function openContactDrawer(id) {
   if (!c) return;
   drawerRecord = c; drawerTable = 'contacts';
   const cadenceOpts = ['2','4','6','12','52'].map(v => `<option value="${v}" ${String(c.cadence_weeks)===v?'selected':''}>${{2:'Fortnightly',4:'Monthly',6:'6-weekly',12:'Quarterly',52:'Annually'}[v]||v+'w'}</option>`).join('');
+  const missEmail = !c.email; const missMobile = !c.mobile;
   const html = `
     <div class="ds">
-      <div class="fr"><div class="fg"><div class="fl">First Name</div><input class="fi" data-field="first_name" value="${c.first_name||''}"></div><div class="fg"><div class="fl">Last Name</div><input class="fi" data-field="last_name" value="${c.last_name||''}"></div></div>
-      <div class="fr"><div class="fg"><div class="fl">Firm</div><input class="fi" data-field="firm" value="${c.firm||''}"></div><div class="fg"><div class="fl">Role / Title</div><input class="fi" data-field="role_title" value="${c.role_title||''}"></div></div>
-      <div class="fr"><div class="fg"><div class="fl">Mobile</div><input class="fi" type="tel" data-field="mobile" value="${c.mobile||''}"></div><div class="fg"><div class="fl">Email</div><input class="fi" type="email" data-field="email" value="${c.email||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Name</div><input class="fi" data-field="name" value="${(c.name||'').replace(/"/g,'&quot;')}"></div><div class="fg"><div class="fl">Role / Title</div><input class="fi" data-field="role_title" value="${c.role_title||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Firm</div><input class="fi" data-field="firm" value="${c.firm||''}"></div><div class="fg"><div class="fl">Sector Coverage</div><select class="fi" data-field="asset_class_coverage"><option value="">—</option><option ${c.asset_class_coverage==='Office'?'selected':''}>Office</option><option ${c.asset_class_coverage==='Industrial'?'selected':''}>Industrial</option><option ${c.asset_class_coverage==='Retail'?'selected':''}>Retail</option><option ${c.asset_class_coverage==='Alternatives'?'selected':''}>Alternatives</option><option ${c.asset_class_coverage==='Diversified'?'selected':''}>Diversified</option></select></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Mobile ${missMobile?'<span class="clarify-dot" title="Missing"></span>':''}</div><input class="fi ${missMobile?'needs-clarify':''}" type="tel" data-field="mobile" value="${c.mobile||''}"></div><div class="fg"><div class="fl">Email ${missEmail?'<span class="clarify-dot" title="Missing"></span>':''}</div><input class="fi ${missEmail?'needs-clarify':''}" type="email" data-field="email" value="${c.email||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">City</div><input class="fi" data-field="city" value="${c.city||''}"></div><div class="fg"><div class="fl">LinkedIn</div><input class="fi" data-field="linkedin_url" value="${c.linkedin_url||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Tier</div><select class="fi" data-field="relationship_tier"><option value="1" ${c.relationship_tier===1?'selected':''}>Tier 1</option><option value="2" ${c.relationship_tier===2?'selected':''}>Tier 2</option><option value="3" ${c.relationship_tier===3?'selected':''}>Tier 3</option></select></div><div class="fg"><div class="fl">Cadence</div><select class="fi" data-field="cadence_weeks">${cadenceOpts}</select></div></div>
     </div>
@@ -968,11 +998,27 @@ function updateNextContact(el, cadenceWeeks) {
 }
 
 // ── Deal Cards ──
-async function loadDeals() {
-  const { data, error } = await sb.from('deal_cards').select('*').order('created_at',{ascending:false});
-  if (error) { document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error</div>'; return; }
+let dealSectorFilter = 'all'; let dealConfFilter = 'all';
+async function loadDeals(sf, cf) {
+  if (sf !== undefined) dealSectorFilter = sf;
+  if (cf !== undefined) dealConfFilter = cf;
+  let q = sb.from('deal_cards').select('*').order('created_at',{ascending:false});
+  if (dealSectorFilter !== 'all') q = q.eq('sector', dealSectorFilter);
+  if (dealConfFilter !== 'all') q = q.eq('confidence', dealConfFilter);
+  const { data, error } = await q;
+  if (error) { document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error loading deals</div>'; return; }
   const deals = data||[];
-  let html = `<div class="card-grid">`;
+  const sectors = ['Office','Industrial','Retail','Alternatives'];
+  const confs = ['Rumoured','Reported','Confirmed'];
+  const sChip = (v,label) => `<span class="fchip ${dealSectorFilter===v?'active-'+v.toLowerCase():''}${dealSectorFilter===v?' active':''}" onclick="loadDeals('${v}','${dealConfFilter}')">${label}</span>`;
+  const cChip = (v) => `<span class="fchip ${dealConfFilter===v?'active-'+v.toLowerCase():''}${dealConfFilter===v?' active':''}" onclick="loadDeals('${dealSectorFilter}','${v}')">${v}</span>`;
+  let html = `<div class="filter-bar">
+    <span class="fchip ${dealSectorFilter==='all'?'active':''}" onclick="loadDeals('all','${dealConfFilter}')">All Sectors</span>
+    ${sectors.map(s=>sChip(s,s)).join('')}
+    <span style="width:1px;background:var(--border);margin:0 4px"></span>
+    <span class="fchip ${dealConfFilter==='all'?'active':''}" onclick="loadDeals('${dealSectorFilter}','all')">All Confidence</span>
+    ${confs.map(c=>cChip(c)).join('')}
+  </div><div class="card-grid">`;
   deals.forEach(d => {
     const sc = sectorColor(d.sector);
     const waleOk = d.wale !== null && d.wale !== undefined;
@@ -983,16 +1029,16 @@ async function loadDeals() {
       <div class="card-body">
         <div class="card-header"><div><div class="card-address">${d.address}</div><div class="card-suburb">${d.suburb||''}${d.state?', '+d.state:''}</div></div>${confBadge(d.confidence||d.status)}</div>
         <div class="card-fields">
-          <div class="${!d.headline_price?'cfw needs-clarify':'cfw'}"><div class="cfl">Price</div><div class="cfv ${!d.headline_price?'missing':''}">${d.headline_price?fmtPrice(d.headline_price):'—'}</div></div>
+          <div class="${!d.headline_price?'cfw needs-clarify':'cfw'}"><div class="cfl">Pricing</div><div class="cfv ${!d.headline_price?'missing':''}">${d.headline_price?fmtPrice(d.headline_price):'—'}</div></div>
           <div class="${!d.reported_yield?'cfw needs-clarify':'cfw'}"><div class="cfl">Yield</div><div class="cfv ${!d.reported_yield?'missing':''}">${d.reported_yield?d.reported_yield+'%':'—'}</div></div>
-          <div class="cfw"><div class="cfl">NLA/GLA</div><div class="cfv ${!d.nla_sqm?'missing':''}">${d.nla_sqm?(Number(d.nla_sqm).toLocaleString()+' sqm'):'—'}</div></div>
+          <div class="cfw"><div class="cfl">Cap Value/sqm</div><div class="cfv ${(!d.headline_price||!d.nla_sqm)?'missing':''}">${(d.headline_price&&d.nla_sqm)?'$'+Math.round(d.headline_price/d.nla_sqm).toLocaleString():'—'}</div></div>
           <div class="${!waleOk?'cfw needs-clarify':'cfw'}"><div class="cfl">WALE</div><div class="cfv ${!waleOk?'missing':''}">${waleOk?d.wale+' yrs':'—'}</div></div>
           <div class="${!procOk?'cfw needs-clarify':'cfw'}"><div class="cfl">Process</div><div class="cfv ${!procOk?'missing':''}">${procOk||'—'}</div></div>
-          <div class="cfw"><div class="cfl">Vendor</div><div class="cfv ${!d.vendor?'missing':''}">${d.vendor||'—'}</div></div>
+          <div class="cfw"><div class="cfl">NLA (sqm)</div><div class="cfv ${!d.nla_sqm?'missing':''}">${d.nla_sqm?Number(d.nla_sqm).toLocaleString():'—'}</div></div>
         </div>
         <div class="card-footer">
           <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector||'—'}</span>${d.conviction?'<span class="card-tag" style="background:var(--bg);color:var(--text-secondary)">'+d.conviction+'</span>':''}</div>
-          ${clarifyCount>0?`<span class="card-clarify">⚡ ${clarifyCount} clarification${clarifyCount>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.date_logged)||''}</span>`}
+          ${clarifyCount>0?`<span class="card-clarify">⚡ ${clarifyCount} clarification${clarifyCount>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.deal_date)||''}</span>`}
         </div>
       </div>
     </div>`;
@@ -1012,8 +1058,9 @@ async function openDealDrawer(id) {
     </div>
     <div class="ds"><div class="dst">Deal Metrics</div>
       <div class="fr"><div class="fg"><div class="fl">Confidence</div><select class="fi" data-field="confidence"><option ${(d.confidence||d.status)==='Rumoured'?'selected':''}>Rumoured</option><option ${(d.confidence||d.status)==='Reported'?'selected':''}>Reported</option><option ${(d.confidence||d.status)==='Confirmed'?'selected':''}>Confirmed</option></select></div><div class="fg"><div class="fl">Conviction</div><select class="fi" data-field="conviction"><option value="">—</option><option ${d.conviction==='High'?'selected':''}>High</option><option ${d.conviction==='Medium'?'selected':''}>Medium</option><option ${d.conviction==='Low'?'selected':''}>Low</option><option ${d.conviction==='Pass'?'selected':''}>Pass</option></select></div></div>
-      <div class="fr"><div class="fg"><div class="fl">Price ($)</div><input class="fi" type="number" data-field="headline_price" value="${d.headline_price||''}"></div><div class="fg"><div class="fl">Yield (%)</div><input class="fi" type="number" step="0.01" data-field="reported_yield" value="${d.reported_yield||''}"></div></div>
-      <div class="fr"><div class="fg"><div class="fl">NLA/GLA (sqm)</div><input class="fi" type="number" data-field="nla_sqm" value="${d.nla_sqm||''}"></div><div class="fg"><div class="fl">WALE (yrs)</div><input class="fi" type="number" step="0.1" data-field="wale" value="${d.wale||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Pricing ($)</div><input class="fi" type="number" data-field="headline_price" value="${d.headline_price||''}"></div><div class="fg"><div class="fl">Yield (%)</div><input class="fi" type="number" step="0.01" data-field="reported_yield" value="${d.reported_yield||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">NLA/GLA (sqm)</div><input class="fi" type="number" data-field="nla_sqm" value="${d.nla_sqm||''}"></div><div class="fg"><div class="fl">Capital Value ($/sqm)</div><div class="fi" style="background:var(--bg);color:var(--text-secondary);display:flex;align-items:center">${(d.headline_price&&d.nla_sqm)?'$'+Math.round(d.headline_price/d.nla_sqm).toLocaleString()+'/sqm':'Auto-calculated from Pricing ÷ NLA'}</div></div></div>
+      <div class="fr"><div class="fg"><div class="fl">WALE (yrs)</div><input class="fi" type="number" step="0.1" data-field="wale" value="${d.wale||''}"></div><div class="fg"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Process Type</div><input class="fi" data-field="process_type" value="${d.process_type||''}"></div><div class="fg"><div class="fl">Vendor</div><input class="fi" data-field="vendor" value="${d.vendor||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Purchaser</div><input class="fi" data-field="purchaser" value="${d.purchaser||''}"></div><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
@@ -1023,11 +1070,27 @@ async function openDealDrawer(id) {
 }
 
 // ── Leasing Cards ──
-async function loadLeasing() {
-  const { data, error } = await sb.from('leasing_cards').select('*').order('created_at',{ascending:false});
-  if (error) { document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error</div>'; return; }
+let leaseSectorFilter = 'all'; let leaseConfFilter = 'all';
+async function loadLeasing(sf, cf) {
+  if (sf !== undefined) leaseSectorFilter = sf;
+  if (cf !== undefined) leaseConfFilter = cf;
+  let q = sb.from('leasing_cards').select('*').order('created_at',{ascending:false});
+  if (leaseSectorFilter !== 'all') q = q.eq('sector', leaseSectorFilter);
+  if (leaseConfFilter !== 'all') q = q.eq('confidence', leaseConfFilter);
+  const { data, error } = await q;
+  if (error) { document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error loading leasing cards</div>'; return; }
   const cards = data||[];
-  let html = `<div class="card-grid">`;
+  const sectors = ['Office','Industrial','Retail','Alternatives'];
+  const confs = ['Rumoured','Reported','Confirmed'];
+  const sChip = (v) => `<span class="fchip ${leaseSectorFilter===v?'active-'+v.toLowerCase():''}${leaseSectorFilter===v?' active':''}" onclick="loadLeasing('${v}','${leaseConfFilter}')">${v}</span>`;
+  const cChip = (v) => `<span class="fchip ${leaseConfFilter===v?'active-'+v.toLowerCase():''}${leaseConfFilter===v?' active':''}" onclick="loadLeasing('${leaseSectorFilter}','${v}')">${v}</span>`;
+  let html = `<div class="filter-bar">
+    <span class="fchip ${leaseSectorFilter==='all'?'active':''}" onclick="loadLeasing('all','${leaseConfFilter}')">All Sectors</span>
+    ${sectors.map(s=>sChip(s)).join('')}
+    <span style="width:1px;background:var(--border);margin:0 4px"></span>
+    <span class="fchip ${leaseConfFilter==='all'?'active':''}" onclick="loadLeasing('${leaseSectorFilter}','all')">All Confidence</span>
+    ${confs.map(c=>cChip(c)).join('')}
+  </div><div class="card-grid">`;
   cards.forEach(d => {
     const sc = sectorColor(d.sector);
     const effOk = d.effective_rent !== null;
@@ -1039,15 +1102,15 @@ async function loadLeasing() {
         <div class="card-header"><div><div class="card-address">${d.address}</div><div class="card-suburb">${d.suburb||''}${d.state?', '+d.state:''}</div></div>${confBadge(d.confidence)}</div>
         <div class="card-fields">
           <div class="cfw"><div class="cfl">Tenant</div><div class="cfv ${!d.tenant?'missing':''}">${d.tenant||'—'}</div></div>
-          <div class="cfw"><div class="cfl">Landlord</div><div class="cfv ${!d.landlord?'missing':''}">${d.landlord||'—'}</div></div>
-          <div class="cfw"><div class="cfl">Area</div><div class="cfv ${!d.area_sqm?'missing':''}">${d.area_sqm?(Number(d.area_sqm).toLocaleString()+' sqm'):'—'}</div></div>
-          <div class="cfw"><div class="cfl">Term</div><div class="cfv ${!d.term_years?'missing':''}">${d.term_years?d.term_years+' yrs':'—'}</div></div>
+          <div class="cfw"><div class="cfl">Area / Term</div><div class="cfv ${!d.area_sqm?'missing':''}">${d.area_sqm?Number(d.area_sqm).toLocaleString()+' sqm':'—'}${d.term_years?' · '+d.term_years+'yr':''}</div></div>
           <div class="cfw"><div class="cfl">Face Rent</div><div class="cfv ${!d.face_rent?'missing':''}">${d.face_rent?'$'+d.face_rent+'/sqm':'—'}</div></div>
           <div class="${!effOk?'cfw needs-clarify':'cfw'}"><div class="cfl">Eff. Rent</div><div class="cfv ${!effOk?'missing':''}">${effOk?'$'+d.effective_rent+'/sqm':'—'}</div></div>
+          <div class="${!incOk?'cfw needs-clarify':'cfw'}"><div class="cfl">Incentive</div><div class="cfv ${!incOk?'missing':''}">${incOk?d.incentive_pct+'%':'—'}</div></div>
+          <div class="cfw"><div class="cfl">Type</div><div class="cfv">${d.lease_type?`<span class="badge" style="background:${d.lease_type==='Gross'?'#EFF6FF':'#ECFDF5'};color:${d.lease_type==='Gross'?'#3B82F6':'#10B981'}">${d.lease_type}</span>`:'—'}</div></div>
         </div>
         <div class="card-footer">
           <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector}</span>${d.is_comparable?'<span class="card-tag" style="background:var(--bg);color:var(--text-secondary)">Comp</span>':''}</div>
-          ${clarify>0?`<span class="card-clarify">⚡ ${clarify} clarification${clarify>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.date_logged)||''}</span>`}
+          ${clarify>0?`<span class="card-clarify">⚡ ${clarify} clarification${clarify>1?'s':''}</span>`:`<span class="card-date">${fmtDate(d.deal_date)||''}</span>`}
         </div>
       </div>
     </div>`;
@@ -1069,12 +1132,19 @@ async function openLeasingDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">Tenant</div><input class="fi" data-field="tenant" value="${d.tenant||''}"></div><div class="fg"><div class="fl">Landlord</div><input class="fi" data-field="landlord" value="${d.landlord||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Area (sqm)</div><input class="fi" type="number" data-field="area_sqm" value="${d.area_sqm||''}"></div><div class="fg"><div class="fl">Term (yrs)</div><input class="fi" type="number" data-field="term_years" value="${d.term_years||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Face Rent ($/sqm)</div><input class="fi" type="number" data-field="face_rent" value="${d.face_rent||''}"></div><div class="fg"><div class="fl">Eff. Rent ($/sqm)</div><input class="fi" type="number" data-field="effective_rent" value="${d.effective_rent||''}"></div></div>
-      <div class="fr"><div class="fg"><div class="fl">Incentive (%)</div><input class="fi" type="number" step="0.1" data-field="incentive_pct" value="${d.incentive_pct||''}"></div><div class="fg"><div class="fl">Lease Type</div><select class="fi" data-field="lease_type"><option ${d.lease_type==='Gross'?'selected':''}>Gross</option><option ${d.lease_type==='Net'?'selected':''}>Net</option></select></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Incentive (%)</div><div style="display:flex;align-items:center;gap:6px"><input class="fi" type="number" step="0.1" data-field="incentive_pct" value="${d.incentive_pct||''}" style="flex:1">${d.incentive_pct?`<span style="font-size:12px;color:var(--text-secondary)">${d.incentive_pct}%</span>`:''}</div></div><div class="fg"><div class="fl">Rent Type</div><div class="lease-type-row"><button class="lt-btn ${(!d.lease_type||d.lease_type==='Gross')?'sel':''}" onclick="setLeaseType(this,'Gross')">Gross</button><button class="lt-btn ${d.lease_type==='Net'?'sel':''}" onclick="setLeaseType(this,'Net')">Net</button></div><input type="hidden" data-field="lease_type" id="leaseTypeHidden" value="${d.lease_type||'Gross'}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div><div class="fg"><div class="fl">Is Comparable</div><select class="fi" data-field="is_comparable"><option value="false" ${!d.is_comparable?'selected':''}>No</option><option value="true" ${d.is_comparable?'selected':''}>Yes — Comp</option></select></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
     ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a>${d.meeting_label}</a></div></div></div>`:''}`;
   openDrawer(d.address, html, 'leasing_cards', d);
+}
+
+function setLeaseType(btn, type) {
+  document.querySelectorAll('.lt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const hidden = document.getElementById('leaseTypeHidden');
+  if (hidden) hidden.value = type;
 }
 
 // ── Market Intel ──
@@ -1098,11 +1168,13 @@ async function renderIntelList(filter) {
   if (filter === 'archived') {
     q = q.eq('is_archived', true);
   } else {
-    q = q.eq('is_archived', false);
+    q = q.neq('is_archived', true); // includes both false AND null rows
     if (filter !== 'all') q = q.eq('confidence', filter);
   }
-  const { data: records } = await q;
+  const { data: records, error } = await q;
   const list = document.getElementById('intel-list');
+  if (!list) return;
+  if (error) { list.innerHTML = `<div style="color:#ef4444;padding:24px;font-size:13px">Query error: ${error.message}</div>`; return; }
   if (!records || !records.length) { list.innerHTML = '<div style="color:#94a3b8;padding:40px;text-align:center">No intel records</div>'; return; }
 
   const today = new Date();
@@ -1193,17 +1265,28 @@ async function filterStrategy(f) {
   await renderStrategyGrid(f);
 }
 
+function normStatus(s) {
+  if (!s) return 'Raw Idea';
+  const m = {'raw idea':'Raw Idea','developing':'Developing','active':'Active','filed':'Filed'};
+  return m[s.toLowerCase()] || s;
+}
+
 async function renderStrategyGrid(filter) {
   let q = sb.from('strategy_ideas').select('*').order('created_at', { ascending: false });
-  if (filter !== 'all') q = q.eq('status', filter);
-  const { data: ideas } = await q;
+  // match both cases in DB: 'raw idea' and 'Raw Idea'
+  if (filter !== 'all') {
+    q = q.or(`status.eq.${filter},status.eq.${filter.toLowerCase()}`);
+  }
+  const { data: ideas, error } = await q;
   const grid = document.getElementById('strategy-grid');
+  if (!grid) return;
+  if (error) { grid.innerHTML = `<div style="color:#ef4444;padding:24px;font-size:13px">Query error: ${error.message}</div>`; return; }
   if (!ideas || !ideas.length) { grid.innerHTML = '<div style="color:#94a3b8;padding:40px;text-align:center">No ideas yet</div>'; return; }
 
-  const statusColor = { 'Raw Idea':'#94a3b8', 'Developing':'#f97316', 'Active':'#22c55e', 'Filed':'#64748b', 'raw idea':'#94a3b8' };
+  const statusColor = { 'Raw Idea':'#94a3b8', 'Developing':'#f97316', 'Active':'#22c55e', 'Filed':'#64748b' };
   grid.innerHTML = ideas.map(s => {
     const title = s.title || s.entry || 'Untitled';
-    const status = s.status || 'Raw Idea';
+    const status = normStatus(s.status);
     const col = statusColor[status] || '#94a3b8';
     const hex = sectorHex(s.sector);
     return `<div class="deal-card" onclick="openStrategyDrawer('${s.id}')">
@@ -1248,8 +1331,8 @@ async function openStrategyDrawer(id) {
   const html = `<div class="ds">
     <div class="fr"><div class="fg full"><div class="fl">Title</div><input class="fi" data-field="title" value="${(title||'').replace(/"/g,'&quot;')}"></div></div>
     <div class="fr"><div class="fg full"><div class="fl">Body</div><textarea class="fta" data-field="body">${s.body||''}</textarea></div></div>
-    <div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option value="">—</option><option ${s.sector==='Office'?'selected':''}>Office</option><option ${s.sector==='Industrial'?'selected':''}>Industrial</option><option ${s.sector==='Retail'?'selected':''}>Retail</option><option ${s.sector==='Alternatives'?'selected':''}>Alternatives</option><option ${s.sector==='Mixed'?'selected':''}>Mixed</option></select></div><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status"><option ${s.status==='Raw Idea'||s.status==='raw idea'?'selected':''}>Raw Idea</option><option ${s.status==='Developing'?'selected':''}>Developing</option><option ${s.status==='Active'?'selected':''}>Active</option><option ${s.status==='Filed'?'selected':''}>Filed</option></select></div></div>
-    ${s.status==='Filed'?`<div class="fr"><div class="fg full"><div class="fl">Filed Reason</div><textarea class="fta" data-field="filed_reason">${s.filed_reason||''}</textarea></div></div>`:''}
+    <div class="fr"><div class="fg"><div class="fl">Sector</div><select class="fi" data-field="sector"><option value="">—</option><option ${s.sector==='Office'?'selected':''}>Office</option><option ${s.sector==='Industrial'?'selected':''}>Industrial</option><option ${s.sector==='Retail'?'selected':''}>Retail</option><option ${s.sector==='Alternatives'?'selected':''}>Alternatives</option><option ${s.sector==='Mixed'?'selected':''}>Mixed</option></select></div><div class="fg"><div class="fl">Status</div><select class="fi" data-field="status"><option value="Raw Idea" ${normStatus(s.status)==='Raw Idea'?'selected':''}>Raw Idea</option><option value="Developing" ${normStatus(s.status)==='Developing'?'selected':''}>Developing</option><option value="Active" ${normStatus(s.status)==='Active'?'selected':''}>Active</option><option value="Filed" ${normStatus(s.status)==='Filed'?'selected':''}>Filed</option></select></div></div>
+    ${normStatus(s.status)==='Filed'?`<div class="fr"><div class="fg full"><div class="fl">Filed Reason</div><textarea class="fta" data-field="filed_reason">${s.filed_reason||''}</textarea></div></div>`:''}
     ${s.filed_date?`<div class="fr"><div class="fg"><div class="fl">Filed Date</div><span style="font-size:13px;color:#64748b">${fmtDate(s.filed_date)}</span></div></div>`:''}
   </div>`;
   openDrawer(title, html, 'strategy_ideas', s);
