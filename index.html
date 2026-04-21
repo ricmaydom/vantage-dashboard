@@ -219,20 +219,36 @@ tr.done-row .task-name{text-decoration:line-through;}
 .task-check{width:18px;height:18px;border-radius:4px;border:2px solid #D1D5DB;background:#fff;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:12px;line-height:1;color:transparent;flex-shrink:0;}
 .task-check:hover{border-color:var(--confirmed);background:var(--low-bg);}
 tr.done-row .task-check{background:var(--confirmed);border-color:var(--confirmed);color:#fff;}
-tr.row-overdue td{background:#FFF5F5;}
-tr.row-overdue:hover td{background:#FEE2E2;}
-tr.row-overdue .task-name{color:var(--high);}
+tr.row-overdue .task-name{color:var(--high);font-weight:600;}
 .filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
 .fchip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);transition:all 0.12s;}
 .fchip:hover{background:var(--bg);}
 .fchip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-.fchip.active-office{background:var(--office);color:#fff;border-color:var(--office);}
-.fchip.active-industrial{background:var(--industrial);color:#fff;border-color:var(--industrial);}
-.fchip.active-retail{background:var(--retail);color:#fff;border-color:var(--retail);}
-.fchip.active-alternatives{background:var(--alternatives);color:#fff;border-color:var(--alternatives);}
-.fchip.active-confirmed{background:var(--confirmed);color:#fff;border-color:var(--confirmed);}
-.fchip.active-reported{background:var(--retail);color:#fff;border-color:var(--retail);}
-.fchip.active-rumoured{background:var(--text-tertiary);color:#fff;border-color:var(--text-tertiary);}
+/* Sector chips — always tinted, filled when active */
+.fchip.chip-office{border-color:#93c5fd;color:#2563eb;background:#eff6ff;}
+.fchip.chip-office.active{background:var(--office);color:#fff;border-color:var(--office);}
+.fchip.chip-industrial{border-color:#6ee7b7;color:#059669;background:#ecfdf5;}
+.fchip.chip-industrial.active{background:var(--industrial);color:#fff;border-color:var(--industrial);}
+.fchip.chip-retail{border-color:#fcd34d;color:#d97706;background:#fffbeb;}
+.fchip.chip-retail.active{background:var(--retail);color:#fff;border-color:var(--retail);}
+.fchip.chip-alternatives{border-color:#c4b5fd;color:#7c3aed;background:#f5f3ff;}
+.fchip.chip-alternatives.active{background:var(--alternatives);color:#fff;border-color:var(--alternatives);}
+/* Confidence chips */
+.fchip.chip-confirmed{border-color:#6ee7b7;color:#059669;background:#ecfdf5;}
+.fchip.chip-confirmed.active{background:var(--confirmed);color:#fff;border-color:var(--confirmed);}
+.fchip.chip-reported{border-color:#fcd34d;color:#d97706;background:#fffbeb;}
+.fchip.chip-reported.active{background:var(--retail);color:#fff;border-color:var(--retail);}
+.fchip.chip-rumoured{border-color:#d1d5db;color:#6b7280;background:#f9fafb;}
+.fchip.chip-rumoured.active{background:var(--text-tertiary);color:#fff;border-color:var(--text-tertiary);}
+/* Status tabs */
+.tab.tab-open.active{background:#eff6ff;color:#2563eb;box-shadow:none;}
+.tab.tab-inprogress.active{background:#fffbeb;color:#d97706;box-shadow:none;}
+.tab.tab-overdue.active{background:#fef2f2;color:#ef4444;box-shadow:none;}
+.tab.tab-done.active{background:#ecfdf5;color:#10b981;box-shadow:none;}
+/* Tier tabs */
+.tab.tab-tier1.active{background:#fef3c7;color:#d97706;box-shadow:none;}
+.tab.tab-tier2.active{background:#dbeafe;color:#2563eb;box-shadow:none;}
+.tab.tab-tier3.active{background:#f3f4f6;color:#6b7280;box-shadow:none;}
 .clarify-dot{width:8px;height:8px;border-radius:50%;background:var(--medium);display:inline-block;margin-right:4px;flex-shrink:0;}
 .clarify-dot.urgent{background:var(--high);}
 .lease-type-row{display:flex;gap:6px;margin-top:4px;}
@@ -243,8 +259,9 @@ tr.row-overdue .task-name{color:var(--high);}
 .ie-input{font-size:12px;padding:2px 5px;border:1px solid var(--accent);border-radius:4px;font-family:inherit;width:100%;background:#fff;}
 .inline-imp{cursor:pointer;user-select:none;}
 .inline-imp:hover{opacity:0.75;}
-.inline-date-cell{position:relative;cursor:pointer;font-size:12px;white-space:nowrap;}
-.inline-date-cell input[type=date]{position:absolute;opacity:0;inset:0;cursor:pointer;width:100%;}
+.inline-date-cell{position:relative;cursor:pointer;font-size:12px;white-space:nowrap;user-select:none;}
+.inline-date-cell:hover span{text-decoration:underline;text-decoration-style:dotted;}
+.inline-date-cell input[type=date]{position:absolute;width:0;height:0;opacity:0;pointer-events:none;border:0;padding:0;}
 .inline-status-select{font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;font-family:inherit;padding:0;color:inherit;outline:none;}
 .sort-bar{display:flex;align-items:center;gap:8px;padding:8px 0 4px;flex-wrap:wrap;}
 .sort-bar label{font-size:12px;color:var(--text-secondary);font-weight:500;}
@@ -926,10 +943,10 @@ async function loadActions(filter='all') {
   let html = `
   <div class="tabs">
     <div class="tab ${filter==='all'?'active':''}" onclick="loadActions('all')">All Tasks</div>
-    <div class="tab ${filter==='open'?'active':''}" onclick="loadActions('open')">Open</div>
-    <div class="tab ${filter==='inprogress'?'active':''}" onclick="loadActions('inprogress')">In Progress</div>
-    <div class="tab ${filter==='overdue'?'active':''}" onclick="loadActions('overdue')">Overdue</div>
-    <div class="tab ${filter==='done'?'active':''}" onclick="loadActions('done')">Done</div>
+    <div class="tab tab-open ${filter==='open'?'active':''}" onclick="loadActions('open')">Open</div>
+    <div class="tab tab-inprogress ${filter==='inprogress'?'active':''}" onclick="loadActions('inprogress')">In Progress</div>
+    <div class="tab tab-overdue ${filter==='overdue'?'active':''}" onclick="loadActions('overdue')">Overdue</div>
+    <div class="tab tab-done ${filter==='done'?'active':''}" onclick="loadActions('done')">Done</div>
   </div>
   <div class="table-wrap">
     <table><thead><tr><th style="width:34px"></th><th>Task</th><th>Due Date</th><th>Importance</th><th>Reminder</th><th>Status</th></tr></thead><tbody>`;
@@ -943,17 +960,17 @@ async function loadActions(filter='all') {
     const dClass = done ? 'text-muted' : (isOverdue ? 'overdue-red' : diff === 0 ? 'due-amber' : 'text-muted');
     const missingDeadline = !t.deadline_date && !done;
     const clarifyChip = '<span style="font-size:10px;background:#FEF3C7;color:#D97706;border:1px solid #FCD34D;border-radius:6px;padding:1px 6px;font-weight:600;white-space:nowrap;flex-shrink:0">⚡ No date</span>';
-    html += `<tr class="clickable ${done?'done-row':''} ${isOverdue?'row-overdue':''}" style="${missingDeadline?'background:#FFFBEB;':''}" data-id="${t.id}" onclick="openTaskDrawer('${t.id}')">
+    html += `<tr class="clickable ${done?'done-row':''} ${isOverdue?'row-overdue':''}" data-id="${t.id}" onclick="openTaskDrawer('${t.id}')">
       <td class="task-check-wrap" onclick="toggleDone('${t.id}',this);event.stopPropagation()"><div class="task-check" style="${done?'background:var(--confirmed);border-color:var(--confirmed);color:#fff;':''}">${done?'✓':''}</div></td>
       <td><div style="display:flex;align-items:center;gap:7px">${missingDeadline?clarifyChip:''}<div class="task-name" style="${isOverdue?'font-weight:600;':''}">${t.title||t.task}</div></div></td>
-      <td class="inline-date-cell ${dClass}" onclick="event.stopPropagation()">
-        <span>${t.deadline_date?fmtDate(t.deadline_date):'—'}</span>
-        <input type="date" value="${t.deadline_date||''}" onchange="updateTaskDate('${t.id}',this.value);this.previousElementSibling.textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'—'">
+      <td class="inline-date-cell ${dClass}" onclick="event.stopPropagation();this.querySelector('input').showPicker?.()">
+        <span style="pointer-events:none">${t.deadline_date?fmtDate(t.deadline_date):'—'}</span>
+        <input type="date" value="${t.deadline_date||''}" onchange="updateTaskDate('${t.id}',this.value);this.closest('td').querySelector('span').textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'—'">
       </td>
       <td onclick="event.stopPropagation()">${impBadge(t.importance||'Medium')}</td>
-      <td class="inline-date-cell text-muted" onclick="event.stopPropagation()">
-        <span>${t.reminder_date?fmtDate(t.reminder_date):'<span style="font-size:11px;color:var(--text-tertiary)">Set</span>'}</span>
-        <input type="date" value="${t.reminder_date||''}" onchange="updateTaskReminder('${t.id}',this.value);this.previousElementSibling.textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'Set'">
+      <td class="inline-date-cell text-muted" onclick="event.stopPropagation();this.querySelector('input').showPicker?.()">
+        <span style="pointer-events:none;font-size:${t.reminder_date?'12':'11'}px;color:${t.reminder_date?'inherit':'var(--text-tertiary)'}">${t.reminder_date?fmtDate(t.reminder_date):'Set'}</span>
+        <input type="date" value="${t.reminder_date||''}" onchange="updateTaskReminder('${t.id}',this.value);this.closest('td').querySelector('span').textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'Set'">
       </td>
       <td onclick="event.stopPropagation()">${inlineStatusBadge(t.id,t.status,t.deadline_date)}</td>
     </tr>`;
@@ -1063,7 +1080,7 @@ function setDrawerStatus(s, el) {
 }
 
 // ── CRM ──
-let crmSearch = ''; let crmTier = 'all'; let crmAllData = [];
+let crmSearch = ''; let crmTier = 'all'; let crmAllData = []; let crmSort = 'next_contact_date:asc';
 async function loadCRM() {
   let query = sb.from('contacts').select('*').order('next_contact_date',{nullsFirst:false});
   if (crmTier !== 'all') query = query.eq('relationship_tier', parseInt(crmTier));
@@ -1078,13 +1095,13 @@ async function loadCRM() {
     </div>
     <div class="tabs" style="margin-bottom:0">
       <div class="tab ${crmTier==='all'?'active':''}" onclick="crmTier='all';loadCRM()">All (${crmAllData.length})</div>
-      <div class="tab ${crmTier==='1'?'active':''}" onclick="crmTier='1';loadCRM()">Tier 1</div>
-      <div class="tab ${crmTier==='2'?'active':''}" onclick="crmTier='2';loadCRM()">Tier 2</div>
-      <div class="tab ${crmTier==='3'?'active':''}" onclick="crmTier='3';loadCRM()">Tier 3</div>
+      <div class="tab tab-tier1 ${crmTier==='1'?'active':''}" onclick="crmTier='1';loadCRM()">Tier 1</div>
+      <div class="tab tab-tier2 ${crmTier==='2'?'active':''}" onclick="crmTier='2';loadCRM()">Tier 2</div>
+      <div class="tab tab-tier3 ${crmTier==='3'?'active':''}" onclick="crmTier='3';loadCRM()">Tier 3</div>
     </div>
   </div>
   <div class="table-wrap"><table>
-    <thead><tr><th>Name</th><th>Firm</th><th>Sector</th><th>Tier</th><th>Cadence</th><th>Last Contact</th><th>Next Due</th><th>City</th></tr></thead>
+    <thead><tr id="crmHeaderRow"></tr></thead>
     <tbody id="crmTbody"></tbody>
   </table></div>`;
   renderCRMRows();
@@ -1095,11 +1112,36 @@ function renderCRMRows() {
   if (!tbody) return;
   const clearBtn = document.getElementById('crmClearBtn');
   if (clearBtn) clearBtn.style.display = crmSearch ? '' : 'none';
-  let rows = crmAllData;
+  // Render sortable headers
+  const headerRow = document.getElementById('crmHeaderRow');
+  if (headerRow) {
+    const cols = [
+      {key:'name',label:'Name'},{key:'firm',label:'Firm'},{key:'asset_class_coverage',label:'Sector'},
+      {key:'relationship_tier',label:'Tier'},{key:'cadence_weeks',label:'Cadence'},
+      {key:'last_contact_date',label:'Last Contact'},{key:'next_contact_date',label:'Next Due'},{key:'city',label:'City'}
+    ];
+    const [sk,sd] = crmSort.split(':');
+    headerRow.innerHTML = cols.map(col => {
+      const isActive = sk === col.key;
+      const arrow = isActive ? (sd==='asc' ? ' ↑' : ' ↓') : '';
+      const nextDir = isActive && sd==='asc' ? 'desc' : 'asc';
+      return `<th onclick="crmSort='${col.key}:${nextDir}';renderCRMRows()" style="cursor:pointer;user-select:none;white-space:nowrap;${isActive?'color:var(--accent);':''}">${col.label}${arrow}</th>`;
+    }).join('');
+  }
+  let rows = [...crmAllData];
   if (crmSearch) {
     const q = crmSearch.toLowerCase();
     rows = rows.filter(c => (c.name||'').toLowerCase().includes(q) || (c.firm||'').toLowerCase().includes(q));
   }
+  // Client-side sort
+  const [sortKey,sortDir] = crmSort.split(':');
+  rows.sort((a,b) => {
+    let av = a[sortKey]??''; let bv = b[sortKey]??'';
+    if (av === '' && bv !== '') return 1;
+    if (bv === '' && av !== '') return -1;
+    const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+    return sortDir === 'desc' ? -cmp : cmp;
+  });
   if (!rows.length) {
     tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="padding:24px">No contacts found</div></td></tr>`;
     return;
@@ -1177,13 +1219,13 @@ async function loadDeals(sf, cf, sort) {
   const deals = data||[];
   const sectors = ['Office','Industrial','Retail','Alternatives'];
   const confs = ['Rumoured','Reported','Confirmed'];
-  const sChip = (v,label) => `<span class="fchip ${dealSectorFilter===v?'active-'+v.toLowerCase():''}${dealSectorFilter===v?' active':''}" onclick="loadDeals('${v}','${dealConfFilter}')">${label}</span>`;
-  const cChip = (v) => `<span class="fchip ${dealConfFilter===v?'active-'+v.toLowerCase():''}${dealConfFilter===v?' active':''}" onclick="loadDeals('${dealSectorFilter}','${v}')">${v}</span>`;
+  const sChip = (v) => `<span class="fchip chip-${v.toLowerCase()}${dealSectorFilter===v?' active':''}" onclick="loadDeals('${v}','${dealConfFilter}')">${v}</span>`;
+  const cChip = (v) => `<span class="fchip chip-${v.toLowerCase()}${dealConfFilter===v?' active':''}" onclick="loadDeals('${dealSectorFilter}','${v}')">${v}</span>`;
   let html = `<div class="filter-bar">
     <span class="fchip ${dealSectorFilter==='all'?'active':''}" onclick="loadDeals('all','${dealConfFilter}')">All Sectors</span>
-    ${sectors.map(s=>sChip(s,s)).join('')}
+    ${sectors.map(s=>sChip(s)).join('')}
     <span style="width:1px;background:var(--border);margin:0 4px"></span>
-    <span class="fchip ${dealConfFilter==='all'?'active':''}" onclick="loadDeals('${dealSectorFilter}','all')">All Confidence</span>
+    <span class="fchip ${dealConfFilter==='all'?'active':''}" onclick="loadDeals('${dealSectorFilter}','all')">All</span>
     ${confs.map(c=>cChip(c)).join('')}
   </div>
   <div class="sort-bar">
@@ -1267,13 +1309,13 @@ async function loadLeasing(sf, cf, sort) {
   const cards = data||[];
   const sectors = ['Office','Industrial','Retail','Alternatives'];
   const confs = ['Rumoured','Reported','Confirmed'];
-  const sChip = (v) => `<span class="fchip ${leaseSectorFilter===v?'active-'+v.toLowerCase():''}${leaseSectorFilter===v?' active':''}" onclick="loadLeasing('${v}','${leaseConfFilter}')">${v}</span>`;
-  const cChip = (v) => `<span class="fchip ${leaseConfFilter===v?'active-'+v.toLowerCase():''}${leaseConfFilter===v?' active':''}" onclick="loadLeasing('${leaseSectorFilter}','${v}')">${v}</span>`;
+  const sChip = (v) => `<span class="fchip chip-${v.toLowerCase()}${leaseSectorFilter===v?' active':''}" onclick="loadLeasing('${v}','${leaseConfFilter}')">${v}</span>`;
+  const cChip = (v) => `<span class="fchip chip-${v.toLowerCase()}${leaseConfFilter===v?' active':''}" onclick="loadLeasing('${leaseSectorFilter}','${v}')">${v}</span>`;
   let html = `<div class="filter-bar">
     <span class="fchip ${leaseSectorFilter==='all'?'active':''}" onclick="loadLeasing('all','${leaseConfFilter}')">All Sectors</span>
     ${sectors.map(s=>sChip(s)).join('')}
     <span style="width:1px;background:var(--border);margin:0 4px"></span>
-    <span class="fchip ${leaseConfFilter==='all'?'active':''}" onclick="loadLeasing('${leaseSectorFilter}','all')">All Confidence</span>
+    <span class="fchip ${leaseConfFilter==='all'?'active':''}" onclick="loadLeasing('${leaseSectorFilter}','all')">All</span>
     ${confs.map(c=>cChip(c)).join('')}
   </div>
   <div class="sort-bar">
@@ -1352,7 +1394,7 @@ function setLeaseType(btn, type) {
 // ── Market Intel ──
 async function loadIntel() {
   const ca = document.getElementById('contentArea');
-  ca.innerHTML = `<div style="margin-bottom:16px"><div class="tabs"><div class="tab active" id="itab-all" onclick="filterIntel('all')">All</div><div class="tab" id="itab-Rumoured" onclick="filterIntel('Rumoured')">Rumoured</div><div class="tab" id="itab-Reported" onclick="filterIntel('Reported')">Reported</div><div class="tab" id="itab-Confirmed" onclick="filterIntel('Confirmed')">Confirmed</div><div class="tab" id="itab-archived" onclick="filterIntel('archived')">Archived</div></div></div><div id="intel-list"></div>`;
+  ca.innerHTML = `<div style="margin-bottom:16px"><div class="filter-bar"><span class="fchip active" id="itab-all" onclick="filterIntel('all')">All</span><span class="fchip chip-rumoured" id="itab-Rumoured" onclick="filterIntel('Rumoured')">Rumoured</span><span class="fchip chip-reported" id="itab-Reported" onclick="filterIntel('Reported')">Reported</span><span class="fchip chip-confirmed" id="itab-Confirmed" onclick="filterIntel('Confirmed')">Confirmed</span><span class="fchip" id="itab-archived" onclick="filterIntel('archived')">Archived</span></div></div><div id="intel-list"></div>`;
   await renderIntelList('all');
 }
 
@@ -1568,17 +1610,14 @@ async function loadPipeline(sf, stf, sort) {
   const deals = data||[];
   const sectors = ['Office','Industrial','Retail','Alternatives'];
   const statuses = ['Live','Coming to Market','Monitor','Closed / DNP'];
-  const sChip = (v) => `<span class="fchip ${pipelineSectorFilter===v?'active-'+v.toLowerCase():''}${pipelineSectorFilter===v?' active':''}" onclick="loadPipeline('${v}','${pipelineStatusFilter}')">${v}</span>`;
-  const stChip = (v,label) => {
-    const col = pipelineStatusFilter===v ? pipelineStatusColor(v) : '';
-    const bg = pipelineStatusFilter===v ? pipelineStatusBg(v) : '';
-    return `<span class="fchip ${pipelineStatusFilter===v?'active':''}" style="${pipelineStatusFilter===v?'background:'+bg+';color:'+col+';border-color:'+col:''}" onclick="loadPipeline('${pipelineSectorFilter}','${v}')">${label||v}</span>`;
-  };
+  const sChip = (v) => `<span class="fchip chip-${v.toLowerCase()}${pipelineSectorFilter===v?' active':''}" onclick="loadPipeline('${v}','${pipelineStatusFilter}')">${v}</span>`;
+  const statusChipClass = {'Live':'chip-confirmed','Coming to Market':'chip-reported','Monitor':'chip-retail','Closed / DNP':'chip-rumoured'};
+  const stChip = (v,label) => `<span class="fchip ${statusChipClass[v]||''}${pipelineStatusFilter===v?' active':''}" onclick="loadPipeline('${pipelineSectorFilter}','${v}')">${label||v}</span>`;
   let html = `<div class="filter-bar">
     <span class="fchip ${pipelineSectorFilter==='all'?'active':''}" onclick="loadPipeline('all','${pipelineStatusFilter}')">All Sectors</span>
     ${sectors.map(s=>sChip(s)).join('')}
     <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></span>
-    <span class="fchip ${pipelineStatusFilter==='all'?'active':''}" onclick="loadPipeline('${pipelineSectorFilter}','all')">All Status</span>
+    <span class="fchip ${pipelineStatusFilter==='all'?'active':''}" onclick="loadPipeline('${pipelineSectorFilter}','all')">All</span>
     ${statuses.map(s=>stChip(s)).join('')}
   </div>
   <div class="sort-bar">
