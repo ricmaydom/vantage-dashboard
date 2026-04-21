@@ -136,13 +136,13 @@ tr.done-row .task-name{text-decoration:line-through;}
 .view-all{font-size:11px;color:var(--accent);cursor:pointer;}
 .view-all:hover{text-decoration:underline;}
 .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.deal-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:box-shadow 0.12s;}
+.deal-card{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:box-shadow 0.12s;}
 .deal-card:hover{box-shadow:0 3px 10px rgba(0,0,0,0.08);}
-.card-top{height:4px;background:var(--border);}
-.card-top-Office{background:var(--office);}
-.card-top-Industrial{background:var(--industrial);}
-.card-top-Retail{background:var(--retail);}
-.card-top-Alternatives{background:var(--alternatives);}
+.deal-card[data-sector="Office"]{border-left-color:var(--office);}
+.deal-card[data-sector="Industrial"]{border-left-color:var(--industrial);}
+.deal-card[data-sector="Retail"]{border-left-color:var(--retail);}
+.deal-card[data-sector="Alternatives"]{border-left-color:var(--alternatives);}
+.deal-card[data-sector="Mixed"]{border-left-color:#8b5cf6;}
 .card-body{padding:14px;}
 .card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
 .card-address{font-weight:600;font-size:13px;line-height:1.3;}
@@ -157,7 +157,6 @@ tr.done-row .task-name{text-decoration:line-through;}
 .card-tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;}
 .card-date{font-size:10px;color:var(--text-tertiary);}
 .card-clarify{font-size:11px;font-weight:600;color:#D97706;background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;padding:2px 8px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;}
-.deal-card.has-clarify{border-left:3px solid #F59E0B;}
 .new-card{background:var(--bg);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;min-height:180px;color:var(--text-tertiary);transition:all 0.12s;}
 .new-card:hover{border-color:var(--accent);color:var(--accent);}
 .cfw.needs-clarify{background:#FFFBEB;border-left:3px solid #F59E0B;outline:1px solid #FCD34D;}
@@ -1006,6 +1005,13 @@ function inlineStatusBadge(id, status, deadline) {
     </select>
   </span>`;
 }
+function granolaSourceLink(docId, label) {
+  const lbl = label || 'Meeting';
+  if (docId) {
+    return `<div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <a href="https://app.granola.ai/notes/${docId}" target="_blank" style="color:#7c3aed;font-weight:500;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${lbl}</a></div></div>`;
+  }
+  return `<div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${lbl}</span></div></div>`;
+}
 async function deleteCard(table, id) {
   if (!confirm('Delete this record? This cannot be undone.')) return;
   const { error } = await sb.from(table).delete().eq('id', id);
@@ -1038,7 +1044,7 @@ async function openTaskDrawer(id) {
       <div class="fg"><div class="fl">Category</div><input class="fi" data-field="category" value="${t.category||''}"></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${t.notes||''}</textarea></div></div>
     </div>
-    ${t.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${t.meeting_label}</span></div></div></div>`:''}`;
+    ${t.meeting_label?`<div class="ds"><div class="dst">Source</div>${granolaSourceLink(t.granola_doc_id,t.meeting_label)}</div>`:''}`;
   openDrawer(t.title||t.task, html, 'tasks', t);
   document.getElementById('drawerSaveBtn').onclick = drawerSave;
 }
@@ -1100,11 +1106,12 @@ function renderCRMRows() {
   }
   tbody.innerHTML = rows.map(c => {
     const dClass = dateClass(c.next_contact_date);
-    const missingInfo = !c.email || !c.mobile;
+    const missCt = (!c.email?1:0)+(!c.mobile?1:0)+(!c.last_contact_date?1:0)+(!c.relationship_tier?1:0);
+    const missingInfo = missCt > 0;
     const cadenceLabel = {2:'Fortnightly',4:'Monthly',6:'6-weekly',12:'Quarterly',52:'Annually'}[c.cadence_weeks]||`${c.cadence_weeks}w`;
     const sectorHexC = c.asset_class_coverage ? sectorHex(c.asset_class_coverage) : null;
     return `<tr class="clickable" style="${missingInfo?'background:#FFFBEB;':''}" onclick="openContactDrawer('${c.id}')">
-      <td><div style="display:flex;align-items:center;gap:7px">${missingInfo?'<span style="font-size:10px;background:#FEF3C7;color:#D97706;border:1px solid #FCD34D;border-radius:6px;padding:1px 6px;font-weight:600;white-space:nowrap;flex-shrink:0">⚡ Incomplete</span>':''}<b>${c.name||''}</b></div></td>
+      <td><div style="display:flex;align-items:center;gap:7px">${missingInfo?`<span style="font-size:10px;background:#FEF3C7;color:#D97706;border:1px solid #FCD34D;border-radius:6px;padding:1px 6px;font-weight:600;white-space:nowrap;flex-shrink:0">⚡ ${missCt} to fill</span>`:''}<b>${c.name||''}</b></div></td>
       <td class="text-muted">${c.firm||'—'}</td>
       <td>${c.asset_class_coverage?`<span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:${sectorHexC}22;color:${sectorHexC}">${c.asset_class_coverage}</span>`:'<span class="text-muted">—</span>'}</td>
       <td>${tierBadge(c.relationship_tier)}</td>
@@ -1128,17 +1135,17 @@ async function openContactDrawer(id) {
   if (!c) return;
   drawerRecord = c; drawerTable = 'contacts';
   const cadenceOpts = ['2','4','6','12','52'].map(v => `<option value="${v}" ${String(c.cadence_weeks)===v?'selected':''}>${{2:'Fortnightly',4:'Monthly',6:'6-weekly',12:'Quarterly',52:'Annually'}[v]||v+'w'}</option>`).join('');
-  const missEmail = !c.email; const missMobile = !c.mobile;
+  const missEmail = !c.email; const missMobile = !c.mobile; const missTier = !c.relationship_tier; const missContact = !c.last_contact_date;
   const html = `
     <div class="ds">
       <div class="fr"><div class="fg"><div class="fl">Name</div><input class="fi" data-field="name" value="${(c.name||'').replace(/"/g,'&quot;')}"></div><div class="fg"><div class="fl">Role / Title</div><input class="fi" data-field="role_title" value="${c.role_title||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Firm</div><input class="fi" data-field="firm" value="${c.firm||''}"></div><div class="fg"><div class="fl">Sector Coverage</div><select class="fi" data-field="asset_class_coverage"><option value="">—</option><option ${c.asset_class_coverage==='Office'?'selected':''}>Office</option><option ${c.asset_class_coverage==='Industrial'?'selected':''}>Industrial</option><option ${c.asset_class_coverage==='Retail'?'selected':''}>Retail</option><option ${c.asset_class_coverage==='Alternatives'?'selected':''}>Alternatives</option><option ${c.asset_class_coverage==='Diversified'?'selected':''}>Diversified</option></select></div></div>
       <div class="fr"><div class="${missMobile?'fg cfw needs-clarify':'fg'}"><div class="fl">Mobile${missMobile?' <span class="clarify-dot"></span>':''}</div><input class="fi" type="tel" data-field="mobile" value="${c.mobile||''}"></div><div class="${missEmail?'fg cfw needs-clarify':'fg'}"><div class="fl">Email${missEmail?' <span class="clarify-dot"></span>':''}</div><input class="fi" type="email" data-field="email" value="${c.email||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">City</div><input class="fi" data-field="city" value="${c.city||''}"></div><div class="fg"><div class="fl">LinkedIn</div><input class="fi" data-field="linkedin_url" value="${c.linkedin_url||''}"></div></div>
-      <div class="fr"><div class="fg"><div class="fl">Tier</div><select class="fi" data-field="relationship_tier"><option value="1" ${c.relationship_tier===1?'selected':''}>Tier 1</option><option value="2" ${c.relationship_tier===2?'selected':''}>Tier 2</option><option value="3" ${c.relationship_tier===3?'selected':''}>Tier 3</option></select></div><div class="fg"><div class="fl">Cadence</div><select class="fi" data-field="cadence_weeks">${cadenceOpts}</select></div></div>
+      <div class="fr"><div class="${missTier?'fg cfw needs-clarify':'fg'}"><div class="fl">Tier${missTier?' <span class="clarify-dot"></span>':''}</div><select class="fi" data-field="relationship_tier"><option value="">—</option><option value="1" ${c.relationship_tier===1?'selected':''}>Tier 1</option><option value="2" ${c.relationship_tier===2?'selected':''}>Tier 2</option><option value="3" ${c.relationship_tier===3?'selected':''}>Tier 3</option></select></div><div class="fg"><div class="fl">Cadence</div><select class="fi" data-field="cadence_weeks">${cadenceOpts}</select></div></div>
     </div>
     <div class="ds"><div class="dst">Last Contact</div>
-      <div class="fr"><div class="fg"><div class="fl">Date</div><input class="fi" type="date" data-field="last_contact_date" value="${c.last_contact_date||''}" onchange="updateNextContact(this,'${c.cadence_weeks}')"></div><div class="fg"><div class="fl">Next Due</div><div id="nextDueDisplay" style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--border-light);color:${dateClass(c.next_contact_date)?'var(--high)':'var(--text-primary)'}">${dateLbl(c.next_contact_date)||'Not set'}</div><input type="hidden" data-field="next_contact_date" id="nextContactDateHidden" value="${c.next_contact_date||''}"></div></div>
+      <div class="fr"><div class="${missContact?'fg cfw needs-clarify':'fg'}"><div class="fl">Date${missContact?' <span class="clarify-dot"></span>':''}</div><input class="fi" type="date" data-field="last_contact_date" value="${c.last_contact_date||''}" onchange="updateNextContact(this,'${c.cadence_weeks}')"></div><div class="fg"><div class="fl">Next Due</div><div id="nextDueDisplay" style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--border-light);color:${dateClass(c.next_contact_date)?'var(--high)':'var(--text-primary)'}">${dateLbl(c.next_contact_date)||'Not set'}</div><input type="hidden" data-field="next_contact_date" id="nextContactDateHidden" value="${c.next_contact_date||''}"></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="relationship_notes">${c.relationship_notes||''}</textarea></div></div>
     </div>`;
   openDrawer(c.name||'Contact', html, 'contacts', c);
@@ -1196,8 +1203,7 @@ async function loadDeals(sf, cf, sort) {
     const waleOk = d.wale !== null && d.wale !== undefined;
     const procOk = d.process_type;
     const clarifyCount = (!waleOk?1:0) + (!procOk?1:0);
-    html += `<div class="deal-card${clarifyCount>0?' has-clarify':''}" onclick="openDealDrawer('${d.id}')">
-      <div class="card-top card-top-${d.sector}"></div>
+    html += `<div class="deal-card${clarifyCount>0?' has-clarify':''}" data-sector="${d.sector||''}" onclick="openDealDrawer('${d.id}')">
       <div class="card-body">
         <div class="card-header"><div><div class="card-address">${d.address}</div><div class="card-suburb">${d.suburb||''}${d.state?', '+d.state:''}</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${confBadge(d.confidence||d.status)}${clarifyCount>0?`<span class="card-clarify">⚡ ${clarifyCount} to fill</span>`:''}</div>
@@ -1241,7 +1247,7 @@ async function openDealDrawer(id) {
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
     ${d.attachment_url?`<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px;word-break:break-all">${d.attachment_url}</a></div>`:''}
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div>${granolaSourceLink(d.granola_doc_id,d.meeting_label)}</div>`:''}
     <div style="padding:20px 24px 0"><button class="delete-btn" onclick="deleteCard('deal_cards','${d.id}')">Delete Card</button></div>`;
   openDrawer(d.address, html, 'deal_cards', d);
 }
@@ -1288,8 +1294,7 @@ async function loadLeasing(sf, cf, sort) {
     const effOk = d.effective_rent !== null;
     const incOk = d.incentive_pct !== null;
     const clarify = (!effOk?1:0)+(!incOk?1:0);
-    html += `<div class="deal-card${clarify>0?' has-clarify':''}" onclick="openLeasingDrawer('${d.id}')">
-      <div class="card-top card-top-${d.sector}"></div>
+    html += `<div class="deal-card${clarify>0?' has-clarify':''}" data-sector="${d.sector||''}" onclick="openLeasingDrawer('${d.id}')">
       <div class="card-body">
         <div class="card-header"><div><div class="card-address">${d.address}</div><div class="card-suburb">${d.suburb||''}${d.state?', '+d.state:''}</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${confBadge(d.confidence)}${clarify>0?`<span class="card-clarify">⚡ ${clarify} to fill</span>`:''}</div>
@@ -1332,7 +1337,7 @@ async function openLeasingDrawer(id) {
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
     ${d.attachment_url?`<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px;word-break:break-all">${d.attachment_url}</a></div>`:''}
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div>${granolaSourceLink(d.granola_doc_id,d.meeting_label)}</div>`:''}
     <div style="padding:20px 24px 0"><button class="delete-btn" onclick="deleteCard('leasing_cards','${d.id}')">Delete Card</button></div>`;
   openDrawer(d.address, html, 'leasing_cards', d);
 }
@@ -1390,7 +1395,7 @@ async function renderIntelList(filter) {
           ${confBadge(r.confidence)}
           ${r.intel_type ? `<span style="${tagStyle}background:#f1f5f9;color:#64748b">${r.intel_type}</span>` : ''}
           ${src ? `<span style="${tagStyle}background:#f1f5f9;color:#334155">📎 ${src}</span>` : ''}
-          ${r.meeting_label ? `<span style="${tagStyle}background:#eff6ff;color:#3b82f6">🎙 ${r.meeting_label}</span>` : ''}
+          ${r.meeting_label ? (r.granola_doc_id ? `<a href="https://app.granola.ai/notes/${r.granola_doc_id}" target="_blank" style="${tagStyle}background:#eff6ff;color:#3b82f6;text-decoration:none" onclick="event.stopPropagation()">🎙 ${r.meeting_label}</a>` : `<span style="${tagStyle}background:#eff6ff;color:#3b82f6">🎙 ${r.meeting_label}</span>`) : ''}
           ${reviewDue ? `<span style="${tagStyle}background:#fff7ed;color:#f97316">⚡ review due</span>` : ''}
           <span style="font-size:11px;color:#94a3b8;margin-left:4px">${fmtDate(r.date_logged)}</span>
         </div>
@@ -1431,7 +1436,7 @@ async function openIntelDrawer(id) {
     <div class="fr"><div class="fg"><div class="fl">Type</div><select class="fi" data-field="intel_type"><option value="">—</option><option ${d.intel_type==='Transaction'?'selected':''}>Transaction</option><option ${d.intel_type==='Strategy'?'selected':''}>Strategy</option><option ${d.intel_type==='Market Data'?'selected':''}>Market Data</option><option ${d.intel_type==='Other'?'selected':''}>Other</option></select></div><div class="fg"><div class="fl">Source</div><input class="fi" data-field="source_contact_name" value="${d.source_contact_name||''}"></div></div>
     <div class="fr"><div class="fg"><div class="fl">Meeting Label</div><input class="fi" data-field="meeting_label" value="${d.meeting_label||''}"></div><div class="fg"><div class="fl">Review By</div><input class="fi" type="date" data-field="review_by_date" value="${d.review_by_date||''}"></div></div>
     ${d.attachment_url ? `<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px">${d.attachment_name||d.attachment_url}</a></div>` : ''}
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div>${granolaSourceLink(d.granola_doc_id,d.meeting_label)}</div>`:''}
   </div>
   <div style="padding:20px 24px 0">
     <button class="btn-outline" style="color:#ef4444;border-color:#ef4444" onclick="archiveIntel('${d.id}',${d.is_archived})">${d.is_archived?'Unarchive':'Archive'}</button>
@@ -1488,8 +1493,7 @@ async function renderStrategyGrid(filter) {
     const col = statusColor[status] || '#94a3b8';
     const hex = sectorHex(s.sector);
     const sClarify = (!s.body ? 1 : 0) + (!s.sector ? 1 : 0);
-    return `<div class="deal-card${sClarify>0?' has-clarify':''}" onclick="openStrategyDrawer('${s.id}')">
-      <div class="card-top" style="height:4px;background:${col}"></div>
+    return `<div class="deal-card${sClarify>0?' has-clarify':''}" data-sector="${s.sector||''}" style="border-left-color:${hex||col}" onclick="openStrategyDrawer('${s.id}')">
       <div class="card-body">
         <div class="card-header"><div class="card-address">${title}</div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="badge" style="background:${col}22;color:${col}">${status}</span>${sClarify>0?`<span class="card-clarify">⚡ ${sClarify} to fill</span>`:''}</div>
@@ -1597,8 +1601,7 @@ async function loadPipeline(sf, stf, sort) {
     const clarifyCount = (!priceOk?1:0)+(!phaseOk?1:0);
     const sCol = pipelineStatusColor(d.status);
     const sBg = pipelineStatusBg(d.status);
-    html += `<div class="deal-card${clarifyCount>0?' has-clarify':''}" onclick="openPipelineDrawer('${d.id}')">
-      <div class="card-top card-top-${d.sector}"></div>
+    html += `<div class="deal-card${clarifyCount>0?' has-clarify':''}" data-sector="${d.sector||''}" onclick="openPipelineDrawer('${d.id}')">
       <div class="card-body">
         <div class="card-header">
           <div><div class="card-address">${d.address||'Untitled'}</div><div class="card-suburb">${d.suburb||''}${d.state?', '+d.state:''}</div></div>
@@ -1657,7 +1660,7 @@ async function openPipelineDrawer(id) {
       <div class="fr full"><div class="fg"><div class="fl">Notes / Next Steps</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
     ${d.attachment_url?`<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px;word-break:break-all">${d.attachment_url}</a></div>`:''}
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div>${granolaSourceLink(d.granola_doc_id,d.meeting_label)}</div>`:''}
     <div style="padding:20px 24px 0"><button class="delete-btn" onclick="deleteCard('pipeline_cards','${d.id}')">Delete Card</button></div>`;
   openDrawer(d.address||'Pipeline Deal', html, 'pipeline_cards', d);
 }
