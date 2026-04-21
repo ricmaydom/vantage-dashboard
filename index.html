@@ -246,6 +246,12 @@ tr.row-overdue .task-name{color:var(--high);}
 .inline-imp:hover{opacity:0.75;}
 .inline-date-cell{position:relative;cursor:pointer;font-size:12px;white-space:nowrap;}
 .inline-date-cell input[type=date]{position:absolute;opacity:0;inset:0;cursor:pointer;width:100%;}
+.inline-status-select{font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;font-family:inherit;padding:0;color:inherit;outline:none;}
+.sort-bar{display:flex;align-items:center;gap:8px;padding:8px 0 4px;flex-wrap:wrap;}
+.sort-bar label{font-size:12px;color:var(--text-secondary);font-weight:500;}
+.sort-sel{font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-family:inherit;color:var(--text-primary);}
+.delete-btn{background:#fff0f0;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;}
+.delete-btn:hover{background:#fee2e2;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;display:flex;align-items:center;justify-content:center;}
 .modal{background:var(--surface);border-radius:14px;width:640px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
 .modal-wide{width:700px;}
@@ -946,8 +952,11 @@ async function loadActions(filter='all') {
         <input type="date" value="${t.deadline_date||''}" onchange="updateTaskDate('${t.id}',this.value);this.previousElementSibling.textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'—'">
       </td>
       <td onclick="event.stopPropagation()">${impBadge(t.importance||'Medium')}</td>
-      <td class="text-muted">${t.reminder_date?fmtDate(t.reminder_date):'<span style="font-size:11px;color:var(--text-tertiary)">Set reminder</span>'}</td>
-      <td>${statusBadge(t.status,t.deadline_date)}</td>
+      <td class="inline-date-cell text-muted" onclick="event.stopPropagation()">
+        <span>${t.reminder_date?fmtDate(t.reminder_date):'<span style="font-size:11px;color:var(--text-tertiary)">Set</span>'}</span>
+        <input type="date" value="${t.reminder_date||''}" onchange="updateTaskReminder('${t.id}',this.value);this.previousElementSibling.textContent=this.value?new Date(this.value+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'Set'">
+      </td>
+      <td onclick="event.stopPropagation()">${inlineStatusBadge(t.id,t.status,t.deadline_date)}</td>
     </tr>`;
   });
   html += `</tbody></table></div>`;
@@ -972,6 +981,38 @@ async function toggleDone(id, wrapEl) {
 async function updateTaskDate(id, val) {
   await sb.from('tasks').update({ deadline_date: val||null }).eq('id', id);
   snack('Date updated');
+}
+async function updateTaskReminder(id, val) {
+  await sb.from('tasks').update({ reminder_date: val||null }).eq('id', id);
+  snack('Reminder set');
+}
+async function updateTaskStatus(id, val) {
+  await sb.from('tasks').update({ status: val }).eq('id', id);
+  updateBadges();
+  if (val === 'Done') {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) row.classList.add('done-row');
+  }
+}
+function inlineStatusBadge(id, status, deadline) {
+  const s = status || 'Open';
+  const colors = { 'Open':'#64748b', 'In Progress':'#3b82f6', 'Done':'#10b981', 'Overdue':'#ef4444' };
+  const col = colors[s] || '#64748b';
+  return `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${col}18;color:${col}">
+    <select class="inline-status-select" style="color:${col}" onchange="updateTaskStatus('${id}',this.value)">
+      <option ${s==='Open'?'selected':''}>Open</option>
+      <option ${s==='In Progress'?'selected':''}>In Progress</option>
+      <option ${s==='Done'?'selected':''}>Done</option>
+    </select>
+  </span>`;
+}
+async function deleteCard(table, id) {
+  if (!confirm('Delete this record? This cannot be undone.')) return;
+  const { error } = await sb.from(table).delete().eq('id', id);
+  if (error) { snack('Error: ' + error.message); return; }
+  closeDrawer();
+  snack('Deleted');
+  showModule(currentModule);
 }
 
 async function openTaskDrawer(id) {
@@ -1115,11 +1156,13 @@ function updateNextContact(el, cadenceWeeks) {
 }
 
 // ── Deal Cards ──
-let dealSectorFilter = 'all'; let dealConfFilter = 'all';
-async function loadDeals(sf, cf) {
+let dealSectorFilter = 'all'; let dealConfFilter = 'all'; let dealSort = 'created_at:desc';
+async function loadDeals(sf, cf, sort) {
   if (sf !== undefined) dealSectorFilter = sf;
   if (cf !== undefined) dealConfFilter = cf;
-  let q = sb.from('deal_cards').select('*').order('created_at',{ascending:false});
+  if (sort !== undefined) dealSort = sort;
+  const [sortCol, sortDir] = dealSort.split(':');
+  let q = sb.from('deal_cards').select('*').order(sortCol, {ascending: sortDir === 'asc', nullsFirst: false});
   if (dealSectorFilter !== 'all') q = q.eq('sector', dealSectorFilter);
   if (dealConfFilter !== 'all') q = q.eq('confidence', dealConfFilter);
   const { data, error } = await q;
@@ -1135,7 +1178,19 @@ async function loadDeals(sf, cf) {
     <span style="width:1px;background:var(--border);margin:0 4px"></span>
     <span class="fchip ${dealConfFilter==='all'?'active':''}" onclick="loadDeals('${dealSectorFilter}','all')">All Confidence</span>
     ${confs.map(c=>cChip(c)).join('')}
-  </div><div class="card-grid">`;
+  </div>
+  <div class="sort-bar">
+    <label>Sort by</label>
+    <select class="sort-sel" onchange="loadDeals('${dealSectorFilter}','${dealConfFilter}',this.value)">
+      <option value="created_at:desc" ${dealSort==='created_at:desc'?'selected':''}>Date Added (newest)</option>
+      <option value="sale_date:desc" ${dealSort==='sale_date:desc'?'selected':''}>Sale Date (newest)</option>
+      <option value="sale_date:asc" ${dealSort==='sale_date:asc'?'selected':''}>Sale Date (oldest)</option>
+      <option value="headline_price:desc" ${dealSort==='headline_price:desc'?'selected':''}>Price (high–low)</option>
+      <option value="headline_price:asc" ${dealSort==='headline_price:asc'?'selected':''}>Price (low–high)</option>
+      <option value="sector:asc" ${dealSort==='sector:asc'?'selected':''}>Sector (A–Z)</option>
+    </select>
+  </div>
+  <div class="card-grid">`;
   deals.forEach(d => {
     const sc = sectorColor(d.sector);
     const waleOk = d.wale !== null && d.wale !== undefined;
@@ -1157,7 +1212,7 @@ async function loadDeals(sf, cf) {
         </div>
         <div class="card-footer">
           <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector||'—'}</span>${d.conviction?'<span class="card-tag" style="background:var(--bg);color:var(--text-secondary)">'+d.conviction+'</span>':''}</div>
-          <span class="card-date">${fmtDate(d.deal_date)||''}</span>
+          <span class="card-date">${fmtDate(d.sale_date)||''}</span>
         </div>
       </div>
     </div>`;
@@ -1182,18 +1237,23 @@ async function openDealDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">WALE (yrs)</div><input class="fi" type="number" step="0.1" data-field="wale" value="${d.wale||''}"></div><div class="fg"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Process Type</div><input class="fi" data-field="process_type" value="${d.process_type||''}"></div><div class="fg"><div class="fl">Vendor</div><input class="fi" data-field="vendor" value="${d.vendor||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Purchaser</div><input class="fi" data-field="purchaser" value="${d.purchaser||''}"></div><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Sale Date</div><input class="fi" type="date" data-field="sale_date" value="${d.sale_date||''}"></div><div class="fg"><div class="fl">Attachment URL</div><input class="fi" data-field="attachment_url" value="${d.attachment_url||''}" placeholder="https://..."></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}`;
+    ${d.attachment_url?`<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px;word-break:break-all">${d.attachment_url}</a></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
+    <div style="padding:20px 24px 0"><button class="delete-btn" onclick="deleteCard('deal_cards','${d.id}')">Delete Card</button></div>`;
   openDrawer(d.address, html, 'deal_cards', d);
 }
 
 // ── Leasing Cards ──
-let leaseSectorFilter = 'all'; let leaseConfFilter = 'all';
-async function loadLeasing(sf, cf) {
+let leaseSectorFilter = 'all'; let leaseConfFilter = 'all'; let leaseSort = 'created_at:desc';
+async function loadLeasing(sf, cf, sort) {
   if (sf !== undefined) leaseSectorFilter = sf;
   if (cf !== undefined) leaseConfFilter = cf;
-  let q = sb.from('leasing_cards').select('*').order('created_at',{ascending:false});
+  if (sort !== undefined) leaseSort = sort;
+  const [sortCol, sortDir] = leaseSort.split(':');
+  let q = sb.from('leasing_cards').select('*').order(sortCol, {ascending: sortDir === 'asc', nullsFirst: false});
   if (leaseSectorFilter !== 'all') q = q.eq('sector', leaseSectorFilter);
   if (leaseConfFilter !== 'all') q = q.eq('confidence', leaseConfFilter);
   const { data, error } = await q;
@@ -1209,7 +1269,20 @@ async function loadLeasing(sf, cf) {
     <span style="width:1px;background:var(--border);margin:0 4px"></span>
     <span class="fchip ${leaseConfFilter==='all'?'active':''}" onclick="loadLeasing('${leaseSectorFilter}','all')">All Confidence</span>
     ${confs.map(c=>cChip(c)).join('')}
-  </div><div class="card-grid">`;
+  </div>
+  <div class="sort-bar">
+    <label>Sort by</label>
+    <select class="sort-sel" onchange="loadLeasing('${leaseSectorFilter}','${leaseConfFilter}',this.value)">
+      <option value="created_at:desc" ${leaseSort==='created_at:desc'?'selected':''}>Date Added (newest)</option>
+      <option value="lease_date:desc" ${leaseSort==='lease_date:desc'?'selected':''}>Lease Date (newest)</option>
+      <option value="lease_date:asc" ${leaseSort==='lease_date:asc'?'selected':''}>Lease Date (oldest)</option>
+      <option value="face_rent:desc" ${leaseSort==='face_rent:desc'?'selected':''}>Face Rent (high–low)</option>
+      <option value="effective_rent:desc" ${leaseSort==='effective_rent:desc'?'selected':''}>Eff. Rent (high–low)</option>
+      <option value="sector:asc" ${leaseSort==='sector:asc'?'selected':''}>Sector (A–Z)</option>
+      <option value="tenant:asc" ${leaseSort==='tenant:asc'?'selected':''}>Tenant (A–Z)</option>
+    </select>
+  </div>
+  <div class="card-grid">`;
   cards.forEach(d => {
     const sc = sectorColor(d.sector);
     const effOk = d.effective_rent !== null;
@@ -1231,7 +1304,7 @@ async function loadLeasing(sf, cf) {
         </div>
         <div class="card-footer">
           <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector}</span>${d.is_comparable?'<span class="card-tag" style="background:var(--bg);color:var(--text-secondary)">Comp</span>':''}</div>
-          <span class="card-date">${fmtDate(d.deal_date)||''}</span>
+          <span class="card-date">${fmtDate(d.lease_date)||''}</span>
         </div>
       </div>
     </div>`;
@@ -1255,9 +1328,12 @@ async function openLeasingDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">Face Rent ($/sqm)</div><input class="fi" type="number" data-field="face_rent" value="${d.face_rent||''}"></div><div class="fg"><div class="fl">Eff. Rent ($/sqm)</div><input class="fi" type="number" data-field="effective_rent" value="${d.effective_rent||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Incentive (%)</div><div style="display:flex;align-items:center;gap:6px"><input class="fi" type="number" step="0.1" data-field="incentive_pct" value="${d.incentive_pct||''}" style="flex:1">${d.incentive_pct?`<span style="font-size:12px;color:var(--text-secondary)">${d.incentive_pct}%</span>`:''}</div></div><div class="fg"><div class="fl">Rent Type</div><div class="lease-type-row"><button class="lt-btn ${(!d.lease_type||d.lease_type==='Gross')?'sel':''}" onclick="setLeaseType(this,'Gross')">Gross</button><button class="lt-btn ${d.lease_type==='Net'?'sel':''}" onclick="setLeaseType(this,'Net')">Net</button></div><input type="hidden" data-field="lease_type" id="leaseTypeHidden" value="${d.lease_type||'Gross'}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div><div class="fg"><div class="fl">Is Comparable</div><select class="fi" data-field="is_comparable"><option value="false" ${!d.is_comparable?'selected':''}>No</option><option value="true" ${d.is_comparable?'selected':''}>Yes — Comp</option></select></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Lease Date</div><input class="fi" type="date" data-field="lease_date" value="${d.lease_date||''}"></div><div class="fg"><div class="fl">Attachment URL</div><input class="fi" data-field="attachment_url" value="${d.attachment_url||''}" placeholder="https://..."></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}`;
+    ${d.attachment_url?`<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px;word-break:break-all">${d.attachment_url}</a></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
+    <div style="padding:20px 24px 0"><button class="delete-btn" onclick="deleteCard('leasing_cards','${d.id}')">Delete Card</button></div>`;
   openDrawer(d.address, html, 'leasing_cards', d);
 }
 
@@ -1474,11 +1550,13 @@ function phaseNum(p) {
   return {'Identified':1,'Initial Analysis':2,'Detailed Analysis':3,'Bid Submitted':4,'Entered DD':5,'Asset Secured':6}[p]||'—';
 }
 
-let pipelineStatusFilter = 'all'; let pipelineSectorFilter = 'all';
-async function loadPipeline(sf, stf) {
+let pipelineStatusFilter = 'all'; let pipelineSectorFilter = 'all'; let pipelineSort = 'created_at:desc';
+async function loadPipeline(sf, stf, sort) {
   if (sf !== undefined) pipelineSectorFilter = sf;
   if (stf !== undefined) pipelineStatusFilter = stf;
-  let q = sb.from('pipeline_cards').select('*').order('created_at',{ascending:false});
+  if (sort !== undefined) pipelineSort = sort;
+  const [sortCol, sortDir] = pipelineSort.split(':');
+  let q = sb.from('pipeline_cards').select('*').order(sortCol, {ascending: sortDir === 'asc', nullsFirst: false});
   if (pipelineSectorFilter !== 'all') q = q.eq('sector', pipelineSectorFilter);
   if (pipelineStatusFilter !== 'all') q = q.eq('status', pipelineStatusFilter);
   const { data, error } = await q;
@@ -1498,7 +1576,20 @@ async function loadPipeline(sf, stf) {
     <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></span>
     <span class="fchip ${pipelineStatusFilter==='all'?'active':''}" onclick="loadPipeline('${pipelineSectorFilter}','all')">All Status</span>
     ${statuses.map(s=>stChip(s)).join('')}
-  </div><div class="card-grid">`;
+  </div>
+  <div class="sort-bar">
+    <label>Sort by</label>
+    <select class="sort-sel" onchange="loadPipeline('${pipelineSectorFilter}','${pipelineStatusFilter}',this.value)">
+      <option value="created_at:desc" ${pipelineSort==='created_at:desc'?'selected':''}>Date Added (newest)</option>
+      <option value="input_date:desc" ${pipelineSort==='input_date:desc'?'selected':''}>Input Date (newest)</option>
+      <option value="input_date:asc" ${pipelineSort==='input_date:asc'?'selected':''}>Input Date (oldest)</option>
+      <option value="headline_price:desc" ${pipelineSort==='headline_price:desc'?'selected':''}>Price (high–low)</option>
+      <option value="headline_price:asc" ${pipelineSort==='headline_price:asc'?'selected':''}>Price (low–high)</option>
+      <option value="sector:asc" ${pipelineSort==='sector:asc'?'selected':''}>Sector (A–Z)</option>
+      <option value="status:asc" ${pipelineSort==='status:asc'?'selected':''}>Status (A–Z)</option>
+    </select>
+  </div>
+  <div class="card-grid">`;
   deals.forEach(d => {
     const sc = sectorColor(d.sector);
     const priceOk = d.headline_price !== null && d.headline_price !== undefined;
@@ -1526,7 +1617,7 @@ async function loadPipeline(sf, stf) {
         </div>
         <div class="card-footer">
           <div class="card-tags"><span class="card-tag badge-${sc}">${d.sector||'—'}</span></div>
-          <span class="card-date">${fmtDate(d.deal_date)||''}</span>
+          <span class="card-date">${fmtDate(d.input_date)||''}</span>
         </div>
       </div>
     </div>`;
@@ -1562,10 +1653,12 @@ async function openPipelineDrawer(id) {
       <div class="fr"><div class="fg"><div class="fl">NLA/GLA (sqm)</div><input class="fi" type="number" data-field="nla_sqm" value="${d.nla_sqm||''}"></div><div class="fg"><div class="fl">Capital Value ($/sqm)</div><div class="fi" style="background:var(--bg);color:var(--text-secondary);display:flex;align-items:center">${(d.headline_price&&d.nla_sqm)?'$'+Math.round(d.headline_price/d.nla_sqm).toLocaleString()+'/sqm':'Auto-calculated'}</div></div></div>
       <div class="fr"><div class="fg"><div class="fl">WALE (yrs)</div><input class="fi" type="number" step="0.1" data-field="wale" value="${d.wale||''}"></div><div class="fg"><div class="fl">Process Type</div><input class="fi" data-field="process_type" value="${d.process_type||''}"></div></div>
       <div class="fr"><div class="fg"><div class="fl">Vendor</div><input class="fi" data-field="vendor" value="${d.vendor||''}"></div><div class="fg"><div class="fl">Agent</div><input class="fi" data-field="agent" value="${d.agent||''}"></div></div>
-      <div class="fr"><div class="fg"><div class="fl">Date</div><input class="fi" type="date" data-field="deal_date" value="${d.deal_date||''}"></div><div class="fg"></div></div>
+      <div class="fr"><div class="fg"><div class="fl">Input Date</div><input class="fi" type="date" data-field="input_date" value="${d.input_date||''}"></div><div class="fg"><div class="fl">Attachment URL</div><input class="fi" data-field="attachment_url" value="${d.attachment_url||''}" placeholder="https://..."></div></div>
       <div class="fr full"><div class="fg"><div class="fl">Notes / Next Steps</div><textarea class="fta" data-field="notes">${d.notes||''}</textarea></div></div>
     </div>
-    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}`;
+    ${d.attachment_url?`<div class="ds"><div class="dst">Attachment</div><a href="${d.attachment_url}" target="_blank" style="color:#3b82f6;font-size:13px;word-break:break-all">${d.attachment_url}</a></div>`:''}
+    ${d.meeting_label?`<div class="ds"><div class="dst">Source</div><div class="granola-ref"><span style="font-size:13px">📎</span><div class="granola-text">Sourced from: <span style="font-weight:500">${d.meeting_label}</span></div></div></div>`:''}
+    <div style="padding:20px 24px 0"><button class="delete-btn" onclick="deleteCard('pipeline_cards','${d.id}')">Delete Card</button></div>`;
   openDrawer(d.address||'Pipeline Deal', html, 'pipeline_cards', d);
 }
 
