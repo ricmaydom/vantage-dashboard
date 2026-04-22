@@ -1,0 +1,83 @@
+[
+  {
+    "id": "2a85d23b-c56f-418a-9940-932085ce6b7b",
+    "source": "quick_capture",
+    "raw_text": "This is a test idea. It should be recorded in the strategy and ideas section. I want to look at implementing an Leasing and Transactional evidence database, that people can forward emails to, and it reviews, clarifies, and stores the data.",
+    "status": "pending",
+    "created_at": "2026-04-21T02:10:54.11911+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "dea0e326-20c5-4275-9502-0fceb7e4f5e0",
+    "source": "granola",
+    "raw_text": "Meeting: Meeting on 16 Furzer with Karan\n\nDate: 2026-04-20T07:18:32.259Z",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "9877a750-47a4-4252-bc50-ed6f3728e4d5",
+    "source": "granola",
+    "raw_text": "Meeting: Private Credit Explainer\n\nDate: 2026-04-20T04:40:20.261Z\n\nNotes:\nTom Duncan (Head of Clients & Capital @ Sentinel)",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "a199a077-0f3f-419d-9333-4d7cca1723ef",
+    "source": "granola",
+    "raw_text": "Meeting: Vantage PKA\n\nDate: 2026-04-19T20:52:38.969Z\n\nNotes:\nNotes on 1st Build [feedback on Vantage UI]",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "40b3faf1-78e5-4990-8225-ff16640c19c4",
+    "source": "granola",
+    "raw_text": "Meeting: Q x KF Fortnightly Catch-up\n\nDate: 2026-04-16T23:34:58.205Z",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "5adf282a-daae-4446-b239-40d6335e527c",
+    "source": "granola",
+    "raw_text": "Meeting: IC Meeting - 519 Grand Junction Road, Wingfield, SA (industrial) 83 Pirie, Adelaide CBD (office)\n\nDate: 2026-04-16T06:14:39.093Z\n\nNotes:\nCan we do a historical analysis of construction costs versus rental growth through an under pinning against economic rents.",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "82e20cea-b764-4a88-b3ab-95d8af8dfd18",
+    "source": "granola",
+    "raw_text": "Meeting: IC Rehearsal\n\nDate: 2026-04-16T05:25:25.354Z",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "76452252-3dbc-4a20-8c94-f4efa9ec7cbc",
+    "source": "granola",
+    "raw_text": "Meeting: Quintessential/CBRE Adelaide\n\nDate: 2026-04-16T00:40:29.971Z",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  },
+  {
+    "id": "502fd766-d9e5-43ae-ad36-9b20a68aed06",
+    "source": "granola",
+    "raw_text": "Meeting: QE x JLL\n\nDate: 2026-04-15T23:12:37.358Z",
+    "status": "pending",
+    "created_at": "2026-04-21T02:14:43.516+00:00",
+    "processed_at": null,
+    "granola_doc_id": null
+  }
+]
