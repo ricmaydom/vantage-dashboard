@@ -634,7 +634,14 @@ function App(){
                 <div className="who__n">Ric Maydom</div>
                 <div className="who__r">PKA</div>
               </div>
-              <div className="who__dot" title="Online"/>
+              <button
+                title="Sign out"
+                style={{fontSize:10, color:"var(--ink-4)", fontFamily:"var(--mono)", cursor:"pointer", background:"none", border:"1px solid var(--rule)", padding:"3px 7px", borderRadius:4, letterSpacing:"0.04em", flexShrink:0}}
+                onClick={() => {
+                  if(window.__vantageAuth) window.__vantageAuth.auth.signOut().then(() => location.reload());
+                  else location.reload();
+                }}
+              >sign out</button>
             </>
           )}
         </div>

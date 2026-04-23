@@ -783,14 +783,98 @@ window.HEALTH_LABEL_MAP = {
 };
 </script>
 
+<!-- Supabase auth gate -->
+<div id="auth-gate" style="position:fixed;inset:0;z-index:9999;background:#FAFAF7;display:flex;align-items:center;justify-content:center;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;">
+  <div id="auth-loading" style="text-align:center;">
+    <div style="font-weight:700;font-size:22px;letter-spacing:-0.02em;color:#121416;">Vantage</div>
+    <div style="font-size:10px;color:#8B9098;font-family:'JetBrains Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-top:5px;">PKA Intelligence</div>
+    <div style="margin-top:28px;font-size:12px;color:#8B9098;letter-spacing:0.01em;">Checking session…</div>
+  </div>
+  <div id="auth-form" style="display:none;width:300px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-weight:700;font-size:22px;letter-spacing:-0.02em;color:#121416;">Vantage</div>
+      <div style="font-size:10px;color:#8B9098;font-family:'JetBrains Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-top:5px;">PKA Intelligence</div>
+    </div>
+    <input id="auth-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #E4E2DA;border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;outline:none;color:#121416;margin-bottom:10px;" />
+    <input id="auth-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #E4E2DA;border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;outline:none;color:#121416;margin-bottom:16px;" />
+    <button id="auth-btn" style="width:100%;padding:11px;background:#121416;color:#FAFAF7;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:-0.005em;">Sign in</button>
+    <div id="auth-err" style="margin-top:12px;font-size:12px;color:#C4353D;text-align:center;display:none;min-height:16px;"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  var SURL = 'https://qxjdwafkntlgiytdxeaf.supabase.co';
+  var SKEY = 'sb_publishable_AnpuVpUdk7ggC435BgdvNQ_aRFl6Yh_';
+  var client = supabase.createClient(SURL, SKEY);
+  window.__vantageAuth = client;
+
+  function revealApp(){
+    var gate = document.getElementById('auth-gate');
+    if(!gate) return;
+    gate.style.transition = 'opacity 220ms ease';
+    gate.style.opacity = '0';
+    setTimeout(function(){ gate.remove(); }, 240);
+  }
+
+  function showForm(){
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('auth-form').style.display = 'block';
+    document.getElementById('auth-email').focus();
+  }
+
+  function setError(msg){
+    var el = document.getElementById('auth-err');
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  client.auth.getSession().then(function(r){
+    if(r.data && r.data.session){ revealApp(); }
+    else { showForm(); }
+  }).catch(function(){ showForm(); });
+
+  document.getElementById('auth-btn').addEventListener('click', function(){
+    var email = document.getElementById('auth-email').value.trim();
+    var pass  = document.getElementById('auth-pass').value;
+    var btn   = document.getElementById('auth-btn');
+    if(!email || !pass){ setError('Please enter your email and password.'); return; }
+    btn.textContent = 'Signing in…';
+    btn.disabled = true;
+    setError('');
+    client.auth.signInWithPassword({ email: email, password: pass }).then(function(r){
+      if(r.error){
+        setError(r.error.message || 'Sign-in failed. Check your credentials.');
+        btn.textContent = 'Sign in';
+        btn.disabled = false;
+      } else {
+        revealApp();
+      }
+    }).catch(function(){
+      setError('Something went wrong. Try again.');
+      btn.textContent = 'Sign in';
+      btn.disabled = false;
+    });
+  });
+
+  document.getElementById('auth-pass').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') document.getElementById('auth-btn').click();
+  });
+  document.getElementById('auth-email').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') document.getElementById('auth-pass').focus();
+  });
+})();
+</script>
+
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<script src="vantage-v4/data-inline.js?v=9"></script>
-<script type="text/babel" src="vantage-v4/adapter.jsx?v=9"></script>
-<script type="text/babel" src="vantage-v4/components.jsx?v=9"></script>
-<script type="text/babel" src="vantage-v4/screens.jsx?v=9"></script>
-<script type="text/babel" src="vantage-v4/app.jsx?v=9"></script>
+<script src="vantage-v4/data-inline.js?v=10"></script>
+<script type="text/babel" src="vantage-v4/adapter.jsx?v=10"></script>
+<script type="text/babel" src="vantage-v4/components.jsx?v=10"></script>
+<script type="text/babel" src="vantage-v4/screens.jsx?v=10"></script>
+<script type="text/babel" src="vantage-v4/app.jsx?v=10"></script>
 </body>
 </html>
