@@ -165,7 +165,6 @@ const TxCard = ({ tx, onClick, flags }) => {
             <span>{tx.suburbOnly || tx.suburb || "—"}</span>
             {tx.state && <><span className="dot"/><span>{tx.state}</span></>}
             {tx.strategy && tx.strategy !== "—" && <><span className="dot"/><span className="chip chip--strategy" style={{fontSize:10, padding:"1px 6px"}}>{tx.strategy}</span></>}
-            {tx.vendor && <><span className="dot"/><span style={{color:"var(--ink-3)", fontSize:11}}>{tx.vendor}{tx.purchaser ? " → " + tx.purchaser : ""}</span></>}
           </div>
           <div className="card__stats">
               <div className="card__stat">
@@ -217,7 +216,7 @@ const TxCard = ({ tx, onClick, flags }) => {
       <div className="card__foot">
         <div>
           <div className="card__val">{tx.valueFmt}<small>{tx.yield !== "—" ? " · " + tx.yield : ""}</small></div>
-          <div className="text-sm muted mt-sm">{tx.vendor && <span>{tx.vendor}{tx.purchaser ? " → " + tx.purchaser : ""}</span>}</div>
+          <div className="text-sm muted mt-sm">{tx.saleDateFmt}</div>
         </div>
         <div className="text-sm muted">{tx.saleDateFmt}</div>
       </div>

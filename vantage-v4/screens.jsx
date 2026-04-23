@@ -134,7 +134,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, toggleAction, flags, setMo
                           {i.body && <div className="muted text-sm" style={{display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", lineHeight:1.45}}>{i.body}</div>}
                         </td>
                         <td style={{width:120, verticalAlign:"top", paddingTop:12}}><ConfidenceChip c={i.confidence}/></td>
-                        <td className="mono" style={{width:70, textAlign:"right", verticalAlign:"top", paddingTop:12}} {...(flags.relTime && i.date ? { "data-tip": VT_FMT.FULL(i.date) } : {})}>{i.dateFmt}</td>
+                        <td className="mono" style={{width:82, textAlign:"right", verticalAlign:"top", paddingTop:12}} {...(flags.relTime && i.date ? { "data-tip": VT_FMT.FULL(i.date) } : {})}>{fmtDDMMMYY(i.date)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -403,6 +403,8 @@ function fmtFaceRent(v){ const n = parseFloat(String(v).replace(/,/g,"")); retur
 function fmtTerm(v){ const n = parseFloat(String(v).replace(/,/g,"")); return isNaN(n) ? (v || "—") : n.toFixed(1); }
 function fmtIncentive(v){ const n = parseFloat(String(v).replace(/,/g,"")); return isNaN(n) ? (v || "—") : n.toFixed(1) + "%"; }
 function rentBasisShort(b){ if(!b || b === "—") return ""; return {Net:"N", Gross:"G", "Semi-Gross":"S"}[b] || b.charAt(0); }
+// Date: DD MMM YY (e.g. "15 Apr 26")
+function fmtDDMMMYY(d){ if(!d) return "—"; const dt = new Date(d); if(isNaN(dt)) return "—"; return dt.toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"2-digit"}); }
 
 // ================== PIPELINE ==================
 const PHASE_LABELS_SHORT = { identified:"Identified", initial:"Initial Analysis", detailed:"Detailed Analysis", bid:"Bid Submitted", dd:"Entered DD", closed:"Closed", dead:"Dead" };
@@ -596,7 +598,10 @@ const ScreenPipeline = ({ openDeal, flags }) => {
                       <div className="pipecard__edge"/>
                       <span className="pipecard__grip" aria-hidden="true">⋮⋮</span>
                       <div className="pipecard__body">
-                        <div className="pipecard__title">{d.title}</div>
+                        <div style={{display:"flex", alignItems:"baseline", gap:6, justifyContent:"space-between"}}>
+                          <div className="pipecard__title" style={{flex:1, minWidth:0}}>{d.title}</div>
+                          <span className="pipecard__val" style={{fontSize:12, flexShrink:0, whiteSpace:"nowrap"}}>{d.valueFmt}</span>
+                        </div>
                         <div className="pipecard__sub">{d.suburb || "—"}</div>
                         <div className="pipecard__metrics">
                           <div className="pipecard__metric"><span className="pipecard__metric__l">Initial Yield</span><span className="pipecard__metric__v">{d.yield}</span></div>
@@ -612,7 +617,6 @@ const ScreenPipeline = ({ openDeal, flags }) => {
                               ? <span className="chip chip--strategy" title="Strategy">{s}</span>
                               : <span className="chip chip--strategy" title="Strategy — not set" style={{opacity:0.55}}>No strategy</span>;
                           })()}
-                          <span className="pipecard__val">{d.valueFmt}</span>
                         </div>
                       </div>
                     </article>
@@ -830,13 +834,11 @@ const LeasingCard = ({ l, onClick }) => {
       <div className="card__body" style={{position:"relative"}}>
         <div style={{paddingRight:90}}>
           <div className="card__title">{l.title}</div>
+          {locationStr && <div className="card__sub" style={{marginTop:3}}>{locationStr}</div>}
         </div>
         <div style={{position:"absolute", top:14, right:14, textAlign:"right"}}>
           <div className="card__money">{rentDisplay}</div>
           {tenant && <div style={{fontSize:11, color:"var(--ink-3)", marginTop:3, fontWeight:500}}>{tenant}</div>}
-        </div>
-        <div className="card__sub">
-          {locationStr || <span className="muted">No location set</span>}
         </div>
         <div className="card__stats">
           <div className="card__stat">
@@ -906,7 +908,7 @@ const IntelTable = ({ rows, openIntel, tableCls, flags }) => {
             <th className="hide-sm" style={{width:130}} {...sortProps("sector")}>Sector</th>
             <th style={{width:120}} {...sortProps("confidence")}>Confidence</th>
             <th className="hide-sm" style={{width:120}} {...sortProps("source")}>Source</th>
-            <th style={{width:80, textAlign:"right"}} {...sortProps("date")}>Date</th>
+            <th style={{width:90, textAlign:"right"}} {...sortProps("date")}>Date</th>
           </tr>
         </thead>
         <tbody className={flags.microMotion ? "stagger" : ""}>
@@ -917,7 +919,7 @@ const IntelTable = ({ rows, openIntel, tableCls, flags }) => {
               <td className="hide-sm">{i.sector ? <SectorChip s={i.sector}/> : <span className="muted text-sm">—</span>}</td>
               <td><ConfidenceChip c={i.confidence}/></td>
               <td className="hide-sm muted text-sm">{i.source || "—"}</td>
-              <td className="mono num" style={{textAlign:"right"}} {...(flags.relTime && i.date ? { "data-tip": VT_FMT.FULL(i.date) } : {})}>{i.dateFmt}</td>
+              <td className="mono num" style={{textAlign:"right", whiteSpace:"nowrap"}} {...(flags.relTime && i.date ? { "data-tip": VT_FMT.FULL(i.date) } : {})}>{fmtDDMMMYY(i.date)}</td>
             </tr>
           ))}
         </tbody>
@@ -998,7 +1000,7 @@ const ScreenStrategy = ({ openStrategy, flags }) => {
                   <div className="card__sub" style={{marginBottom:4}}>
                     <span className="pill">{s.theme}</span>
                     {s.sector && <><span className="dot"/><SectorChip s={s.sector}/></>}
-                    <span className="dot"/><span className="mono text-sm" {...(flags.relTime && s.date ? { "data-tip": VT_FMT.FULL(s.date) } : {})}>{s.dateFmt}</span>
+                    <span className="dot"/><span className="mono text-sm" {...(flags.relTime && s.date ? { "data-tip": VT_FMT.FULL(s.date) } : {})}>{fmtDDMMMYY(s.date)}</span>
                   </div>
                   <div className="card__notes" style={{WebkitLineClamp:3}}>{s.body}</div>
                 </div>

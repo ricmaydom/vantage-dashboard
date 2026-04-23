@@ -474,7 +474,7 @@ function App(){
             <div className="editrow">
               <EditableField label="Property / address" value={r.title} onSave={v => setLeaseField("title", v)}/>
               <EditableField label="Suburb" value={r.suburb || "—"} onSave={v => setLeaseField("suburb", v)}/>
-              <EditableField label="State" value={r.state || "—"} onSave={v => setLeaseField("state", v)}/>
+              <EditableField label="State" value={r.state || "—"} options={["VIC","NSW","QLD","WA","SA","TAS","ACT","NT","—"]} onSave={v => setLeaseField("state", v === "—" ? null : v)}/>
               <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setLeaseField("sector", v === "—" ? null : v)}/>
               <EditableField label="Status" value={r.status || "—"} options={STATUS_OPTS} onSave={v => setLeaseField("status", v)}/>
               <EditableField label="Tenant" value={r.tenant || "—"} onSave={v => setLeaseField("tenant", v)}/>
