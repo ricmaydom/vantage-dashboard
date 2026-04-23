@@ -154,12 +154,12 @@ const TxCard = ({ tx, onClick, flags }) => {
     return (
       <div className="card card--hero" data-sector={tx.sector || ""} onClick={() => onClick(tx)}>
         <div className="card__edge"/>
-        <div className="card__body">
-          <div className="card__row1">
+        <div className="card__body" style={{position:"relative"}}>
+          <div style={{paddingRight:90}}>
             <div className="card__title">{tx.title}</div>
-            <div className="card__moneypill">
-              <div className="card__money">{tx.valueFmt}</div>
-            </div>
+          </div>
+          <div style={{position:"absolute", top:14, right:14, textAlign:"right", flexShrink:0}}>
+            <div className="card__money">{tx.valueFmt}</div>
           </div>
           <div className="card__sub" style={{display:"flex", alignItems:"center", flexWrap:"wrap", gap:4}}>
             <span>{tx.suburbOnly || tx.suburb || "—"}</span>

@@ -819,17 +819,24 @@ const LeasingCard = ({ l, onClick }) => {
   const rentFmt = fmtFaceRent(l.rent);
   const basis = rentBasisShort(l.rentBasis);
   const rentDisplay = rentFmt !== "—" ? rentFmt + (basis ? " " + basis : "") : "—";
+  const tenant = l.tenant && l.tenant !== "—" ? l.tenant : null;
+  const suburb = l.suburb && l.suburb !== "—" ? l.suburb : null;
+  const state = l.state && l.state !== "—" ? l.state : null;
+  const locationStr = suburb ? (state ? suburb + ", " + state : suburb) : (state || null);
+  const dateFmt = VT_FMT.DATE(l.commencement);
   return (
     <div className="card card--hero" data-sector={l.sector || ""} onClick={() => onClick(l)}>
       <div className="card__edge"/>
-      <div className="card__body">
-        <div className="card__row1">
+      <div className="card__body" style={{position:"relative"}}>
+        <div style={{paddingRight:90}}>
           <div className="card__title">{l.title}</div>
-          <div className="card__moneypill"><div className="card__money">{rentDisplay}</div></div>
         </div>
-        <div className="card__sub" style={{display:"flex", alignItems:"center", flexWrap:"wrap", gap:4}}>
-          <span>{l.tenant && l.tenant !== "—" ? l.tenant : "No tenant"}</span>
-          {l.status && <><span className="dot"/><Chip kind="">{l.status}</Chip></>}
+        <div style={{position:"absolute", top:14, right:14, textAlign:"right"}}>
+          <div className="card__money">{rentDisplay}</div>
+          {tenant && <div style={{fontSize:11, color:"var(--ink-3)", marginTop:3, fontWeight:500}}>{tenant}</div>}
+        </div>
+        <div className="card__sub">
+          {locationStr || <span className="muted">No location set</span>}
         </div>
         <div className="card__stats">
           <div className="card__stat">
@@ -837,7 +844,7 @@ const LeasingCard = ({ l, onClick }) => {
             <div className="card__stat__v">{fmtArea(l.area)}</div>
           </div>
           <div className="card__stat">
-            <div className="card__stat__l">Face Rent ($/sqm)</div>
+            <div className="card__stat__l">Face Rent</div>
             <div className="card__stat__v">{rentDisplay}</div>
           </div>
           <div className="card__stat">
@@ -852,7 +859,7 @@ const LeasingCard = ({ l, onClick }) => {
         <div className="card__chips">
           {l.sector && <SectorChip s={l.sector}/>}
           <Chip kind="">{l.status || "Draft"}</Chip>
-          {l.commencement && l.commencement !== "—" && <span style={{marginLeft:"auto", fontSize:10, color:"var(--ink-4)", fontFamily:"var(--mono)"}}>{l.commencement}</span>}
+          {dateFmt !== "—" && <span style={{marginLeft:"auto", fontSize:10, color:"var(--ink-4)", fontFamily:"var(--mono)"}}>{dateFmt}</span>}
         </div>
       </div>
     </div>

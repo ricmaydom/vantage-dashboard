@@ -173,7 +173,7 @@ function App(){
   };
   const addLease = () => {
     const id = "lease_" + Date.now();
-    const blank = { id, title: "Untitled leasing", tenant: "—", landlord: "—", sector: null, status: "Negotiating", area: "—", rent: "—", term: "—", incentive: "—", commencement: "—", notes: "" };
+    const blank = { id, title: "Untitled leasing", suburb: "—", state: "—", tenant: "—", landlord: "—", sector: null, status: "Negotiating", area: "—", rent: "—", term: "—", incentive: "—", commencement: "—", notes: "" };
     setLeases(prev => [blank, ...prev]);
     return blank;
   };
@@ -473,6 +473,8 @@ function App(){
           <div className="drawer__section">
             <div className="editrow">
               <EditableField label="Property / address" value={r.title} onSave={v => setLeaseField("title", v)}/>
+              <EditableField label="Suburb" value={r.suburb || "—"} onSave={v => setLeaseField("suburb", v)}/>
+              <EditableField label="State" value={r.state || "—"} onSave={v => setLeaseField("state", v)}/>
               <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setLeaseField("sector", v === "—" ? null : v)}/>
               <EditableField label="Status" value={r.status || "—"} options={STATUS_OPTS} onSave={v => setLeaseField("status", v)}/>
               <EditableField label="Tenant" value={r.tenant || "—"} onSave={v => setLeaseField("tenant", v)}/>
