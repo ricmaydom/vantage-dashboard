@@ -812,6 +812,10 @@ const ScreenDeals = ({ openTx, flags, setModal }) => {
       ) : (
         <div className={"grid" + (flags.microMotion ? " stagger" : "")}>
           {filtered.map(d => <TxCard key={d.id} tx={d} onClick={openTx} flags={flags}/>)}
+          <article className="card card--new" onClick={addBlankTx} style={{cursor:"pointer", borderStyle:"dashed", display:"flex", alignItems:"center", justifyContent:"center", minHeight:160, gap:10, color:"var(--ink-3)"}}>
+            <Icon name="plus" size={16}/>
+            <span>Add deal</span>
+          </article>
         </div>
       )}
     </div>

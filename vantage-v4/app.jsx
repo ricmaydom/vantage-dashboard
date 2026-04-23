@@ -9,7 +9,7 @@ const NAV = [
   { id: "crm", label: "CRM", icon: "users", badge: () => window.VT_STATS.overdueContacts || null, badgeTone: () => "warm" },
   { group: "Deals & Leasing" },
   { id: "pipeline", label: "Pipeline", icon: "target", badge: () => window.VT_STATS.activeDealCount || null },
-  { id: "deals", label: "Deal Cards", icon: "building", badge: () => null },
+  { id: "deals", label: "Deals", icon: "building", badge: () => null },
   { id: "leasing", label: "Leasing", icon: "doc", badge: () => null },
   { group: "Intelligence" },
   { id: "intel", label: "Market Intel", icon: "radar", badge: () => null },
@@ -21,7 +21,7 @@ const TITLES = {
   actions: ["Work", "Actions"],
   crm: ["Relationships", "CRM"],
   pipeline: ["Deals & Leasing", "Pipeline"],
-  deals: ["Deals & Leasing", "Deal Cards"],
+  deals: ["Deals & Leasing", "Deals"],
   leasing: ["Deals & Leasing", "Leasing Cards"],
   intel: ["Intelligence", "Market Intel"],
   strategy: ["Intelligence", "Strategy & Ideas"],
@@ -774,7 +774,7 @@ function App(){
           <div><kbd>g a</kbd><span>Go to Actions</span></div>
           <div><kbd>g c</kbd><span>Go to CRM</span></div>
           <div><kbd>g p</kbd><span>Go to Pipeline</span></div>
-          <div><kbd>g t</kbd><span>Go to Deal Cards</span></div>
+          <div><kbd>g t</kbd><span>Go to Deals</span></div>
           <div><kbd>g i</kbd><span>Go to Market Intel</span></div>
           <div><kbd>g s</kbd><span>Go to Strategy</span></div>
           <div><kbd>c</kbd><span>Quick Capture</span></div>
