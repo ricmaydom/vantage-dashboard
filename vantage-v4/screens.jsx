@@ -397,6 +397,13 @@ const ScreenCRM = ({ openContact, flags }) => {
   );
 };
 
+// ================== Leasing format helpers ==================
+function fmtArea(v){ const n = parseFloat(String(v).replace(/,/g,"")); return isNaN(n) ? (v || "—") : n.toLocaleString("en-AU", {maximumFractionDigits:0}) + " sqm"; }
+function fmtFaceRent(v){ const n = parseFloat(String(v).replace(/,/g,"")); return isNaN(n) ? (v || "—") : "$" + n.toLocaleString("en-AU", {maximumFractionDigits:0}); }
+function fmtTerm(v){ const n = parseFloat(String(v).replace(/,/g,"")); return isNaN(n) ? (v || "—") : n.toFixed(1); }
+function fmtIncentive(v){ const n = parseFloat(String(v).replace(/,/g,"")); return isNaN(n) ? (v || "—") : n.toFixed(1) + "%"; }
+function rentBasisShort(b){ if(!b || b === "—") return ""; return {Net:"N", Gross:"G", "Semi-Gross":"S"}[b] || b.charAt(0); }
+
 // ================== PIPELINE ==================
 const PHASE_LABELS_SHORT = { identified:"Identified", initial:"Initial Analysis", detailed:"Detailed Analysis", bid:"Bid Submitted", dd:"Entered DD", closed:"Closed", dead:"Dead" };
 const ScreenPipeline = ({ openDeal, flags }) => {
@@ -426,6 +433,10 @@ const ScreenPipeline = ({ openDeal, flags }) => {
     try { return localStorage.getItem("vt_dead_collapsed") === "1"; } catch(e){ return false; }
   });
   React.useEffect(() => { try { localStorage.setItem("vt_dead_collapsed", deadCollapsed ? "1" : "0"); } catch(e){} }, [deadCollapsed]);
+  const [closedCollapsed, setClosedCollapsed] = React.useState(() => {
+    try { return localStorage.getItem("vt_closed_collapsed") === "1"; } catch(e){ return true; }
+  });
+  React.useEffect(() => { try { localStorage.setItem("vt_closed_collapsed", closedCollapsed ? "1" : "0"); } catch(e){} }, [closedCollapsed]);
 
   const resolvePhase = React.useCallback((d) => overrides[d.id] || d.phaseK, [overrides]);
 
@@ -526,13 +537,13 @@ const ScreenPipeline = ({ openDeal, flags }) => {
             <div className="phase__n">{p.count}</div>
             <div className="phase__v">{p.valueFmt}</div>
             <ul className="phase__deals">
-              {p.k !== "dead" && p.deals.slice(0, 4).map(d => (
+              {p.k !== "dead" && p.k !== "closed" && p.deals.slice(0, 4).map(d => (
                 <li key={d.id} onClick={() => openDeal(d)} style={{cursor:"pointer"}}>· {d.title}</li>
               ))}
-              {p.k !== "dead" && p.deals.length === 0 && <li className="empty">—</li>}
-              {p.k !== "dead" && p.deals.length > 4 && <li className="muted text-sm">+{p.deals.length - 4} more</li>}
-              {p.k === "dead" && p.deals.length > 0 && <li className="muted text-sm" style={{fontStyle:"italic"}}>See table below</li>}
-              {p.k === "dead" && p.deals.length === 0 && <li className="empty">—</li>}
+              {p.k !== "dead" && p.k !== "closed" && p.deals.length === 0 && <li className="empty">—</li>}
+              {p.k !== "dead" && p.k !== "closed" && p.deals.length > 4 && <li className="muted text-sm">+{p.deals.length - 4} more</li>}
+              {(p.k === "dead" || p.k === "closed") && p.deals.length > 0 && <li className="muted text-sm" style={{fontStyle:"italic"}}>See table below</li>}
+              {(p.k === "dead" || p.k === "closed") && p.deals.length === 0 && <li className="empty">—</li>}
             </ul>
           </div>
         ))}
@@ -610,6 +621,49 @@ const ScreenPipeline = ({ openDeal, flags }) => {
               </div>
             ))}
           </div>
+          {(() => {
+            const closedPhase = phases.find(p => p.k === "closed");
+            const closedDeals = closedPhase ? closedPhase.deals : [];
+            return (
+              <div className={"dead-table" + (closedCollapsed ? " dead-table--collapsed" : "")}>
+                <button className="dead-table__head" onClick={() => setClosedCollapsed(v => !v)} type="button" aria-expanded={!closedCollapsed}>
+                  <span className={"dead-table__chev" + (closedCollapsed ? " dead-table__chev--collapsed" : "")}>▾</span>
+                  <span className="dead-table__dot" style={{background:"var(--ink-3)"}}/>
+                  <span className="dead-table__lbl">Closed</span>
+                  <span className="dead-table__count">{closedDeals.length}</span>
+                  <span className="dead-table__sub">{closedPhase ? closedPhase.valueFmt : "$0"}</span>
+                  <span className="dead-table__hint">{closedCollapsed ? "Click to expand" : "Completed deals"}</span>
+                </button>
+                {!closedCollapsed && closedDeals.length > 0 && (
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Address</th>
+                        <th className="hide-sm">Suburb</th>
+                        <th className="hide-sm">Sector</th>
+                        <th style={{textAlign:"right"}}>Value</th>
+                        <th style={{textAlign:"right", width:80}}>Yield</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {closedDeals.map(d => (
+                        <tr key={d.id} onClick={() => openDeal(d)}>
+                          <td className="strong">{d.title}</td>
+                          <td className="hide-sm muted text-sm">{d.suburb || "—"}</td>
+                          <td className="hide-sm"><span className={"chip " + window.VT_CLS.sector(d.sector)}>{d.sector}</span></td>
+                          <td className="mono num" style={{textAlign:"right"}}>{d.valueFmt}</td>
+                          <td className="mono num" style={{textAlign:"right"}}>{d.yield}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+                {!closedCollapsed && closedDeals.length === 0 && (
+                  <div className="muted text-sm" style={{padding:"12px 16px"}}>No closed deals yet — drag a card to the Closed column to archive it here.</div>
+                )}
+              </div>
+            );
+          })()}
           {(() => {
             const deadPhase = phases.find(p => p.k === "dead");
             const deadDeals = deadPhase ? deadPhase.deals : [];
@@ -761,6 +815,50 @@ const ScreenDeals = ({ openTx, flags, setModal }) => {
 };
 
 // ================== LEASING ==================
+const LeasingCard = ({ l, onClick }) => {
+  const rentFmt = fmtFaceRent(l.rent);
+  const basis = rentBasisShort(l.rentBasis);
+  const rentDisplay = rentFmt !== "—" ? rentFmt + (basis ? " " + basis : "") : "—";
+  return (
+    <div className="card card--hero" data-sector={l.sector || ""} onClick={() => onClick(l)}>
+      <div className="card__edge"/>
+      <div className="card__body">
+        <div className="card__row1">
+          <div className="card__title">{l.title}</div>
+          <div className="card__moneypill"><div className="card__money">{rentDisplay}</div></div>
+        </div>
+        <div className="card__sub" style={{display:"flex", alignItems:"center", flexWrap:"wrap", gap:4}}>
+          <span>{l.tenant && l.tenant !== "—" ? l.tenant : "No tenant"}</span>
+          {l.status && <><span className="dot"/><Chip kind="">{l.status}</Chip></>}
+        </div>
+        <div className="card__stats">
+          <div className="card__stat">
+            <div className="card__stat__l">Area</div>
+            <div className="card__stat__v">{fmtArea(l.area)}</div>
+          </div>
+          <div className="card__stat">
+            <div className="card__stat__l">Face Rent ($/sqm)</div>
+            <div className="card__stat__v">{rentDisplay}</div>
+          </div>
+          <div className="card__stat">
+            <div className="card__stat__l">Term (yrs)</div>
+            <div className="card__stat__v">{fmtTerm(l.term)}</div>
+          </div>
+          <div className="card__stat">
+            <div className="card__stat__l">Incentive</div>
+            <div className="card__stat__v">{fmtIncentive(l.incentive)}</div>
+          </div>
+        </div>
+        <div className="card__chips">
+          {l.sector && <SectorChip s={l.sector}/>}
+          <Chip kind="">{l.status || "Draft"}</Chip>
+          {l.commencement && l.commencement !== "—" && <span style={{marginLeft:"auto", fontSize:10, color:"var(--ink-4)", fontFamily:"var(--mono)"}}>{l.commencement}</span>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ScreenLeasing = ({ leases = [], openLease, addLease, removeLease, flags, setModal }) => (
   <div>
     <SectionHead title="Leasing cards" count={leases.length}>
@@ -778,24 +876,7 @@ const ScreenLeasing = ({ leases = [], openLease, addLease, removeLease, flags, s
       </div>
     ) : (
       <div className={"grid" + (flags.microMotion ? " stagger" : "")} style={{marginTop:12}}>
-        {leases.map(l => (
-          <article key={l.id} className="card card--click" onClick={() => openLease(l)}>
-            <div className="card__head">
-              <div className="row" style={{flexWrap:"wrap", gap:6}}>
-                {l.sector && <SectorChip s={l.sector}/>}
-                <Chip kind="">{l.status || "Draft"}</Chip>
-              </div>
-            </div>
-            <div className="card__title">{l.title}</div>
-            <div className="card__sub muted text-sm">{l.tenant && l.tenant !== "—" ? l.tenant : "No tenant yet"}</div>
-            <div className="card__metrics" style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:12, paddingTop:12, borderTop:"1px solid var(--rule)"}}>
-              <div><div className="muted text-sm">Area</div><div className="mono">{l.area || "—"}</div></div>
-              <div><div className="muted text-sm">Face rent</div><div className="mono">{l.rent || "—"}{l.rentBasis ? " " + l.rentBasis.charAt(0) : ""}</div></div>
-              <div><div className="muted text-sm">Term</div><div className="mono">{l.term || "—"}</div></div>
-              <div><div className="muted text-sm">Incentive</div><div className="mono">{l.incentive || "—"}</div></div>
-            </div>
-          </article>
-        ))}
+        {leases.map(l => <LeasingCard key={l.id} l={l} onClick={openLease}/>)}
         <article className="card card--new" onClick={addLease} style={{cursor:"pointer", borderStyle:"dashed", display:"flex", alignItems:"center", justifyContent:"center", minHeight:160, gap:10, color:"var(--ink-3)"}}>
           <Icon name="plus" size={16}/>
           <span>Add leasing card</span>
