@@ -41,19 +41,34 @@ const ScreenDashboard = ({ setView, openDeal, openTx, toggleAction, flags, setMo
   const overdueContacts = window.VT_CONTACTS.filter(c => c.status === "Overdue" || c.status === "Never contacted").slice(0, 5);
   const tableCls = "table" + (flags.stickyHeaders ? " table--sticky" : "");
 
+  // Apply pipeline phase overrides (same localStorage key as ScreenPipeline) for accurate KPIs
+  const pipelineStats = useMemoS(() => {
+    let overrides = {};
+    try { overrides = JSON.parse(localStorage.getItem("vt_phase_overrides") || "{}"); } catch(e) {}
+    const resolvePhase = d => overrides[d.id] || d.phaseK;
+    const activeDeals = window.VT_DEALS.filter(d => resolvePhase(d) !== "dead" && resolvePhase(d) !== "closed");
+    const closedDeals = window.VT_DEALS.filter(d => resolvePhase(d) === "closed");
+    return {
+      activeCount: activeDeals.length,
+      activeValue: VT_FMT.AUD(activeDeals.reduce((a, d) => a + (d.value || 0), 0)),
+      closedCount: closedDeals.length,
+      closedValue: VT_FMT.AUD(closedDeals.reduce((a, d) => a + (d.value || 0), 0)),
+    };
+  }, []);
+
   return (
     <div>
       {flags.leoStrip && !leoDismissed && <LeoStrip onDismiss={() => setLeoDismissed(true)}/>}
 
       <div className="kpis">
-        <KPI accent label="Active pipeline" value={stats.activeDealValueFmt} sub={`${stats.activeDealCount} deals in flight`} sparkline={flags.sparkline ? window.VT_PIPELINE_HISTORY : null} onClick={() => setView("pipeline")}/>
+        <KPI accent label="Active pipeline" value={pipelineStats.activeValue} sub={`${pipelineStats.activeCount} deal${pipelineStats.activeCount === 1 ? "" : "s"} in flow`} sparkline={flags.sparkline ? window.VT_PIPELINE_HISTORY : null} onClick={() => setView("pipeline")}/>
         <KPI label="Open actions" value={stats.openActions} sub={
           <>{stats.overdueActions > 0 && <span className="down">{stats.overdueActions} overdue · </span>}{stats.todayActions} due today</>
         } onClick={() => setView("actions")}/>
         <KPI label="Contact network" value={stats.contactCount} sub={
           <>{stats.overdueContacts > 0 && <span className="down">{stats.overdueContacts} overdue</span>}{stats.overdueContacts === 0 && <span className="up">All cadences on track</span>}</>
         } onClick={() => setView("crm")}/>
-        <KPI label="Closed deals" value={stats.transactionCount} sub={stats.transactionValueFmt + " tracked"} onClick={() => setView("pipeline")}/>
+        <KPI label="Closed pipeline" value={pipelineStats.closedCount} sub={pipelineStats.closedValue + " tracked"} onClick={() => setView("pipeline")}/>
       </div>
 
       <div className="stack">
@@ -80,7 +95,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, toggleAction, flags, setMo
                       </td>
                       <td className="strong" style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{a.title}</td>
                       <td style={{width:100}}><ImportanceChip i={a.importance}/></td>
-                      <td className="mono" style={{width:80, textAlign:"right", whiteSpace:"nowrap"}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})}>{a.dueFmt}</td>
+                      <td className="mono" style={{width:80, textAlign:"right", whiteSpace:"nowrap", paddingRight:14}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})}>{!a.done && a.bucket === "overdue" ? "Due Today" : a.dueFmt}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -266,7 +281,7 @@ const ScreenActions = ({ toggleAction, openAction, updateAction, flags, setModal
                         </td>
                         <td className="hide-sm muted text-sm" style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{a.ctx}</td>
                         <td><ImportanceChip i={a.importance}/></td>
-                        <td className="mono num" style={{textAlign:"right", whiteSpace:"nowrap"}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})} onDoubleClick={e => { e.stopPropagation(); setEditing({ id: a.id, field: "due" }); }}>
+                        <td className="mono num" style={{textAlign:"right", whiteSpace:"nowrap", paddingRight:14}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})} onDoubleClick={e => { e.stopPropagation(); setEditing({ id: a.id, field: "due" }); }}>
                           {editingDue ? (
                             <input
                               className="inline-edit inline-edit--num"
@@ -281,7 +296,7 @@ const ScreenActions = ({ toggleAction, openAction, updateAction, flags, setModal
                               }}
                             />
                           ) : (
-                            <span title="Double-click to edit">{a.dueFmt}</span>
+                            <span title="Double-click to edit">{!a.done && a.bucket === "overdue" ? "Due Today" : a.dueFmt}</span>
                           )}
                         </td>
                       </tr>

@@ -164,7 +164,7 @@ const TxCard = ({ tx, onClick, flags }) => {
           <div className="card__sub" style={{display:"flex", alignItems:"center", flexWrap:"wrap", gap:4}}>
             <span>{tx.suburbOnly || tx.suburb || "—"}</span>
             {tx.state && <><span className="dot"/><span>{tx.state}</span></>}
-            {tx.confidence && <><span className="dot"/><ConfidenceChip c={tx.confidence}/></>}
+            {tx.strategy && tx.strategy !== "—" && <><span className="dot"/><span className="chip chip--strategy" style={{fontSize:10, padding:"1px 6px"}}>{tx.strategy}</span></>}
             {tx.vendor && <><span className="dot"/><span style={{color:"var(--ink-3)", fontSize:11}}>{tx.vendor}{tx.purchaser ? " → " + tx.purchaser : ""}</span></>}
           </div>
           <div className="card__stats">
@@ -192,7 +192,7 @@ const TxCard = ({ tx, onClick, flags }) => {
           <div className="card__chips">
             <SectorChip s={tx.sector}/>
             {tx.subSector && <span className="chip chip--ghost">{tx.subSector}</span>}
-            {tx.strategy && tx.strategy !== "—" && <span className="chip chip--strategy" title="Strategy">{tx.strategy}</span>}
+            <ConfidenceChip c={tx.confidence}/>
             <span style={{marginLeft:"auto", fontSize:10, color:"var(--ink-4)", fontFamily:"var(--mono)"}}>{tx.saleDateFmt}</span>
           </div>
         </div>
