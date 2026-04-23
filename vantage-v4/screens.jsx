@@ -53,7 +53,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, toggleAction, flags, setMo
         <KPI label="Contact network" value={stats.contactCount} sub={
           <>{stats.overdueContacts > 0 && <span className="down">{stats.overdueContacts} overdue</span>}{stats.overdueContacts === 0 && <span className="up">All cadences on track</span>}</>
         } onClick={() => setView("crm")}/>
-        <KPI label="Closed deals" value={stats.transactionCount} sub={stats.transactionValueFmt + " tracked"} onClick={() => setView("deals")}/>
+        <KPI label="Closed deals" value={stats.transactionCount} sub={stats.transactionValueFmt + " tracked"} onClick={() => setView("pipeline")}/>
       </div>
 
       <div className="stack">
@@ -64,18 +64,23 @@ const ScreenDashboard = ({ setView, openDeal, openTx, toggleAction, flags, setMo
           {actions.length === 0 ? (
             <Empty title="Inbox zero" sub="No open actions. Well done." flags={flags}/>
           ) : (
-            <div className="table-wrap">
-              <table className={tableCls}>
+            <div className="table-wrap" style={{overflowX:"hidden"}}>
+              <table className={tableCls} style={{width:"100%", tableLayout:"fixed"}}>
+                <colgroup>
+                  <col style={{width:34}}/>
+                  <col/>
+                  <col style={{width:100}}/>
+                  <col style={{width:80}}/>
+                </colgroup>
                 <tbody className={flags.microMotion ? "stagger" : ""}>
                   {actions.map(a => (
                     <tr key={a.id} className={a.done ? "done" : ""} onClick={(e) => { e.stopPropagation(); }}>
                       <td style={{width:34}}>
                         <span className={"check" + (a.done ? " done" : "")} onClick={(e) => { e.stopPropagation(); toggleAction(a.id); }} role="checkbox" aria-checked={a.done}/>
                       </td>
-                      <td className="strong">{a.title}</td>
-                      <td className="hide-sm"><span className="muted text-sm">{a.ctx}</span></td>
-                      <td style={{width:120}}><ImportanceChip i={a.importance}/></td>
-                      <td className="mono" style={{width:90, textAlign:"right"}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})}>{a.dueFmt}</td>
+                      <td className="strong" style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{a.title}</td>
+                      <td style={{width:100}}><ImportanceChip i={a.importance}/></td>
+                      <td className="mono" style={{width:80, textAlign:"right", whiteSpace:"nowrap"}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})}>{a.dueFmt}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -109,9 +114,12 @@ const ScreenDashboard = ({ setView, openDeal, openTx, toggleAction, flags, setMo
                   <tbody>
                     {recentIntel.map(i => (
                       <tr key={i.id}>
-                        <td style={{whiteSpace:"normal"}}>{i.title}</td>
-                        <td style={{width:120}}><ConfidenceChip c={i.confidence}/></td>
-                        <td className="mono" style={{width:70, textAlign:"right"}} {...(flags.relTime && i.date ? { "data-tip": VT_FMT.FULL(i.date) } : {})}>{i.dateFmt}</td>
+                        <td style={{whiteSpace:"normal", verticalAlign:"top", paddingTop:10, paddingBottom:10}}>
+                          <div className="strong" style={{marginBottom:3}}>{i.title}</div>
+                          {i.body && <div className="muted text-sm" style={{display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", lineHeight:1.45}}>{i.body}</div>}
+                        </td>
+                        <td style={{width:120, verticalAlign:"top", paddingTop:12}}><ConfidenceChip c={i.confidence}/></td>
+                        <td className="mono" style={{width:70, textAlign:"right", verticalAlign:"top", paddingTop:12}} {...(flags.relTime && i.date ? { "data-tip": VT_FMT.FULL(i.date) } : {})}>{i.dateFmt}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -209,15 +217,22 @@ const ScreenActions = ({ toggleAction, openAction, updateAction, flags, setModal
                 <SectionHead title={GROUP_LABELS[k]} count={groups[k].length}/>
               )}
               <div className={k === "done" ? "collapse-body" : ""} data-open={k === "done" ? doneOpen : undefined} aria-hidden={k === "done" ? !doneOpen : undefined} style={k === "done" && !doneOpen ? {display:"none"} : undefined}>
-              <div className="table-wrap">
-                <table className={tableCls}>
+              <div className="table-wrap" style={{overflowX:"hidden"}}>
+                <table className={tableCls} style={{width:"100%", tableLayout:"fixed"}}>
+                  <colgroup>
+                    <col style={{width:34}}/>
+                    <col/>
+                    <col style={{width:"25%"}}/>
+                    <col style={{width:100}}/>
+                    <col style={{width:80}}/>
+                  </colgroup>
                   <thead>
                     <tr>
                       <th style={{width:34}}></th>
                       <th>Task</th>
                       <th className="hide-sm">Context</th>
-                      <th style={{width:110}}>Importance</th>
-                      <th style={{width:100, textAlign:"right"}}>Due</th>
+                      <th style={{width:100}}>Importance</th>
+                      <th style={{width:80, textAlign:"right"}}>Due</th>
                     </tr>
                   </thead>
                   <tbody className={flags.microMotion ? "stagger" : ""}>
@@ -232,7 +247,7 @@ const ScreenActions = ({ toggleAction, openAction, updateAction, flags, setModal
                       return (
                       <tr key={a.id} className={a.done ? "done" : ""} onClick={openRow}>
                         <td onClick={e => e.stopPropagation()}><span className={"check" + (a.done ? " done" : "")} onClick={() => toggleAction(a.id)}/></td>
-                        <td className="strong" style={{whiteSpace:"normal"}} onDoubleClick={e => { e.stopPropagation(); setEditing({ id: a.id, field: "title" }); }}>
+                        <td className="strong" style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} onDoubleClick={e => { e.stopPropagation(); setEditing({ id: a.id, field: "title" }); }}>
                           {editingTitle ? (
                             <input
                               className="inline-edit"
@@ -246,12 +261,12 @@ const ScreenActions = ({ toggleAction, openAction, updateAction, flags, setModal
                               }}
                             />
                           ) : (
-                            <span title="Double-click to edit">{a.title}</span>
+                            <span title={a.title}>{a.title}</span>
                           )}
                         </td>
-                        <td className="hide-sm muted text-sm" style={{whiteSpace:"normal"}}>{a.ctx}</td>
+                        <td className="hide-sm muted text-sm" style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{a.ctx}</td>
                         <td><ImportanceChip i={a.importance}/></td>
-                        <td className="mono num" style={{textAlign:"right"}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})} onDoubleClick={e => { e.stopPropagation(); setEditing({ id: a.id, field: "due" }); }}>
+                        <td className="mono num" style={{textAlign:"right", whiteSpace:"nowrap"}} {...(flags.relTime && a.due ? { "data-tip": VT_FMT.FULL(a.due) } : {})} onDoubleClick={e => { e.stopPropagation(); setEditing({ id: a.id, field: "due" }); }}>
                           {editingDue ? (
                             <input
                               className="inline-edit inline-edit--num"

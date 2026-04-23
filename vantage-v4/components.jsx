@@ -161,10 +161,11 @@ const TxCard = ({ tx, onClick, flags }) => {
               <div className="card__money">{tx.valueFmt}</div>
             </div>
           </div>
-          <div className="card__sub">
+          <div className="card__sub" style={{display:"flex", alignItems:"center", flexWrap:"wrap", gap:4}}>
             <span>{tx.suburbOnly || tx.suburb || "—"}</span>
             {tx.state && <><span className="dot"/><span>{tx.state}</span></>}
-            {tx.vendor && <><span className="dot"/><span>{tx.vendor}{tx.purchaser ? " → " + tx.purchaser : ""}</span></>}
+            {tx.confidence && <><span className="dot"/><ConfidenceChip c={tx.confidence}/></>}
+            {tx.vendor && <><span className="dot"/><span style={{color:"var(--ink-3)", fontSize:11}}>{tx.vendor}{tx.purchaser ? " → " + tx.purchaser : ""}</span></>}
           </div>
           <div className="card__stats">
               <div className="card__stat">
@@ -191,7 +192,6 @@ const TxCard = ({ tx, onClick, flags }) => {
           <div className="card__chips">
             <SectorChip s={tx.sector}/>
             {tx.subSector && <span className="chip chip--ghost">{tx.subSector}</span>}
-            <ConfidenceChip c={tx.confidence}/>
             {tx.strategy && tx.strategy !== "—" && <span className="chip chip--strategy" title="Strategy">{tx.strategy}</span>}
             <span style={{marginLeft:"auto", fontSize:10, color:"var(--ink-4)", fontFamily:"var(--mono)"}}>{tx.saleDateFmt}</span>
           </div>
