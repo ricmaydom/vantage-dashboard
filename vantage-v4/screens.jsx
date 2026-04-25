@@ -1041,7 +1041,320 @@ const ScreenStrategy = ({ openStrategy, flags }) => {
   );
 };
 
+// ================== PENDING REVIEW ==================
+const ScreenReview = ({ showToast }) => {
+  const { useState: useStateR, useEffect: useEffectR, useCallback: useCallbackR } = React;
+  const [records, setRecords] = useStateR([]);
+  const [loading, setLoading] = useStateR(true);
+  const [working, setWorking] = useStateR(new Set());
+
+  const sb = window.__vantageAuth;
+
+  const TYPE_LABELS = {
+    intel: "Market Intel",
+    contact_new: "New Contact",
+    contact_update: "Contact Update",
+    task: "Task",
+    deal_new: "New Deal",
+    deal_update: "Deal Update",
+  };
+  const TYPE_COLORS = {
+    intel: "#6366F1",
+    contact_new: "#059669",
+    contact_update: "#D97706",
+    task: "#2563EB",
+    deal_new: "#7C3AED",
+    deal_update: "#DC2626",
+  };
+
+  const load = useCallbackR(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await sb.from('pending_review').select('*').eq('status','pending').order('created_at', { ascending: true });
+      if(error) throw error;
+      setRecords(data || []);
+      window.VT_PENDING_COUNT = (data || []).length;
+    } catch(e) {
+      console.error('pending_review load error', e);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffectR(() => { load(); }, []);
+
+  const writeToLiveTable = async (rec) => {
+    const d = rec.proposed_data;
+    const type = rec.record_type;
+    if(type === 'intel') {
+      const { error } = await sb.from('intel_records').insert([{
+        intel_date: d.intel_date,
+        source: d.source,
+        confidence: d.confidence || 'Reported',
+        asset_class: d.asset_class,
+        grade: d.grade,
+        strategy: d.strategy,
+        geography: d.geography,
+        summary: d.summary,
+        intel_type: d.intel_type || 'market',
+        source_contact_id: d.source_contact_id || null,
+        source_contact_name: d.source_contact_name || null,
+        meeting_label: d.meeting_label || rec.source_meeting_label,
+        meeting_id: d.meeting_id || rec.source_meeting_id,
+        date_logged: d.date_logged,
+        raw_extract: d.raw_extract || null,
+      }]);
+      return error;
+    }
+    if(type === 'contact_new') {
+      const { error } = await sb.from('contacts').insert([{
+        name: d.name,
+        first_name: d.first_name || null,
+        last_name: d.last_name || null,
+        firm: d.firm || null,
+        firm_type: d.firm_type || null,
+        role_title: d.role_title || null,
+        email: d.email || null,
+        mobile: d.mobile || null,
+        city: d.city || null,
+        state: d.state || null,
+        asset_class_coverage: d.asset_class_coverage || null,
+        relationship_tier: d.relationship_tier || 2,
+        cadence_weeks: d.cadence_weeks || 8,
+        how_known: d.how_known || null,
+        last_contact_date: d.last_contact_date || null,
+        last_contact_summary: d.last_contact_summary || null,
+      }]);
+      return error;
+    }
+    if(type === 'contact_update') {
+      if(!d.id) return new Error('contact_update missing id');
+      const { id, ...rest } = d;
+      const { error } = await sb.from('contacts').update(rest).eq('id', id);
+      return error;
+    }
+    if(type === 'task') {
+      const { error } = await sb.from('tasks').insert([{
+        task: d.task || d.title || '(untitled)',
+        title: d.title || null,
+        importance: d.importance || 'Medium',
+        status: d.status || 'open',
+        deadline_date: d.deadline_date || null,
+        reminder_date: d.reminder_date || null,
+        category: d.category || null,
+        notes: d.notes || null,
+        deal_card_id: d.deal_card_id || null,
+        date_logged: d.date_logged || new Date().toISOString().slice(0,10),
+        meeting_label: rec.source_meeting_label || null,
+        meeting_id: rec.source_meeting_id || null,
+      }]);
+      return error;
+    }
+    if(type === 'deal_new') {
+      const { error } = await sb.from('deal_cards').insert([{
+        address: d.address || null,
+        suburb: d.suburb || null,
+        state: d.state || null,
+        sector: d.sector || null,
+        strategy: d.strategy || null,
+        process_type: d.process_type || null,
+        vendor: d.vendor || null,
+        headline_price: d.headline_price || null,
+        reported_yield: d.reported_yield || null,
+        status: d.status || 'Rumoured',
+        confidence: d.confidence || 'Rumoured',
+        source: d.source || null,
+        notes: d.notes || null,
+        meeting_label: rec.source_meeting_label || null,
+        meeting_id: rec.source_meeting_id || null,
+      }]);
+      return error;
+    }
+    if(type === 'deal_update') {
+      if(!d.id) return new Error('deal_update missing id');
+      const { id, ...rest } = d;
+      const { error } = await sb.from('deal_cards').update(rest).eq('id', id);
+      return error;
+    }
+    return new Error('Unknown record_type: ' + type);
+  };
+
+  const approve = async (rec) => {
+    setWorking(prev => new Set([...prev, rec.id]));
+    try {
+      const writeErr = await writeToLiveTable(rec);
+      if(writeErr) { showToast('Write failed: ' + writeErr.message); return; }
+      await sb.from('pending_review').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', rec.id);
+      setRecords(prev => prev.filter(r => r.id !== rec.id));
+      window.VT_PENDING_COUNT = Math.max(0, (window.VT_PENDING_COUNT || 0) - 1);
+      showToast('Approved');
+    } catch(e) {
+      showToast('Error: ' + e.message);
+    }
+    setWorking(prev => { const s = new Set(prev); s.delete(rec.id); return s; });
+  };
+
+  const reject = async (rec) => {
+    setWorking(prev => new Set([...prev, rec.id]));
+    try {
+      await sb.from('pending_review').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', rec.id);
+      setRecords(prev => prev.filter(r => r.id !== rec.id));
+      window.VT_PENDING_COUNT = Math.max(0, (window.VT_PENDING_COUNT || 0) - 1);
+      showToast('Rejected');
+    } catch(e) {
+      showToast('Error: ' + e.message);
+    }
+    setWorking(prev => { const s = new Set(prev); s.delete(rec.id); return s; });
+  };
+
+  const approveAll = async () => {
+    if(!records.length) return;
+    if(!confirm(`Approve all ${records.length} pending records?`)) return;
+    for(const rec of records) { await approve(rec); }
+  };
+
+  if(loading) return (
+    <div className="screen-pad" style={{textAlign:'center', paddingTop:64}}>
+      <div className="muted">Loading pending records…</div>
+    </div>
+  );
+
+  if(!records.length) return (
+    <div className="screen-pad">
+      <div className="empty" style={{textAlign:'center', paddingTop:64}}>
+        <div style={{fontSize:32, marginBottom:12}}>✓</div>
+        <div style={{fontWeight:600, fontSize:17}}>Nothing pending</div>
+        <div className="muted text-sm" style={{marginTop:6}}>All clear — no records waiting for review.</div>
+      </div>
+    </div>
+  );
+
+  // Group by type for rendering
+  const groups = {};
+  records.forEach(r => {
+    if(!groups[r.record_type]) groups[r.record_type] = [];
+    groups[r.record_type].push(r);
+  });
+
+  const renderDataPreview = (proposed_data, record_type) => {
+    if(!proposed_data) return null;
+    const d = proposed_data;
+    const rows = [];
+    if(record_type === 'intel') {
+      if(d.intel_date) rows.push(['Date', d.intel_date]);
+      if(d.asset_class) rows.push(['Asset class', d.asset_class]);
+      if(d.geography) rows.push(['Geography', d.geography]);
+      if(d.strategy) rows.push(['Strategy', d.strategy]);
+      if(d.confidence) rows.push(['Confidence', d.confidence]);
+      if(d.intel_type) rows.push(['Type', d.intel_type]);
+      if(d.source) rows.push(['Source', d.source]);
+      if(d.summary) rows.push(['Summary', d.summary]);
+    } else if(record_type === 'contact_new' || record_type === 'contact_update') {
+      if(d.name) rows.push(['Name', d.name]);
+      if(d.firm) rows.push(['Firm', d.firm]);
+      if(d.role_title) rows.push(['Role', d.role_title]);
+      if(d.email) rows.push(['Email', d.email]);
+      if(d.city) rows.push(['City', d.city]);
+      if(d.relationship_tier) rows.push(['Tier', d.relationship_tier]);
+      if(d.last_contact_summary) rows.push(['Last contact', d.last_contact_summary]);
+    } else if(record_type === 'task') {
+      if(d.title || d.task) rows.push(['Task', d.title || d.task]);
+      if(d.importance) rows.push(['Importance', d.importance]);
+      if(d.deadline_date) rows.push(['Deadline', d.deadline_date]);
+      if(d.category) rows.push(['Category', d.category]);
+      if(d.notes) rows.push(['Notes', d.notes]);
+    } else if(record_type === 'deal_new' || record_type === 'deal_update') {
+      if(d.address) rows.push(['Address', d.address]);
+      if(d.sector) rows.push(['Sector', d.sector]);
+      if(d.strategy) rows.push(['Strategy', d.strategy]);
+      if(d.headline_price) rows.push(['Price', '$' + Number(d.headline_price).toLocaleString()]);
+      if(d.status) rows.push(['Status', d.status]);
+      if(d.notes) rows.push(['Notes', d.notes]);
+    }
+    return (
+      <div style={{marginTop:10, paddingTop:10, borderTop:'1px solid var(--rule)'}}>
+        {rows.map(([k,v]) => (
+          <div key={k} style={{display:'flex', gap:8, marginBottom:4, fontSize:12, lineHeight:1.4}}>
+            <span style={{color:'var(--ink-3)', minWidth:90, flexShrink:0, fontWeight:500}}>{k}</span>
+            <span style={{color:'var(--ink-1)', wordBreak:'break-word'}}>{String(v)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="screen-pad">
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20}}>
+        <div>
+          <div style={{fontWeight:700, fontSize:17}}>{records.length} record{records.length !== 1 ? 's' : ''} pending review</div>
+          <div className="muted text-sm" style={{marginTop:2}}>Extracted from Granola by the team. Approve to write to the live database.</div>
+        </div>
+        <button className="btn btn--accent" onClick={approveAll}>
+          Approve all ({records.length})
+        </button>
+      </div>
+
+      {Object.entries(groups).map(([type, recs]) => (
+        <div key={type} style={{marginBottom:28}}>
+          <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+            <span style={{
+              display:'inline-block', padding:'3px 10px', borderRadius:20, fontSize:11,
+              fontWeight:700, letterSpacing:'0.05em', textTransform:'uppercase',
+              background: TYPE_COLORS[type] + '18', color: TYPE_COLORS[type]
+            }}>
+              {TYPE_LABELS[type] || type}
+            </span>
+            <span className="muted text-sm">{recs.length} item{recs.length !== 1 ? 's' : ''}</span>
+          </div>
+
+          <div className="stack">
+            {recs.map(rec => {
+              const busy = working.has(rec.id);
+              return (
+                <div key={rec.id} className="card" style={{padding:'14px 16px'}}>
+                  <div style={{display:'flex', alignItems:'flex-start', gap:10}}>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{fontWeight:600, fontSize:13, lineHeight:1.4, marginBottom:2}}>
+                        {rec.display_label || '(no label)'}
+                      </div>
+                      {rec.source_meeting_label && (
+                        <div className="muted text-sm" style={{display:'flex', alignItems:'center', gap:4}}>
+                          <Icon name="granola" size={10}/>
+                          {rec.source_meeting_label}
+                        </div>
+                      )}
+                      {renderDataPreview(rec.proposed_data, rec.record_type)}
+                    </div>
+                    <div style={{display:'flex', flexDirection:'column', gap:6, flexShrink:0}}>
+                      <button
+                        className="btn btn--accent"
+                        style={{fontSize:12, padding:'5px 12px'}}
+                        disabled={busy}
+                        onClick={() => approve(rec)}
+                      >
+                        {busy ? '…' : 'Approve'}
+                      </button>
+                      <button
+                        className="btn btn--danger"
+                        style={{fontSize:12, padding:'5px 12px'}}
+                        disabled={busy}
+                        onClick={() => reject(rec)}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 Object.assign(window, {
   ScreenDashboard, ScreenActions, ScreenCRM, ScreenPipeline,
-  ScreenDeals, ScreenLeasing, ScreenIntel, ScreenStrategy,
+  ScreenDeals, ScreenLeasing, ScreenIntel, ScreenStrategy, ScreenReview,
 });

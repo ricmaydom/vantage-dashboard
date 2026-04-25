@@ -14,6 +14,8 @@ const NAV = [
   { group: "Intelligence" },
   { id: "intel", label: "Market Intel", icon: "radar", badge: () => null },
   { id: "strategy", label: "Strategy", icon: "idea", badge: () => null },
+  { group: "System" },
+  { id: "review", label: "Review", icon: "check", badge: () => window.VT_PENDING_COUNT || null, badgeTone: () => window.VT_PENDING_COUNT > 0 ? "warm" : null },
 ];
 
 const TITLES = {
@@ -25,6 +27,7 @@ const TITLES = {
   leasing: ["Deals & Leasing", "Leasing Cards"],
   intel: ["Intelligence", "Market Intel"],
   strategy: ["Intelligence", "Strategy & Ideas"],
+  review: ["System", "Pending Review"],
 };
 
 // Flag keys to surface
@@ -333,6 +336,14 @@ function App(){
   const [toast, setToast] = useStateA(null);
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
 
+  // pending review count — load once at startup for sidebar badge
+  useEffectA(() => {
+    if(!window.__vantageAuth) return;
+    window.__vantageAuth.from('pending_review').select('id', { count: 'exact', head: true }).eq('status','pending').then(({ count }) => {
+      window.VT_PENDING_COUNT = count || 0;
+    }).catch(() => {});
+  }, []);
+
   // tweaks panel
   const [tweaksOpen, setTweaksOpen] = useStateA(false);
   useEffectA(() => {
@@ -441,6 +452,7 @@ function App(){
       case "leasing":   return <ScreenLeasing leases={leases} openLease={openLease} addLease={() => { const l = addLease(); openLease(l); }} removeLease={removeLease} {...props}/>;
       case "intel":     return <ScreenIntel openIntel={openIntel} {...props}/>;
       case "strategy":  return <ScreenStrategy openStrategy={openStrategy} {...props}/>;
+      case "review":    return <ScreenReview showToast={showToast}/>;
       default:          return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
     }
   })();
