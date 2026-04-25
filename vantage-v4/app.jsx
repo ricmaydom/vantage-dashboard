@@ -281,6 +281,50 @@ function App(){
   const [modal, setModal] = useStateA(null);
   const [captureText, setCaptureText] = useStateA("");
   const [eodText, setEodText] = useStateA("");
+  const [granolaStatus, setGranolaStatus] = useStateA({ loading: false, status: null, lastSynced: null, requested: false });
+
+  const loadGranolaStatus = async () => {
+    setGranolaStatus(prev => ({ ...prev, loading: true }));
+    try {
+      const sb = window.__vantageAuth;
+      const { data } = await sb.from('app_config').select('key,value').in('key', ['granola_sync_status','granola_last_synced','granola_sync_requested']);
+      const map = {};
+      (data || []).forEach(row => { map[row.key] = row.value; });
+      setGranolaStatus({ loading: false, status: map['granola_sync_status'] || 'idle', lastSynced: map['granola_last_synced'] || null, requested: false });
+    } catch(e) {
+      setGranolaStatus({ loading: false, status: 'error', lastSynced: null, requested: false });
+    }
+  };
+
+  const requestGranolaSync = async () => {
+    try {
+      const sb = window.__vantageAuth;
+      const now = new Date().toISOString();
+      await sb.from('app_config').upsert([
+        { key: 'granola_sync_requested', value: now },
+        { key: 'granola_sync_status', value: 'requested' }
+      ], { onConflict: 'key' });
+      setGranolaStatus(prev => ({ ...prev, status: 'requested', requested: true }));
+      showToast("Sync requested — Leo will pull your meetings next session");
+      setTimeout(() => setModal(null), 2000);
+    } catch(e) {
+      showToast("Request failed — try again");
+    }
+  };
+
+  useEffectA(() => {
+    if(modal === "granola") loadGranolaStatus();
+  }, [modal]);
+
+  // Helper: write a pending capture to Supabase
+  const savePendingCapture = async (rawText, source) => {
+    try {
+      const sb = window.__vantageAuth;
+      await sb.from('pending_captures').insert({ raw_text: rawText, source, status: 'pending' });
+    } catch(err) {
+      console.warn('Capture save failed:', err);
+    }
+  };
 
   // palette
   const [paletteOpen, setPaletteOpen] = useStateA(false);
@@ -759,7 +803,7 @@ function App(){
           <button className="btn btn--eod btn--hide-sm" onClick={() => setModal("eod")} title="End of day">
             <Icon name="moon" size={13}/><span className="btn--label"> EOD</span>
           </button>
-          <button className="btn" onClick={() => showToast("Synced with Granola — 0 new meetings")} title="Sync Granola">
+          <button className="btn" onClick={() => setModal("granola")} title="Sync Granola meetings">
             <Icon name="refresh" size={13}/><span className="btn--label"> Granola</span>
           </button>
         </header>
@@ -830,7 +874,9 @@ function App(){
             <button className="btn" onClick={() => { setCaptureText(""); setModal(null); }}>Cancel</button>
             <button className="btn btn--accent" onClick={() => {
               if(!captureText.trim()){ showToast("Nothing to capture"); return; }
+              const text = captureText.trim();
               setCaptureText(""); setModal(null); showToast("Saved to Leo queue");
+              savePendingCapture(text, "quick_capture");
             }}>Save to queue</button>
           </>
         }
@@ -848,12 +894,68 @@ function App(){
             <button className="btn" onClick={() => { setEodText(""); setModal(null); }}>Cancel</button>
             <button className="btn btn--accent" onClick={() => {
               if(!eodText.trim()){ showToast("Nothing to wrap up"); return; }
+              const text = eodText.trim();
               setEodText(""); setModal(null); showToast("Wrapped — see you tomorrow");
+              savePendingCapture(text, "eod_dump");
             }}>Submit & wrap up</button>
           </>
         }
       >
         <textarea className="free" value={eodText} onChange={e => setEodText(e.target.value)} placeholder="Rumours, to-dos, follow-ups, deal snippets, thoughts. Free-form is fine."/>
+      </Modal>
+
+      <Modal
+        open={modal === "granola"}
+        title="Granola Sync"
+        subtitle="Pull your latest meetings directly from Granola into Vantage"
+        onClose={() => setModal(null)}
+        footer={
+          <>
+            <button className="btn" onClick={() => setModal(null)}>Close</button>
+            <button
+              className="btn btn--accent"
+              onClick={requestGranolaSync}
+              disabled={granolaStatus.status === 'requested' || granolaStatus.requested}
+            >
+              {granolaStatus.status === 'requested' ? <><Icon name="refresh" size={12}/> Sync requested</> : <><Icon name="refresh" size={12}/> Request sync</>}
+            </button>
+          </>
+        }
+      >
+        {granolaStatus.loading ? (
+          <div className="muted text-sm" style={{padding:"28px 0", textAlign:"center"}}>Loading sync status...</div>
+        ) : (
+          <div>
+            <div style={{display:"flex", gap:24, padding:"14px 0", borderBottom:"1px solid var(--rule)", marginBottom:14}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.06em", color:"var(--ink-3)", marginBottom:4}}>Last synced</div>
+                <div style={{fontSize:14, fontWeight:500}}>
+                  {granolaStatus.lastSynced
+                    ? new Date(granolaStatus.lastSynced).toLocaleString('en-AU', {dateStyle:'medium', timeStyle:'short'})
+                    : <span className="muted">Never</span>}
+                </div>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.06em", color:"var(--ink-3)", marginBottom:4}}>Status</div>
+                <div style={{fontSize:14, fontWeight:500, textTransform:"capitalize"}}>
+                  {granolaStatus.status === 'idle' || !granolaStatus.status ? <span className="muted">Idle</span>
+                    : granolaStatus.status === 'requested' ? <span style={{color:"#D97706"}}>Requested</span>
+                    : granolaStatus.status === 'error' ? <span style={{color:"#EF4444"}}>Error</span>
+                    : granolaStatus.status}
+                </div>
+              </div>
+            </div>
+            <p style={{fontSize:13, color:"var(--ink-3)", lineHeight:1.55, margin:0}}>
+              Requesting a sync flags Leo to pull your latest Granola meetings at the next session start. New meetings are parsed for actions, deal intel, contacts, and market intelligence — then routed to the relevant team members.
+            </p>
+            {granolaStatus.requested && (
+              <div className="leo-read" style={{marginTop:14}}>
+                <div className="leo-read__tag"><span className="orb"/> Sync queued</div>
+                <p style={{margin:"6px 0 0", fontSize:12}}>Leo will process your Granola meetings at next session start.</p>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
 
       <Modal

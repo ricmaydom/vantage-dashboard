@@ -280,7 +280,7 @@ const CONTACTS = (RAW.contacts || []).map((c, i) => {
       else if(days > weeks * 7 * 0.7){ status = "Due soon"; statusCls = "chip--medium"; }
       else { status = "Active"; statusCls = "chip--low"; }
     } else {
-      status = "Never contacted"; statusCls = "chip--high";
+      status = "Never contacted"; statusCls = "chip--rumoured";
     }
   }
   return {
@@ -340,7 +340,7 @@ const STRATEGY = (RAW.strategy || []).map(s => {
     title,
     body,
     sector: s.sector,
-    status: s.status || "Developing",
+    status: (s.status ? s.status.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : "Developing"),
     date: s.date_logged || s.created_at,
     dateFmt: fmtShortDate(s.date_logged || s.created_at),
     importance: s.importance || "Medium",
@@ -376,7 +376,8 @@ const STATS = {
   todayActions: ACTIONS.filter(a => !a.done && a.bucket === "today").length,
 
   contactCount: CONTACTS.length,
-  overdueContacts: CONTACTS.filter(c => c.status === "Overdue" || c.status === "Never contacted").length,
+  overdueContacts: CONTACTS.filter(c => c.status === "Overdue").length,
+  neverContacted: CONTACTS.filter(c => c.status === "Never contacted").length,
   dueSoonContacts: CONTACTS.filter(c => c.status === "Due soon").length,
   tier1Count: CONTACTS.filter(c => Number(c.tier) === 1).length,
 

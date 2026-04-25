@@ -38,7 +38,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, openAction, toggleAction, 
   const actions = window.VT_ACTIONS.filter(a => !a.done).slice(0, 6);
   const activeDeals = window.VT_DEALS.slice(0, 6);
   const recentIntel = window.VT_INTEL.slice().sort((a,b) => (new Date(b.date) - new Date(a.date))).slice(0, 4);
-  const overdueContacts = window.VT_CONTACTS.filter(c => c.status === "Overdue" || c.status === "Never contacted").slice(0, 5);
+  const overdueContacts = window.VT_CONTACTS.filter(c => c.status === "Overdue").slice(0, 5);
   const tableCls = "table" + (flags.stickyHeaders ? " table--sticky" : "");
 
   // Apply pipeline phase overrides (same localStorage key as ScreenPipeline) for accurate KPIs
@@ -336,7 +336,7 @@ const ScreenCRM = ({ openContact, addContact, flags }) => {
   const tableCls = "table" + (flags.stickyHeaders ? " table--sticky" : "");
   const filtered = useMemoS(() => {
     let c = all;
-    if(tab === "overdue") c = c.filter(x => x.status === "Overdue" || x.status === "Never contacted");
+    if(tab === "overdue") c = c.filter(x => x.status === "Overdue");
     else if(tab === "tier1") c = c.filter(x => Number(x.tier) === 1);
     else if(tab === "tier2") c = c.filter(x => Number(x.tier) === 2);
     else if(tab === "tier3") c = c.filter(x => Number(x.tier) === 3);
@@ -353,7 +353,7 @@ const ScreenCRM = ({ openContact, addContact, flags }) => {
     { v:"tier1", l:"Tier 1", c: all.filter(x => Number(x.tier) === 1).length },
     { v:"tier2", l:"Tier 2", c: all.filter(x => Number(x.tier) === 2).length },
     { v:"tier3", l:"Tier 3", c: all.filter(x => Number(x.tier) === 3).length },
-    { v:"overdue", l:"Overdue", c: all.filter(x => x.status === "Overdue" || x.status === "Never contacted").length },
+    { v:"overdue", l:"Overdue", c: all.filter(x => x.status === "Overdue").length },
   ];
 
   return (
