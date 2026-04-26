@@ -1087,20 +1087,19 @@ const ScreenReview = ({ showToast }) => {
     const type = rec.record_type;
     if(type === 'intel') {
       const { error } = await sb.from('intel_records').insert([{
-        intel_date: d.intel_date,
+        intel_date: d.intel_date || d.date_logged || null,
         source: d.source,
         confidence: d.confidence || 'Reported',
-        asset_class: d.asset_class,
+        sector: d.sector || d.asset_class || null,
         grade: d.grade,
         strategy: d.strategy,
         geography: d.geography,
         summary: d.summary,
-        intel_type: d.intel_type || 'market',
+        intel_type: d.intel_type || 'Transaction',
         source_contact_id: d.source_contact_id || null,
         source_contact_name: d.source_contact_name || null,
         meeting_label: d.meeting_label || rec.source_meeting_label,
         meeting_id: d.meeting_id || rec.source_meeting_id,
-        date_logged: d.date_logged,
         raw_extract: d.raw_extract || null,
       }]);
       return error;
@@ -1134,15 +1133,16 @@ const ScreenReview = ({ showToast }) => {
     }
     if(type === 'task') {
       const { error } = await sb.from('tasks').insert([{
-        task: d.task || d.title || '(untitled)',
-        title: d.title || null,
+        title: d.title || d.task || '(untitled)',
         importance: d.importance || 'Medium',
-        status: d.status || 'open',
+        status: (d.status && d.status[0].toUpperCase() + d.status.slice(1)) || 'Open',
         deadline_date: d.deadline_date || null,
         reminder_date: d.reminder_date || null,
         category: d.category || null,
         notes: d.notes || null,
         deal_card_id: d.deal_card_id || null,
+        contact_id: d.contact_id || null,
+        leasing_card_id: d.leasing_card_id || null,
         date_logged: d.date_logged || new Date().toISOString().slice(0,10),
         meeting_label: rec.source_meeting_label || null,
         meeting_id: rec.source_meeting_id || null,

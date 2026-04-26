@@ -134,18 +134,24 @@ function App(){
       if(M[k]) out[M[k]] = patch[k];
       else if(k === 'sector') out.asset_class_coverage = patch[k];
       else if(k === 'lastContactedFmt') out.last_contact_date = _parseDisplayDate(patch[k]);
+      else if(k === 'lastContactSummary') out.last_contact_summary = patch[k];
     }
     return out;
   };
   // Drawer-key → DB-column map for pipeline_cards.
   const _mapPipelinePatch = (patch) => {
     const M = { sector:'sector', phase:'phase', title:'address', suburb:'suburb', state:'state',
-                vendor:'vendor', purchaser:'purchaser', agent:'agent', notes:'notes' };
+                vendor:'vendor', purchaser:'purchaser', agent:'agent', notes:'notes',
+                confidence:'confidence', conviction:'conviction', strategy:'strategy',
+                processType:'process_type' };
     const out = {};
     for(const k in patch){
       if(M[k]) out[M[k]] = patch[k];
       else if(k === 'valueFmt') out.headline_price = _parseNum(patch[k]);
       else if(k === 'yield') out.reported_yield = _parseNum(patch[k]);
+      else if(k === 'marketYield') out.market_yield = _parseNum(patch[k]);
+      else if(k === 'irr') out.irr = _parseNum(patch[k]);
+      else if(k === 'capVal') out.cap_value = _parseNum(patch[k]);
       else if(k === 'wale') out.wale = _parseNum(patch[k]);
       else if(k === 'nla') out.nla_sqm = _parseNum(patch[k]);
     }
@@ -153,46 +159,73 @@ function App(){
   };
   // Drawer-key → DB-column map for deal_cards (closed/comparable trades).
   const _mapDealPatch = (patch) => {
-    const out = _mapPipelinePatch(patch); // shared base fields
-    const E = { confidence:'confidence', conviction:'conviction', strategy:'strategy' };
+    const out = _mapPipelinePatch(patch); // shared base fields including market_yield, irr, cap_value
     for(const k in patch){
-      if(E[k]) out[E[k]] = patch[k];
-      else if(k === 'saleDateFmt') out.sale_date = _parseDisplayDate(patch[k]);
+      if(k === 'saleDateFmt') out.sale_date = _parseDisplayDate(patch[k]);
+      else if(k === 'subSector') out.sub_sector = patch[k];
+      else if(k === 'isComparable') out.is_comparable = !!patch[k];
     }
     return out;
   };
   // Drawer-key → DB-column map for tasks.
   const _mapTaskPatch = (patch) => {
-    const M = { title:'task', importance:'importance', notes:'notes', ctx:'meeting_label' };
+    const M = { title:'title', importance:'importance', notes:'notes',
+                deal_card_id:'deal_card_id', contact_id:'contact_id',
+                leasing_card_id:'leasing_card_id', category:'category' };
     const out = {};
     for(const k in patch){
       if(M[k]) out[M[k]] = patch[k];
       else if(k === 'dueFmt') out.deadline_date = _parseDisplayDate(patch[k]);
       else if(k === 'done') out.status = patch[k] ? 'Done' : 'Open';
+      else if(k === 'status') out.status = patch[k];
     }
     return out;
   };
   // Drawer-key → DB-column map for intel_records.
   const _mapIntelPatch = (patch) => {
-    const M = { category:'intel_type', confidence:'confidence', sector:'sector' };
+    const M = { category:'intel_type', confidence:'confidence', sector:'sector',
+                strategy:'strategy', geography:'geography', grade:'grade',
+                source:'source' };
     const out = {};
     for(const k in patch){
       if(M[k]) out[M[k]] = patch[k];
       else if(k === 'dateFmt') out.intel_date = _parseDisplayDate(patch[k]);
+      else if(k === 'body') out.summary = patch[k];
+      else if(k === 'title') out.summary = patch[k]; // title is computed; if user edits, treat as summary edit
     }
     return out;
   };
   // Drawer-key → DB-column map for strategy_ideas.
   const _mapStrategyPatch = (patch) => {
-    const M = { theme:'theme', sector:'sector', status:'status' };
+    const M = { theme:'theme', sector:'sector', status:'status',
+                importance:'importance', title:'title', body:'body',
+                connections:'connections' };
     const out = {};
     for(const k in patch){
       if(M[k]) out[M[k]] = patch[k];
       else if(k === 'dateFmt') out.date_logged = _parseDisplayDate(patch[k]);
-      // 'importance' has no column on strategy_ideas — silently skipped.
     }
     return out;
   };
+  // Drawer-key → DB-column map for leasing_cards.
+  const _mapLeasePatch = (patch) => {
+    const M = { address:'address', suburb:'suburb', state:'state', sector:'sector',
+                sub_sector:'sub_sector', tenant:'tenant', landlord:'landlord', agent:'agent',
+                lease_type:'lease_type', status:'status', confidence:'confidence', notes:'notes' };
+    const out = {};
+    for(const k in patch){
+      if(M[k]) out[M[k]] = patch[k];
+      else if(k === 'area_sqm') out.area_sqm = _parseNum(patch[k]);
+      else if(k === 'term_years') out.term_years = _parseNum(patch[k]);
+      else if(k === 'face_rent') out.face_rent = _parseNum(patch[k]);
+      else if(k === 'effective_rent') out.effective_rent = _parseNum(patch[k]);
+      else if(k === 'incentive_pct') out.incentive_pct = _parseNum(patch[k]);
+      else if(k === 'lease_date_fmt') out.lease_date = _parseDisplayDate(patch[k]);
+      else if(k === 'is_comparable') out.is_comparable = !!patch[k];
+    }
+    return out;
+  };
+
   // Persist a mapped patch to Supabase. Fire-and-forget with toast on failure.
   const _persistPatch = async (table, id, dbPatch) => {
     const sb = window.__vantageAuth;
@@ -221,17 +254,18 @@ function App(){
     let cancelled = false;
     (async () => {
       try {
-        const [pipe, deals, tasks, contacts, intel, strategy, captures] = await Promise.all([
+        const [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows] = await Promise.all([
           sb.from('pipeline_cards').select('*'),
           sb.from('deal_cards').select('*'),
-          sb.from('tasks').select('id,task,title,date_logged,deadline_date,due_date:deadline_date,importance,status,notes,category,reminder_date,contact_id,deal_card_id,leasing_card_id,meeting_id,meeting_label,granola_doc_id,created_at,updated_at'),
-          sb.from('contacts').select('id,name,first_name,last_name,firm,role_title,email,mobile,phone:business_phone,tier:relationship_tier,last_contacted:last_contact_date,cadence_weeks,asset_class_coverage,geographic_focus,city,state,profession,firm_type,created_at'),
+          sb.from('tasks').select('id,title,date_logged,deadline_date,importance,status,notes,category,reminder_date,contact_id,deal_card_id,leasing_card_id,meeting_id,meeting_label,granola_doc_id,created_at,updated_at'),
+          sb.from('contacts').select('id,name,first_name,last_name,firm,firm_type,role_title,profession,email,mobile,phone:business_phone,tier:relationship_tier,last_contacted:last_contact_date,last_contact_summary,relationship_notes,cadence_weeks,asset_class_coverage,city,state,linkedin_url,created_at,updated_at'),
           sb.from('intel_records').select('*'),
           sb.from('strategy_ideas').select('*'),
           sb.from('pending_captures').select('*'),
+          sb.from('leasing_cards').select('*'),
         ]);
         if(cancelled) return;
-        const responses = [pipe, deals, tasks, contacts, intel, strategy, captures];
+        const responses = [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows];
         const errs = responses.map(r => r.error).filter(Boolean);
         if(errs.length){ console.warn('[Vantage] live fetch errors, keeping snapshot:', errs); return; }
         const RAW = {
@@ -242,7 +276,10 @@ function App(){
           intel:          intel.data || [],
           strategy:       strategy.data || [],
           captures:       captures.data || [],
+          leases:         leasingRows.data || [],
         };
+        // Update React leases state from live data
+        if(typeof setLeases === 'function') setLeases(leasingRows.data || []);
         window.__VANTAGE_RAW = RAW;
         window.VT_buildFromRaw(RAW);
         setBumpKey(k => k + 1);
@@ -426,22 +463,52 @@ function App(){
     });
   }, []);
 
-  // leases (new records + edits, localStorage-backed)
-  const [leases, setLeases] = useStateA(() => {
-    try { return JSON.parse(localStorage.getItem("vt:leases") || "[]"); } catch(e){ return []; }
-  });
-  useEffectA(() => { try { localStorage.setItem("vt:leases", JSON.stringify(leases)); } catch(e){} }, [leases]);
+  // leases — Supabase-backed; initial state empty, populated by live-fetch effect
+  const [leases, setLeases] = useStateA([]);
   useEffectA(() => { window.VT_LEASES = leases; }, [leases]);
   const updateLease = (id, patch) => {
+    // Optimistic local update
     setLeases(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
+    // Persist to Supabase
+    const dbPatch = _mapLeasePatch(patch);
+    if(Object.keys(dbPatch).length) _persistPatch('leasing_cards', id, dbPatch);
   };
-  const addLease = () => {
-    const id = "lease_" + Date.now();
-    const blank = { id, title: "Untitled leasing", suburb: "—", state: "—", tenant: "—", landlord: "—", sector: null, status: "Negotiating", area: "—", rent: "—", term: "—", incentive: "—", commencement: "—", notes: "" };
-    setLeases(prev => [blank, ...prev]);
-    return blank;
+  const addLease = async () => {
+    const sb = window.__vantageAuth;
+    const blank_db = {
+      address: "Untitled leasing", suburb: null, state: null, sector: null,
+      tenant: null, landlord: null, agent: null,
+      area_sqm: null, term_years: null, face_rent: null, effective_rent: null, incentive_pct: null,
+      lease_type: null, lease_date: null, status: 'Active', confidence: 'Reported',
+      is_comparable: true, notes: null,
+    };
+    if(!sb){
+      // No auth — fall back to local-only stub (won't persist)
+      const stub = { id: "lease_" + Date.now(), ...blank_db };
+      setLeases(prev => [stub, ...prev]);
+      return stub;
+    }
+    try {
+      const { data, error } = await sb.from('leasing_cards').insert([blank_db]).select().single();
+      if(error){
+        showToast(`Add lease failed: ${error.message}`);
+        return null;
+      }
+      setLeases(prev => [data, ...prev]);
+      return data;
+    } catch(e) {
+      showToast('Add lease failed — connection error');
+      return null;
+    }
   };
-  const removeLease = (id) => setLeases(prev => prev.filter(l => l.id !== id));
+  const removeLease = async (id) => {
+    setLeases(prev => prev.filter(l => l.id !== id));
+    const sb = window.__vantageAuth;
+    if(sb){
+      try { await sb.from('leasing_cards').delete().eq('id', id); }
+      catch(e) { console.warn('[Vantage] delete lease failed:', e); }
+    }
+  };
 
   // tearsheet
   const [tearsheet, setTearsheet] = useStateA(null);
@@ -775,7 +842,10 @@ function App(){
             </div>
             <div style={{fontSize:17, fontWeight:600, lineHeight:1.35, letterSpacing:"-0.01em", marginTop:14}}>{r.title}</div>
           </div>
-          {r.body && <div className="drawer__section"><h4>Summary</h4><div className="drawer__notes">{r.body}</div></div>}
+          <div className="drawer__section">
+            <h4>Summary</h4>
+            <EditableField label="" value={r.body || "Add summary…"} multiline onSave={v => setIntelField("body", v)}/>
+          </div>
           {r.source && <div className="drawer__section"><h4>Source</h4><div className="muted text-sm">{r.source}</div></div>}
         </>
       );
@@ -797,33 +867,42 @@ function App(){
               <EditableField label="Date" value={r.dateFmt} type="date" onSave={v => setStrategyField("dateFmt", v)}/>
             </div>
           </div>
-          <div className="drawer__section"><h4>Idea</h4><div className="drawer__notes">{r.body}</div></div>
+          <div className="drawer__section">
+            <h4>Idea</h4>
+            <EditableField label="" value={r.body || "Add idea…"} multiline onSave={v => setStrategyField("body", v)}/>
+          </div>
         </>
       );
     }
     if(drawer.kind === "lease"){
       const SECTOR_OPTS = ["Office","Retail","Industrial","Residential","Hotel","Alternatives","Diversified","—"];
-      const STATUS_OPTS = ["Inquiry","Tour","Negotiating","LOI","Heads of Agreement","Executed","Lost"];
+      const STATUS_OPTS = ["Inquiry","Tour","Negotiating","LOI","Heads of Agreement","Executed","Active","Lost","—"];
+      const LEASE_TYPE_OPTS = ["Net","Gross","Semi-Gross","—"];
+      // Helper: format DB date string (ISO) to display
+      const fmtDateDisp = (d) => d ? (window.VT_FMT && window.VT_FMT.DATE ? window.VT_FMT.DATE(d) : d) : "—";
       const setLeaseField = (k,v) => { updateLease(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
           <div className="drawer__section">
             <div className="editrow">
-              <EditableField label="Property / address" value={r.title} onSave={v => setLeaseField("title", v)}/>
+              <EditableField label="Address" value={r.address || "—"} onSave={v => setLeaseField("address", v)}/>
               <EditableField label="Suburb" value={r.suburb || "—"} onSave={v => setLeaseField("suburb", v)}/>
               <EditableField label="State" value={r.state || "—"} options={["VIC","NSW","QLD","WA","SA","TAS","ACT","NT","—"]} onSave={v => setLeaseField("state", v === "—" ? null : v)}/>
               <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setLeaseField("sector", v === "—" ? null : v)}/>
-              <EditableField label="Status" value={r.status || "—"} options={STATUS_OPTS} onSave={v => setLeaseField("status", v)}/>
+              <EditableField label="Sub-sector" value={r.sub_sector || "—"} onSave={v => setLeaseField("sub_sector", v)}/>
+              <EditableField label="Status" value={r.status || "—"} options={STATUS_OPTS} onSave={v => setLeaseField("status", v === "—" ? null : v)}/>
               <EditableField label="Tenant" value={r.tenant || "—"} onSave={v => setLeaseField("tenant", v)}/>
               <EditableField label="Landlord" value={r.landlord || "—"} onSave={v => setLeaseField("landlord", v)}/>
+              <EditableField label="Agent" value={r.agent || "—"} onSave={v => setLeaseField("agent", v)}/>
             </div>
             <div className="editrow" style={{marginTop:10}}>
-              <EditableField label="Area (sqm)" value={r.area || "—"} onSave={v => setLeaseField("area", v)}/>
-              <EditableField label="Rent basis" value={r.rentBasis || "—"} options={["Net","Gross","Semi-Gross","—"]} onSave={v => setLeaseField("rentBasis", v === "—" ? null : v)}/>
-              <EditableField label="Face rent ($/sqm)" value={r.rent || "—"} onSave={v => setLeaseField("rent", v)}/>
-              <EditableField label="Term (yrs)" value={r.term || "—"} onSave={v => setLeaseField("term", v)}/>
-              <EditableField label="Incentive (%)" value={r.incentive || "—"} onSave={v => setLeaseField("incentive", v)}/>
-              <EditableField label="Commencement" value={r.commencement || "—"} type="date" onSave={v => setLeaseField("commencement", v)}/>
+              <EditableField label="Area (sqm)" value={r.area_sqm != null ? String(r.area_sqm) : "—"} onSave={v => setLeaseField("area_sqm", v)}/>
+              <EditableField label="Lease type" value={r.lease_type || "—"} options={LEASE_TYPE_OPTS} onSave={v => setLeaseField("lease_type", v === "—" ? null : v)}/>
+              <EditableField label="Face rent ($/sqm)" value={r.face_rent != null ? String(r.face_rent) : "—"} onSave={v => setLeaseField("face_rent", v)}/>
+              <EditableField label="Effective rent ($/sqm)" value={r.effective_rent != null ? String(r.effective_rent) : "—"} onSave={v => setLeaseField("effective_rent", v)}/>
+              <EditableField label="Term (yrs)" value={r.term_years != null ? String(r.term_years) : "—"} onSave={v => setLeaseField("term_years", v)}/>
+              <EditableField label="Incentive (%)" value={r.incentive_pct != null ? String(r.incentive_pct) : "—"} onSave={v => setLeaseField("incentive_pct", v)}/>
+              <EditableField label="Lease date" value={fmtDateDisp(r.lease_date)} type="date" onSave={v => setLeaseField("lease_date_fmt", v)}/>
             </div>
           </div>
           <div className="drawer__section">
@@ -840,13 +919,23 @@ function App(){
           <div className="drawer__section">
             <div className="editrow">
               <EditableField label="Title" value={r.title} onSave={v => { updateAction(r.id, { title: v }); setDrawer(d => ({ ...d, record: { ...d.record, title: v }})); }}/>
-              <EditableField label="Linked deal" value={r.ctx || "— None —"} options={["— None —", ...((window.VT_DEALS || []).map(d => d.title))]} onSave={v => { const val = v === "— None —" ? "" : v; updateAction(r.id, { ctx: val }); setDrawer(d => ({ ...d, record: { ...d.record, ctx: val }})); }}/>
+              <EditableField label="Linked deal" value={r.dealCardTitle || "— None —"} options={["— None —", ...((window.VT_DEALS || []).map(d => d.title))]} onSave={v => {
+                const isNone = v === "— None —";
+                const deal = isNone ? null : (window.VT_DEALS || []).find(d => d.title === v);
+                const dealId = deal ? deal.id : null;
+                const dealTitle = isNone ? null : v;
+                updateAction(r.id, { deal_card_id: dealId, dealCardId: dealId, dealCardTitle: dealTitle, ctx: dealTitle || "—" });
+                setDrawer(d => ({ ...d, record: { ...d.record, deal_card_id: dealId, dealCardId: dealId, dealCardTitle: dealTitle, ctx: dealTitle || "—" }}));
+              }}/>
               <EditableField label="Importance" value={r.importance} options={IMPORTANCE_OPTS} onSave={v => { updateAction(r.id, { importance: v }); setDrawer(d => ({ ...d, record: { ...d.record, importance: v }})); }}/>
               <EditableField label="Due" value={r.dueFmt || "—"} type="date" onSave={v => { updateAction(r.id, { dueFmt: v }); setDrawer(d => ({ ...d, record: { ...d.record, dueFmt: v }})); }}/>
               <EditableField label="Status" value={r.done ? "Done" : "Open"} options={["Open","Done"]} onSave={v => { const done = v === "Done"; if(done !== !!r.done){ toggleAction(r.id); setDrawer(d => ({ ...d, record: { ...d.record, done }})); }}}/>
             </div>
           </div>
-          {r.notes && <div className="drawer__section"><h4>Notes</h4><div className="drawer__notes">{r.notes}</div></div>}
+          <div className="drawer__section">
+            <h4>Notes</h4>
+            <EditableField label="" value={r.notes || "Add notes…"} multiline onSave={v => { updateAction(r.id, { notes: v }); setDrawer(d => ({ ...d, record: { ...d.record, notes: v }})); }}/>
+          </div>
         </>
       );
     }

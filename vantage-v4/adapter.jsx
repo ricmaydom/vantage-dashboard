@@ -242,17 +242,25 @@ const TRANSACTIONS = (RAW.deal_cards || []).map(d => {
 
 // ---------- ACTIONS / TASKS ----------
 const ACTIONS = (RAW.tasks || []).map(t => {
-  const done = t.status === "Done";
-  const bucket = done ? "done" : dueBucket(t.due_date);
+  const done = String(t.status || "").toLowerCase() === "done";
+  const bucket = done ? "done" : dueBucket(t.deadline_date);
+  // Resolve linked deal (pipeline_cards or deal_cards) for display
+  const linkedDeal = t.deal_card_id
+    ? ((RAW.pipeline_cards || []).find(d => d.id === t.deal_card_id)
+       || (RAW.deal_cards || []).find(d => d.id === t.deal_card_id))
+    : null;
+  const linkedDealTitle = linkedDeal ? (linkedDeal.address || "—") : null;
   return {
     id: t.id,
-    title: t.task || "—",
+    title: t.title || "—",
     done,
-    due: t.due_date,
-    dueFmt: dueText(t.due_date),
+    due: t.deadline_date,
+    dueFmt: dueText(t.deadline_date),
     bucket,
     importance: t.importance || "Medium",
-    ctx: t.meeting_label || t.source || "—",
+    ctx: linkedDealTitle || t.meeting_label || t.source || "—",
+    dealCardId: t.deal_card_id || null,
+    dealCardTitle: linkedDealTitle,
     granolaId: t.granola_doc_id,
     notes: t.notes || "",
     deadline: t.deadline_date,
