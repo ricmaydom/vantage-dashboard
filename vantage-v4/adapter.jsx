@@ -1,5 +1,4 @@
 // Data adapter: transform Supabase raw data into clean UI shapes
-const RAW = window.__VANTAGE_RAW || {};
 
 // ---------- helpers ----------
 function fmtAUD(n){
@@ -155,6 +154,8 @@ function healthFor(phaseK, days){
 const HEALTH_LABEL = { track:"On track", hot:"Hot", stalled:"Stalled", closed:"Closed", dead:"Dead" };
 
 // ---------- DEALS (active pipeline) ----------
+// === Live-data swap-in: rebuild all derived globals from a fresh RAW snapshot ===
+window.VT_buildFromRaw = function(RAW) {
 const DEALS = (RAW.pipeline_cards || []).map(p => {
   const pk = phaseKey(p.phase);
   const seed = seedFrom(p.id);
@@ -449,3 +450,7 @@ Object.assign(window, {
   VT_FMT: { AUD: fmtAUD, PCT: fmtPct, DATE: fmtDate, SHORT_DATE: fmtShortDate, AGO: agoText, DUE: dueText, INITIALS: initials, FULL: fmtFullDateTime },
   VT_CLS: { sector: sectorClass, confidence: confidenceClass, importance: importanceClass, tier: tierClass },
 });
+}; // end VT_buildFromRaw
+
+// Initial paint: build from the inlined snapshot
+window.VT_buildFromRaw(window.__VANTAGE_RAW || {});

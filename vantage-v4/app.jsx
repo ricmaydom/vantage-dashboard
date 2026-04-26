@@ -89,6 +89,50 @@ function App(){
 
   // drawer state
   const [bumpKey, setBumpKey] = useStateA(0);
+
+  // === Live Supabase swap-in ============================================
+  // First paint uses the inlined snapshot (window.__VANTAGE_RAW). On mount,
+  // pull fresh data from Supabase and rebuild the derived globals. Adapter
+  // exposes window.VT_buildFromRaw(RAW) for re-runnable transformation.
+  useEffectA(() => {
+    const sb = window.__vantageAuth;
+    if(!sb || typeof window.VT_buildFromRaw !== 'function') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [pipe, deals, tasks, contacts, intel, strategy, captures] = await Promise.all([
+          sb.from('pipeline_cards').select('*'),
+          sb.from('deal_cards').select('*'),
+          sb.from('tasks').select('id,task,title,date_logged,deadline_date,due_date:deadline_date,importance,status,notes,category,reminder_date,contact_id,deal_card_id,leasing_card_id,meeting_id,meeting_label,granola_doc_id,created_at,updated_at'),
+          sb.from('contacts').select('id,name,first_name,last_name,firm,role_title,email,mobile,phone:business_phone,tier:relationship_tier,last_contacted:last_contact_date,cadence_weeks,asset_class_coverage,geographic_focus,city,state,profession,firm_type,created_at'),
+          sb.from('intel_records').select('*'),
+          sb.from('strategy_ideas').select('*'),
+          sb.from('pending_captures').select('*'),
+        ]);
+        if(cancelled) return;
+        const responses = [pipe, deals, tasks, contacts, intel, strategy, captures];
+        const errs = responses.map(r => r.error).filter(Boolean);
+        if(errs.length){ console.warn('[Vantage] live fetch errors, keeping snapshot:', errs); return; }
+        const RAW = {
+          pipeline_cards: pipe.data || [],
+          deal_cards:     deals.data || [],
+          tasks:          tasks.data || [],
+          contacts:       contacts.data || [],
+          intel:          intel.data || [],
+          strategy:       strategy.data || [],
+          captures:       captures.data || [],
+        };
+        window.__VANTAGE_RAW = RAW;
+        window.VT_buildFromRaw(RAW);
+        setBumpKey(k => k + 1);
+        console.log('[Vantage] live data loaded:', Object.fromEntries(Object.entries(RAW).map(([k,v]) => [k, v.length])));
+      } catch(e) {
+        console.warn('[Vantage] live fetch failed, keeping snapshot:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const [drawer, setDrawer] = useStateA({ open: false, kind: null, record: null });
   const openDeal = (d) => setDrawer({ open: true, kind: "deal", record: d });
   const openTx = (t) => setDrawer({ open: true, kind: "tx", record: t });
