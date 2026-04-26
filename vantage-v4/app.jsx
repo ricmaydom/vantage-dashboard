@@ -90,6 +90,127 @@ function App(){
   // drawer state
   const [bumpKey, setBumpKey] = useStateA(0);
 
+  // === Drawer-edit persistence helpers =================================
+  // Parse a display-formatted date ("21 Apr 26") back to ISO ("2026-04-21").
+  const _parseDisplayDate = (s) => {
+    if(!s || s === "—") return null;
+    const dt = new Date(s);
+    if(!isNaN(dt) && /^\d{4}-\d{2}-\d{2}/.test(String(s))) return String(s).slice(0,10);
+    if(!isNaN(dt) && String(s).match(/\d{1,2}\s\w{3}\s\d{2,4}/)){
+      return dt.toISOString().slice(0,10);
+    }
+    const m = String(s).match(/^(\d{1,2})[\s\-](\w{3})[\s\-](\d{2,4})$/);
+    if(m){
+      const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+      const mon = months[m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase()];
+      if(mon != null){
+        let yr = Number(m[3]); if(yr < 100) yr += 2000;
+        const d2 = new Date(yr, mon, Number(m[1]));
+        if(!isNaN(d2)) return d2.toISOString().slice(0,10);
+      }
+    }
+    if(!isNaN(dt)) return dt.toISOString().slice(0,10);
+    return null;
+  };
+  // Parse a value-formatted number ("$42.2M", "5.5%", "3.0") to a number.
+  const _parseNum = (s) => {
+    if(s == null || s === "" || s === "—") return null;
+    const str = String(s);
+    const cleaned = str.replace(/[^\d.\-]/g, '');
+    if(!cleaned) return null;
+    let n = Number(cleaned);
+    if(isNaN(n)) return null;
+    if(/[Mm]\b/.test(str)) n = n * 1_000_000;
+    else if(/[Bb]\b/.test(str)) n = n * 1_000_000_000;
+    return n;
+  };
+  // Drawer-key → DB-column map for contacts.
+  const _mapContactPatch = (patch) => {
+    const M = { name:'name', firm:'firm', role:'role_title', tier:'relationship_tier',
+                email:'email', phone:'business_phone', cadenceWeeks:'cadence_weeks',
+                notes:'relationship_notes' };
+    const out = {};
+    for(const k in patch){
+      if(M[k]) out[M[k]] = patch[k];
+      else if(k === 'sector') out.asset_class_coverage = patch[k];
+      else if(k === 'lastContactedFmt') out.last_contact_date = _parseDisplayDate(patch[k]);
+    }
+    return out;
+  };
+  // Drawer-key → DB-column map for pipeline_cards.
+  const _mapPipelinePatch = (patch) => {
+    const M = { sector:'sector', phase:'phase', title:'address', suburb:'suburb', state:'state',
+                vendor:'vendor', purchaser:'purchaser', agent:'agent', notes:'notes' };
+    const out = {};
+    for(const k in patch){
+      if(M[k]) out[M[k]] = patch[k];
+      else if(k === 'valueFmt') out.headline_price = _parseNum(patch[k]);
+      else if(k === 'yield') out.reported_yield = _parseNum(patch[k]);
+      else if(k === 'wale') out.wale = _parseNum(patch[k]);
+      else if(k === 'nla') out.nla_sqm = _parseNum(patch[k]);
+    }
+    return out;
+  };
+  // Drawer-key → DB-column map for deal_cards (closed/comparable trades).
+  const _mapDealPatch = (patch) => {
+    const out = _mapPipelinePatch(patch); // shared base fields
+    const E = { confidence:'confidence', conviction:'conviction', strategy:'strategy' };
+    for(const k in patch){
+      if(E[k]) out[E[k]] = patch[k];
+      else if(k === 'saleDateFmt') out.sale_date = _parseDisplayDate(patch[k]);
+    }
+    return out;
+  };
+  // Drawer-key → DB-column map for tasks.
+  const _mapTaskPatch = (patch) => {
+    const M = { title:'task', importance:'importance', notes:'notes', ctx:'meeting_label' };
+    const out = {};
+    for(const k in patch){
+      if(M[k]) out[M[k]] = patch[k];
+      else if(k === 'dueFmt') out.deadline_date = _parseDisplayDate(patch[k]);
+      else if(k === 'done') out.status = patch[k] ? 'Done' : 'Open';
+    }
+    return out;
+  };
+  // Drawer-key → DB-column map for intel_records.
+  const _mapIntelPatch = (patch) => {
+    const M = { category:'intel_type', confidence:'confidence', sector:'sector' };
+    const out = {};
+    for(const k in patch){
+      if(M[k]) out[M[k]] = patch[k];
+      else if(k === 'dateFmt') out.intel_date = _parseDisplayDate(patch[k]);
+    }
+    return out;
+  };
+  // Drawer-key → DB-column map for strategy_ideas.
+  const _mapStrategyPatch = (patch) => {
+    const M = { theme:'theme', sector:'sector', status:'status' };
+    const out = {};
+    for(const k in patch){
+      if(M[k]) out[M[k]] = patch[k];
+      else if(k === 'dateFmt') out.date_logged = _parseDisplayDate(patch[k]);
+      // 'importance' has no column on strategy_ideas — silently skipped.
+    }
+    return out;
+  };
+  // Persist a mapped patch to Supabase. Fire-and-forget with toast on failure.
+  const _persistPatch = async (table, id, dbPatch) => {
+    const sb = window.__vantageAuth;
+    if(!sb || !id || !dbPatch || Object.keys(dbPatch).length === 0) return;
+    try {
+      const { error } = await sb.from(table).update(dbPatch).eq('id', id);
+      if(error){
+        console.warn(`[Vantage] save ${table} failed:`, error);
+        showToast(`Save failed: ${error.message || 'unknown error'}`);
+      }
+    } catch(e){
+      console.warn(`[Vantage] save ${table} threw:`, e);
+      showToast('Save failed — connection error');
+    }
+  };
+  // === end drawer-edit persistence helpers =============================
+
+
   // === Live Supabase swap-in ============================================
   // First paint uses the inlined snapshot (window.__VANTAGE_RAW). On mount,
   // pull fresh data from Supabase and rebuild the derived globals. Adapter
@@ -174,6 +295,9 @@ function App(){
     // apply to live data so grouping stays consistent
     const a = window.VT_ACTIONS.find(x => x.id === id);
     if(a){ Object.assign(a, clean); }
+    // Persist to Supabase
+    const dbPatch = _mapTaskPatch(clean);
+    if(Object.keys(dbPatch).length) _persistPatch('tasks', id, dbPatch);
   };
   // apply edits once on mount, normalizing any legacy ISO strings persisted before the format change.
   useEffectA(() => {
@@ -207,6 +331,9 @@ function App(){
     });
     const c = window.VT_CONTACTS.find(x => x.id === id);
     if(c){ Object.assign(c, patch); }
+    // Persist to Supabase (fire-and-forget; local state already updated)
+    const dbPatch = _mapContactPatch(patch);
+    if(Object.keys(dbPatch).length) _persistPatch('contacts', id, dbPatch);
   };
   // Create a blank contact, insert at top of VT_CONTACTS, optionally POST to Supabase.
   // Mirrors addLease pattern — returns the record so callers can openContact(c).
@@ -254,11 +381,27 @@ function App(){
     });
   }, []);
 
+  // ad-hoc intel edits — Supabase-only, no localStorage layer (intel is read-mostly)
+  const updateIntel = (id, patch) => {
+    const i = (window.VT_INTEL || []).find(x => x.id === id);
+    if(i){ Object.assign(i, patch); }
+    const dbPatch = _mapIntelPatch(patch);
+    if(Object.keys(dbPatch).length) _persistPatch('intel_records', id, dbPatch);
+  };
+
+  // ad-hoc strategy edits — Supabase-only, no localStorage layer
+  const updateStrategy = (id, patch) => {
+    const s = (window.VT_STRATEGY || []).find(x => x.id === id);
+    if(s){ Object.assign(s, patch); }
+    const dbPatch = _mapStrategyPatch(patch);
+    if(Object.keys(dbPatch).length) _persistPatch('strategy_ideas', id, dbPatch);
+  };
+
   // ad-hoc deal edits
   const [dealEdits, setDealEdits] = useStateA(() => {
     try { return JSON.parse(localStorage.getItem("vt:dealEdits") || "{}"); } catch(e){ return {}; }
   });
-  const updateDeal = (id, patch) => {
+  const updateDeal = (id, patch, table) => {
     setDealEdits(prev => {
       const next = { ...prev, [id]: { ...(prev[id] || {}), ...patch } };
       localStorage.setItem("vt:dealEdits", JSON.stringify(next));
@@ -268,6 +411,11 @@ function App(){
       || (window.VT_TRANSACTIONS || []).find(x => x.id === id)
       || (window.VT_DEAL_CARDS || []).find(x => x.id === id);
     if(d){ Object.assign(d, patch); }
+    // Persist to Supabase. Caller passes 'pipeline_cards' (kind="deal") or 'deal_cards' (kind="tx").
+    if(table){
+      const dbPatch = table === 'pipeline_cards' ? _mapPipelinePatch(patch) : _mapDealPatch(patch);
+      if(Object.keys(dbPatch).length) _persistPatch(table, id, dbPatch);
+    }
   };
   useEffectA(() => {
     Object.keys(dealEdits).forEach(id => {
@@ -512,7 +660,7 @@ function App(){
       const CONFIDENCE_OPTS = ["Confirmed","Reported","Rumoured"];
       const CONVICTION_OPTS = ["High","Medium","Low","—"];
       const STRATEGY_OPTS = ["Value Add","Core Plus","Core","Opportunistic","Development","—"];
-      const setDealField = (k,v) => { updateDeal(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
+      const setDealField = (k,v) => { updateDeal(r.id, { [k]: v }, isDeal ? 'pipeline_cards' : 'deal_cards'); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
           <div className="drawer__section">
@@ -615,14 +763,15 @@ function App(){
       const INTEL_CATEGORIES = ["Market Data","Tenant Intel","Transaction","Strategy","Rumour","Mandate","Deal Specific","General"];
       const CONFIDENCE_OPTS = ["Confirmed","Reported","Rumoured"];
       const SECTOR_OPTS = ["Office","Retail","Industrial","Residential","Hotel","Alternatives","—"];
+      const setIntelField = (k,v) => { updateIntel(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
           <div className="drawer__section">
             <div className="editrow">
-              <EditableField label="Category" value={r.category} options={INTEL_CATEGORIES}/>
-              <EditableField label="Confidence" value={r.confidence} options={CONFIDENCE_OPTS}/>
-              <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS}/>
-              <EditableField label="Date" value={r.dateFmt} type="date"/>
+              <EditableField label="Category" value={r.category} options={INTEL_CATEGORIES} onSave={v => setIntelField("category", v)}/>
+              <EditableField label="Confidence" value={r.confidence} options={CONFIDENCE_OPTS} onSave={v => setIntelField("confidence", v)}/>
+              <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setIntelField("sector", v === "—" ? null : v)}/>
+              <EditableField label="Date" value={r.dateFmt} type="date" onSave={v => setIntelField("dateFmt", v)}/>
             </div>
             <div style={{fontSize:17, fontWeight:600, lineHeight:1.35, letterSpacing:"-0.01em", marginTop:14}}>{r.title}</div>
           </div>
@@ -636,15 +785,16 @@ function App(){
       const STATUS_OPTS = ["Raw Idea","Developing","Validated","Shelved"];
       const SECTOR_OPTS = ["Office","Retail","Industrial","Residential","Hotel","Alternatives","—"];
       const IMPORTANCE_OPTS = ["High","Medium","Low"];
+      const setStrategyField = (k,v) => { updateStrategy(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
           <div className="drawer__section">
             <div className="editrow">
-              <EditableField label="Theme" value={r.theme} options={THEME_OPTS}/>
-              <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS}/>
-              <EditableField label="Status" value={r.status} options={STATUS_OPTS}/>
-              <EditableField label="Importance" value={r.importance} options={IMPORTANCE_OPTS}/>
-              <EditableField label="Date" value={r.dateFmt} type="date"/>
+              <EditableField label="Theme" value={r.theme} options={THEME_OPTS} onSave={v => setStrategyField("theme", v)}/>
+              <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setStrategyField("sector", v === "—" ? null : v)}/>
+              <EditableField label="Status" value={r.status} options={STATUS_OPTS} onSave={v => setStrategyField("status", v)}/>
+              <EditableField label="Importance" value={r.importance} options={IMPORTANCE_OPTS} onSave={v => setStrategyField("importance", v)}/>
+              <EditableField label="Date" value={r.dateFmt} type="date" onSave={v => setStrategyField("dateFmt", v)}/>
             </div>
           </div>
           <div className="drawer__section"><h4>Idea</h4><div className="drawer__notes">{r.body}</div></div>
