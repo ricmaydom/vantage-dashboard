@@ -361,6 +361,10 @@ function App(){
     try { return JSON.parse(localStorage.getItem("vt:contactEdits") || "{}"); } catch(e){ return {}; }
   });
   const updateContact = (id, patch) => {
+    // If the name changed, recompute initials so the avatar updates immediately.
+    if('name' in patch && window.VT_FMT && window.VT_FMT.INITIALS){
+      patch = { ...patch, initials: window.VT_FMT.INITIALS(patch.name || "") };
+    }
     setContactEdits(prev => {
       const next = { ...prev, [id]: { ...(prev[id] || {}), ...patch } };
       localStorage.setItem("vt:contactEdits", JSON.stringify(next));
@@ -372,10 +376,14 @@ function App(){
     const dbPatch = _mapContactPatch(patch);
     if(Object.keys(dbPatch).length) _persistPatch('contacts', id, dbPatch);
   };
-  // Create a blank contact, insert at top of VT_CONTACTS, optionally POST to Supabase.
-  // Mirrors addLease pattern — returns the record so callers can openContact(c).
+  // Create a blank contact: generate UUID client-side, insert into Supabase via
+  // the authenticated client, add to local state. Returns the record so callers
+  // can openContact(c). On insert failure, rolls back the local addition.
   const addContact = () => {
-    const id = "c_new_" + Date.now();
+    // Generate a real UUID so the row is valid in Supabase from the start.
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : ('00000000-0000-4000-8000-' + Date.now().toString(16).padStart(12, '0'));
     const blank = {
       id,
       name: "New contact",
@@ -388,7 +396,7 @@ function App(){
       statusCls: "never",
       lastContacted: null,
       lastContactedFmt: "—",
-      initials: "NC",
+      initials: (window.VT_FMT && window.VT_FMT.INITIALS) ? window.VT_FMT.INITIALS("New contact") : "NC",
       assetCoverage: "",
       email: null,
       phone: null,
@@ -396,19 +404,25 @@ function App(){
     };
     window.VT_CONTACTS = [blank, ...(window.VT_CONTACTS || [])];
     setBumpKey(k => k + 1);
-    // Best-effort Supabase insert — only if creds are configured. Fails silently.
-    try {
-      const cfg = (window.VT_SUPABASE && window.VT_SUPABASE.url && window.VT_SUPABASE.anonKey)
-        ? window.VT_SUPABASE
-        : (() => { try { const p = JSON.parse(localStorage.getItem("vt_supabase") || "null"); return (p && p.url && p.anonKey) ? p : null; } catch(e){ return null; } })();
-      if(cfg){
-        fetch(cfg.url.replace(/\/$/, "") + "/rest/v1/contacts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "apikey": cfg.anonKey, "Authorization": "Bearer " + cfg.anonKey, "Prefer": "return=representation" },
-          body: JSON.stringify({ id, name: blank.name, firm: null, role: null, sector: null, tier: 2, cadence_weeks: 12, created_at: new Date().toISOString() }),
-        }).catch(() => {});
-      }
-    } catch(e){}
+    // Persist to Supabase via the authenticated client.
+    const sb = window.__vantageAuth;
+    if(sb){
+      sb.from('contacts').insert([{
+        id,
+        name: blank.name,
+        relationship_tier: blank.tier,
+        cadence_weeks: blank.cadenceWeeks,
+      }]).then(({ error }) => {
+        if(error){
+          showToast(`Add contact failed: ${error.message || 'unknown error'}`);
+          // Roll back local addition
+          window.VT_CONTACTS = (window.VT_CONTACTS || []).filter(c => c.id !== id);
+          setBumpKey(k => k + 1);
+        }
+      });
+    } else {
+      showToast('Not signed in — contact will not be saved');
+    }
     return blank;
   };
   useEffectA(() => {

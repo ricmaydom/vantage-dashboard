@@ -1119,7 +1119,6 @@ const ScreenReview = ({ showToast }) => {
         asset_class_coverage: d.asset_class_coverage || null,
         relationship_tier: d.relationship_tier || 2,
         cadence_weeks: d.cadence_weeks || 8,
-        how_known: d.how_known || null,
         last_contact_date: d.last_contact_date || null,
         last_contact_summary: d.last_contact_summary || null,
       }]);
