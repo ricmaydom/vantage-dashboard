@@ -554,22 +554,40 @@ const ScreenPipeline = ({ openDeal, flags }) => {
         <button className="btn btn--primary" onClick={addPipelineDeal}><Icon name="plus" size={11}/> Add pipeline deal</button>
       </SectionHead>
       <div className="pipe">
-        {phases.map(p => (
-          <div className="phase" data-k={p.k} key={p.k}>
-            <div className="phase__lbl">{p.label}</div>
-            <div className="phase__n">{p.count}</div>
-            <div className="phase__v">{p.valueFmt}</div>
-            <ul className="phase__deals">
-              {p.k !== "dead" && p.k !== "closed" && p.deals.slice(0, 4).map(d => (
-                <li key={d.id} onClick={() => openDeal(d)} style={{cursor:"pointer"}}>· {d.title}</li>
-              ))}
-              {p.k !== "dead" && p.k !== "closed" && p.deals.length === 0 && <li className="empty">—</li>}
-              {p.k !== "dead" && p.k !== "closed" && p.deals.length > 4 && <li className="muted text-sm">+{p.deals.length - 4} more</li>}
-              {(p.k === "dead" || p.k === "closed") && p.deals.length > 0 && <li className="muted text-sm" style={{fontStyle:"italic"}}>See table below</li>}
-              {(p.k === "dead" || p.k === "closed") && p.deals.length === 0 && <li className="empty">—</li>}
-            </ul>
-          </div>
-        ))}
+        {phases.map(p => {
+          const ovKey = "overview:" + p.k;
+          const isOvDrop = dropTarget === ovKey;
+          return (
+            <div
+              className={"phase" + (isOvDrop ? " phase--drop" : "")}
+              data-k={p.k}
+              key={p.k}
+              onDragOver={e => { if(dragging){ e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropTarget(ovKey); } }}
+              onDragLeave={() => { if(dropTarget === ovKey) setDropTarget(null); }}
+              onDrop={e => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData("text/deal-id");
+                const deal = window.VT_DEALS.find(x => x.id === id);
+                if(deal) moveToPhase(deal, p.k);
+                setDropTarget(null);
+                setDragging(null);
+              }}
+            >
+              <div className="phase__lbl">{p.label}</div>
+              <div className="phase__n">{p.count}</div>
+              <div className="phase__v">{p.valueFmt}</div>
+              <ul className="phase__deals">
+                {p.k !== "dead" && p.k !== "closed" && p.deals.slice(0, 4).map(d => (
+                  <li key={d.id} onClick={() => openDeal(d)} style={{cursor:"pointer"}}>· {d.title}</li>
+                ))}
+                {p.k !== "dead" && p.k !== "closed" && p.deals.length === 0 && <li className="empty">{isOvDrop ? "Drop here" : "—"}</li>}
+                {p.k !== "dead" && p.k !== "closed" && p.deals.length > 4 && <li className="muted text-sm">+{p.deals.length - 4} more</li>}
+                {(p.k === "dead" || p.k === "closed") && p.deals.length > 0 && <li className="muted text-sm" style={{fontStyle:"italic"}}>{isOvDrop ? "Drop here to mark " + p.k : "See table below"}</li>}
+                {(p.k === "dead" || p.k === "closed") && p.deals.length === 0 && <li className="empty">{isOvDrop ? "Drop here" : "—"}</li>}
+              </ul>
+            </div>
+          );
+        })}
       </div>
 
       {flags.pipelineFlow ? (

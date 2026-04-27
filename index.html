@@ -332,6 +332,10 @@ body[data-theme="dark"] .chip--phase{color:var(--accent-ink)}
 .phase[data-k="closed"]::before{background:var(--ink-3)}
 .phase[data-k="dead"]::before{background:var(--neg)}
 .phase[data-k="dead"]{background:color-mix(in oklab,var(--neg-soft) 40%,var(--paper))}
+.phase{transition:background .15s ease,border-color .15s ease,box-shadow .15s ease}
+.phase--drop{background:var(--accent-soft);border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.phase--drop[data-k="dead"]{background:color-mix(in oklab,var(--neg-soft) 70%,var(--paper));border-color:var(--neg);box-shadow:0 0 0 2px var(--neg) inset}
+.phase--drop[data-k="closed"]{background:color-mix(in oklab,var(--ink-4) 12%,var(--paper));border-color:var(--ink-3);box-shadow:0 0 0 2px var(--ink-3) inset}
 .phase__lbl{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:0.08em;text-transform:uppercase;font-weight:600;margin-bottom:8px}
 .phase__n{font-size:26px;font-weight:700;letter-spacing:-0.03em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
 .phase__v{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:2px;font-weight:600}
@@ -1148,10 +1152,10 @@ window.HEALTH_LABEL_MAP = {
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<script src="vantage-v4/data-inline.js?v=35"></script>
-<script type="text/babel" src="vantage-v4/adapter.jsx?v=35"></script>
-<script type="text/babel" src="vantage-v4/components.jsx?v=35"></script>
-<script type="text/babel" src="vantage-v4/screens.jsx?v=35"></script>
-<script type="text/babel" src="vantage-v4/app.jsx?v=35"></script>
+<script src="vantage-v4/data-inline.js?v=36"></script>
+<script type="text/babel" src="vantage-v4/adapter.jsx?v=36"></script>
+<script type="text/babel" src="vantage-v4/components.jsx?v=36"></script>
+<script type="text/babel" src="vantage-v4/screens.jsx?v=36"></script>
+<script type="text/babel" src="vantage-v4/app.jsx?v=36"></script>
 </body>
 </html>
