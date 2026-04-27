@@ -5,12 +5,16 @@ function fmtAUD(n){
   if(!n && n !== 0) return "—";
   const v = Number(n);
   if(isNaN(v)) return "—";
-  if(v >= 1e9) return "$" + (v/1e9).toFixed(2) + "B";
-  if(v >= 1e6) return "$" + (v/1e6).toFixed(v >= 1e7 ? 1 : 2) + "M";
+  // Deal values display as integer millions with comma separator: "$1,200M"
+  if(v >= 1e6) return "$" + Math.round(v/1e6).toLocaleString() + "M";
   if(v >= 1e3) return "$" + (v/1e3).toFixed(0) + "k";
   return "$" + v.toFixed(0);
 }
 function fmtPct(n){ if(n == null || n === "") return "—"; const v = Number(n); if(isNaN(v)) return String(n); return v.toFixed(2) + "%"; }
+// 1-decimal percent — used for IRR
+function fmtPctOne(n){ if(n == null || n === "") return "—"; const v = Number(n); if(isNaN(v)) return String(n); return v.toFixed(1) + "%"; }
+// Per-sqm currency without the "/sqm" suffix (label provides the unit)
+function fmtAUDPerSqm(n){ if(n == null || n === "") return "—"; const v = Number(n); if(isNaN(v)) return "—"; return "$" + Math.round(v).toLocaleString(); }
 // Platform-wide date format: DD MMM YY (e.g. "15 Apr 26")
 const _MON_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function fmtDate(d){
@@ -174,10 +178,17 @@ const DEALS = (RAW.pipeline_cards || []).map(p => {
   valueFmt: fmtAUD(p.headline_price),
   yield: fmtPct(p.reported_yield),
   yieldRaw: p.reported_yield,
+  marketYield: fmtPct(p.market_yield),
+  marketYieldRaw: p.market_yield,
+  irr: fmtPctOne(p.irr),
+  irrRaw: p.irr,
   wale: p.wale != null ? Number(p.wale).toFixed(1) + " yrs" : "—",
   nla: p.nla_sqm ? Number(p.nla_sqm).toLocaleString() + " sqm" : "—",
   nlaRaw: Number(p.nla_sqm) || 0,
-  capVal: (Number(p.headline_price) && Number(p.nla_sqm)) ? "$" + Math.round(Number(p.headline_price) / Number(p.nla_sqm)).toLocaleString() + "/sqm" : "—",
+  capVal: p.cap_value
+    ? fmtAUDPerSqm(p.cap_value)
+    : ((Number(p.headline_price) && Number(p.nla_sqm)) ? fmtAUDPerSqm(Number(p.headline_price) / Number(p.nla_sqm)) : "—"),
+  capValRaw: p.cap_value || (Number(p.headline_price) && Number(p.nla_sqm) ? Number(p.headline_price) / Number(p.nla_sqm) : null),
   processType: p.process_type,
   vendor: p.vendor,
   purchaser: p.purchaser,
@@ -219,9 +230,13 @@ const TRANSACTIONS = (RAW.deal_cards || []).map(d => {
   valueFmt: fmtAUD(price),
   yield: fmtPct(d.reported_yield),
   yieldRaw: d.reported_yield,
+  marketYield: fmtPct(d.market_yield),
+  marketYieldRaw: d.market_yield,
+  irr: fmtPctOne(d.irr),
+  irrRaw: d.irr,
   nla: nla ? nla.toLocaleString() + " sqm" : "—",
   nlaRaw: nla,
-  capVal: capValPerSqm ? "$" + capValPerSqm.toLocaleString() + "/sqm" : "—",
+  capVal: d.cap_value ? fmtAUDPerSqm(d.cap_value) : (capValPerSqm ? fmtAUDPerSqm(capValPerSqm) : "—"),
   capValRaw: capValPerSqm,
   wale: d.wale != null ? Number(d.wale).toFixed(1) + " yrs" : "—",
   processType: d.process_type,
@@ -459,7 +474,7 @@ Object.assign(window, {
   VT_STATS: STATS,
   VT_PHASES: PHASES,
   VT_PIPELINE_HISTORY: PIPELINE_HISTORY,
-  VT_FMT: { AUD: fmtAUD, PCT: fmtPct, DATE: fmtDate, SHORT_DATE: fmtShortDate, AGO: agoText, DUE: dueText, INITIALS: initials, FULL: fmtFullDateTime },
+  VT_FMT: { AUD: fmtAUD, PCT: fmtPct, PCT1: fmtPctOne, AUD_SQM: fmtAUDPerSqm, DATE: fmtDate, SHORT_DATE: fmtShortDate, AGO: agoText, DUE: dueText, INITIALS: initials, FULL: fmtFullDateTime },
   VT_CLS: { sector: sectorClass, confidence: confidenceClass, importance: importanceClass, tier: tierClass },
 });
 }; // end VT_buildFromRaw
