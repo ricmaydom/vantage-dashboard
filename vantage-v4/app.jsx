@@ -363,8 +363,22 @@ function App(){
     try { return JSON.parse(localStorage.getItem("vt:contactEdits") || "{}"); } catch(e){ return {}; }
   });
   const updateContact = (id, patch) => {
-    // If the name changed, recompute initials so the avatar updates immediately.
-    if('name' in patch && window.VT_FMT && window.VT_FMT.INITIALS){
+    // Auto-sync: when first/last name change, regenerate full name + initials.
+    // Keeps DB `name` column in lockstep with first_name + last_name without
+    // requiring the user to maintain three fields.
+    if('firstName' in patch || 'lastName' in patch){
+      const c = window.VT_CONTACTS.find(x => x.id === id);
+      const first = ('firstName' in patch ? (patch.firstName || "") : (c && c.firstName) || "");
+      const last  = ('lastName'  in patch ? (patch.lastName  || "") : (c && c.lastName)  || "");
+      const composed = (first + " " + last).trim();
+      if(composed){
+        patch = { ...patch, name: composed };
+        if(window.VT_FMT && window.VT_FMT.INITIALS){
+          patch.initials = window.VT_FMT.INITIALS(composed);
+        }
+      }
+    } else if('name' in patch && window.VT_FMT && window.VT_FMT.INITIALS){
+      // Direct name edit (Granola sync path; drawer no longer surfaces this).
       patch = { ...patch, initials: window.VT_FMT.INITIALS(patch.name || "") };
     }
     setContactEdits(prev => {
@@ -823,7 +837,6 @@ function App(){
               </div>
             </div>
             <div className="editrow">
-              <EditableField label="Name" value={r.name} onSave={v => setField("name", v)}/>
               <EditableField label="First name" value={r.firstName || "—"} onSave={v => setField("firstName", v === "—" ? "" : v)}/>
               <EditableField label="Last name" value={r.lastName || "—"} onSave={v => setField("lastName", v === "—" ? "" : v)}/>
               <EditableField label="Firm" value={r.firm} onSave={v => setField("firm", v)}/>
