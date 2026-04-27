@@ -801,7 +801,7 @@ function App(){
         return "Annually";
       };
       const SECTOR_OPTS = ["Office","Retail","Industrial","Residential","Hotel","Alternatives","Diversified","—"];
-      const CITY_OPTS = ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Hobart","Canberra","Darwin","—"];
+      const CITY_OPTS = ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Hobart","Canberra","Darwin","Newcastle","Wollongong","Central Coast","Geelong","Ballarat","Bendigo","Gold Coast","Sunshine Coast","Townsville","Cairns","Toowoomba","Mackay","Launceston","Bunbury","Albury","Singapore","Hong Kong","—"];
       const setField = (k,v) => { updateContact(r.id, { [k]: v }, { _draft: !!r._draft }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
