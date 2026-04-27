@@ -1074,19 +1074,31 @@ const ScreenReview = ({ showToast }) => {
 
   const TYPE_LABELS = {
     intel: "Market Intel",
+    intel_record: "Market Intel",
     contact_new: "New Contact",
+    contact: "New Contact",
     contact_update: "Contact Update",
     task: "Task",
     deal_new: "New Deal",
+    deal_card: "New Deal",
     deal_update: "Deal Update",
+    pipeline_card: "Pipeline Deal",
+    leasing_card: "Leasing Deal",
+    strategy_idea: "Strategy / Idea",
   };
   const TYPE_COLORS = {
     intel: "#6366F1",
+    intel_record: "#6366F1",
     contact_new: "#059669",
+    contact: "#059669",
     contact_update: "#D97706",
     task: "#2563EB",
     deal_new: "#7C3AED",
+    deal_card: "#7C3AED",
     deal_update: "#DC2626",
+    pipeline_card: "#0EA5E9",
+    leasing_card: "#14B8A6",
+    strategy_idea: "#F59E0B",
   };
 
   const load = useCallbackR(async () => {
@@ -1105,9 +1117,9 @@ const ScreenReview = ({ showToast }) => {
   useEffectR(() => { load(); }, []);
 
   const writeToLiveTable = async (rec) => {
-    const d = rec.proposed_data;
+    const d = rec.proposed_data || {};
     const type = rec.record_type;
-    if(type === 'intel') {
+    if(type === 'intel' || type === 'intel_record') {
       const { error } = await sb.from('intel_records').insert([{
         intel_date: d.intel_date || d.date_logged || null,
         source: d.source,
@@ -1117,25 +1129,28 @@ const ScreenReview = ({ showToast }) => {
         strategy: d.strategy,
         geography: d.geography,
         summary: d.summary,
-        intel_type: d.intel_type || 'Transaction',
+        intel_type: d.intel_type || 'market',
         source_contact_id: d.source_contact_id || null,
         source_contact_name: d.source_contact_name || null,
         meeting_label: d.meeting_label || rec.source_meeting_label,
         meeting_id: d.meeting_id || rec.source_meeting_id,
+        granola_doc_id: rec.granola_doc_id || null,
         raw_extract: d.raw_extract || null,
       }]);
       return error;
     }
-    if(type === 'contact_new') {
+    if(type === 'contact_new' || type === 'contact') {
       const { error } = await sb.from('contacts').insert([{
-        name: d.name,
+        name: d.name || ((d.first_name || '') + ' ' + (d.last_name || '')).trim() || '(unnamed)',
         first_name: d.first_name || null,
         last_name: d.last_name || null,
         firm: d.firm || null,
         firm_type: d.firm_type || null,
         role_title: d.role_title || null,
+        profession: d.profession || null,
         email: d.email || null,
         mobile: d.mobile || null,
+        business_phone: d.business_phone || null,
         city: d.city || null,
         state: d.state || null,
         asset_class_coverage: d.asset_class_coverage || null,
@@ -1143,6 +1158,7 @@ const ScreenReview = ({ showToast }) => {
         cadence_weeks: d.cadence_weeks || 8,
         last_contact_date: d.last_contact_date || null,
         last_contact_summary: d.last_contact_summary || null,
+        relationship_notes: d.relationship_notes || null,
       }]);
       return error;
     }
@@ -1153,10 +1169,11 @@ const ScreenReview = ({ showToast }) => {
       return error;
     }
     if(type === 'task') {
+      const cap = (s) => s ? (s[0].toUpperCase() + s.slice(1)) : s;
       const { error } = await sb.from('tasks').insert([{
         title: d.title || d.task || '(untitled)',
-        importance: d.importance || 'Medium',
-        status: (d.status && d.status[0].toUpperCase() + d.status.slice(1)) || 'Open',
+        importance: cap(d.importance) || 'Medium',
+        status: cap(d.status) || 'Open',
         deadline_date: d.deadline_date || null,
         reminder_date: d.reminder_date || null,
         category: d.category || null,
@@ -1167,26 +1184,69 @@ const ScreenReview = ({ showToast }) => {
         date_logged: d.date_logged || new Date().toISOString().slice(0,10),
         meeting_label: rec.source_meeting_label || null,
         meeting_id: rec.source_meeting_id || null,
+        granola_doc_id: rec.granola_doc_id || null,
       }]);
       return error;
     }
-    if(type === 'deal_new') {
+    if(type === 'pipeline_card') {
+      const { error } = await sb.from('pipeline_cards').insert([{
+        address: d.address || null,
+        suburb: d.suburb || null,
+        state: d.state || null,
+        sector: d.sector || null,
+        phase: d.phase || 'Identified',
+        status: d.status || 'Watching',
+        confidence: d.confidence || 'Reported',
+        conviction: d.conviction || 'Watching',
+        strategy: d.strategy || null,
+        process_type: d.process_type || null,
+        headline_price: d.headline_price || null,
+        reported_yield: d.reported_yield || null,
+        market_yield: d.market_yield || null,
+        irr: d.irr || null,
+        cap_value: d.cap_value || null,
+        nla_sqm: d.nla_sqm || null,
+        wale: d.wale || null,
+        vendor: d.vendor || null,
+        purchaser: d.purchaser || null,
+        agent: d.agent || null,
+        notes: d.notes || null,
+        input_date: d.input_date || new Date().toISOString().slice(0,10),
+        meeting_label: rec.source_meeting_label || null,
+        meeting_id: rec.source_meeting_id || null,
+        granola_doc_id: rec.granola_doc_id || null,
+      }]);
+      return error;
+    }
+    if(type === 'deal_new' || type === 'deal_card') {
       const { error } = await sb.from('deal_cards').insert([{
         address: d.address || null,
         suburb: d.suburb || null,
         state: d.state || null,
         sector: d.sector || null,
+        sub_sector: d.sub_sector || null,
         strategy: d.strategy || null,
         process_type: d.process_type || null,
         vendor: d.vendor || null,
+        purchaser: d.purchaser || null,
+        agent: d.agent || null,
         headline_price: d.headline_price || null,
         reported_yield: d.reported_yield || null,
+        market_yield: d.market_yield || null,
+        irr: d.irr || null,
+        cap_value: d.cap_value || null,
+        nla_sqm: d.nla_sqm || null,
+        wale: d.wale || null,
+        sale_date: d.sale_date || null,
         status: d.status || 'Rumoured',
         confidence: d.confidence || 'Rumoured',
+        conviction: d.conviction || null,
         source: d.source || null,
         notes: d.notes || null,
+        is_comparable: d.is_comparable !== false,
         meeting_label: rec.source_meeting_label || null,
         meeting_id: rec.source_meeting_id || null,
+        granola_doc_id: rec.granola_doc_id || null,
       }]);
       return error;
     }
@@ -1194,6 +1254,47 @@ const ScreenReview = ({ showToast }) => {
       if(!d.id) return new Error('deal_update missing id');
       const { id, ...rest } = d;
       const { error } = await sb.from('deal_cards').update(rest).eq('id', id);
+      return error;
+    }
+    if(type === 'leasing_card') {
+      const { error } = await sb.from('leasing_cards').insert([{
+        tenancy: d.tenancy || null,
+        address: d.address || null,
+        suburb: d.suburb || null,
+        state: d.state || null,
+        sector: d.sector || null,
+        sub_sector: d.sub_sector || null,
+        tenant: d.tenant || null,
+        landlord: d.landlord || null,
+        agent: d.agent || null,
+        area_sqm: d.area_sqm || null,
+        term_years: d.term_years || null,
+        face_rent: d.face_rent || null,
+        effective_rent: d.effective_rent || null,
+        incentive_pct: d.incentive_pct || null,
+        lease_type: d.lease_type || null,
+        lease_date: d.lease_date || null,
+        status: d.status || 'Active',
+        confidence: d.confidence || 'Reported',
+        is_comparable: d.is_comparable !== false,
+        notes: d.notes || null,
+        meeting_label: rec.source_meeting_label || null,
+        meeting_id: rec.source_meeting_id || null,
+        granola_doc_id: rec.granola_doc_id || null,
+      }]);
+      return error;
+    }
+    if(type === 'strategy_idea') {
+      const { error } = await sb.from('strategy_ideas').insert([{
+        title: d.title || '(untitled idea)',
+        body: d.body || null,
+        theme: d.theme || null,
+        sector: d.sector || null,
+        importance: d.importance || 'medium',
+        status: d.status || 'raw',
+        date_logged: d.date_logged || new Date().toISOString().slice(0,10),
+        connections: d.connections || null,
+      }]);
       return error;
     }
     return new Error('Unknown record_type: ' + type);
@@ -1260,36 +1361,71 @@ const ScreenReview = ({ showToast }) => {
     if(!proposed_data) return null;
     const d = proposed_data;
     const rows = [];
-    if(record_type === 'intel') {
+    const fmtMoney = (v) => '$' + Number(v).toLocaleString();
+    const fmtPct = (v) => (Number(v) * 100).toFixed(2) + '%';
+    if(record_type === 'intel' || record_type === 'intel_record') {
       if(d.intel_date) rows.push(['Date', d.intel_date]);
-      if(d.asset_class) rows.push(['Asset class', d.asset_class]);
+      if(d.sector || d.asset_class) rows.push(['Sector', d.sector || d.asset_class]);
       if(d.geography) rows.push(['Geography', d.geography]);
+      if(d.grade) rows.push(['Grade', d.grade]);
       if(d.strategy) rows.push(['Strategy', d.strategy]);
       if(d.confidence) rows.push(['Confidence', d.confidence]);
       if(d.intel_type) rows.push(['Type', d.intel_type]);
-      if(d.source) rows.push(['Source', d.source]);
+      if(d.source || d.source_contact_name) rows.push(['Source', d.source || d.source_contact_name]);
       if(d.summary) rows.push(['Summary', d.summary]);
-    } else if(record_type === 'contact_new' || record_type === 'contact_update') {
+    } else if(record_type === 'contact_new' || record_type === 'contact' || record_type === 'contact_update') {
       if(d.name) rows.push(['Name', d.name]);
       if(d.firm) rows.push(['Firm', d.firm]);
       if(d.role_title) rows.push(['Role', d.role_title]);
       if(d.email) rows.push(['Email', d.email]);
+      if(d.mobile) rows.push(['Mobile', d.mobile]);
       if(d.city) rows.push(['City', d.city]);
       if(d.relationship_tier) rows.push(['Tier', d.relationship_tier]);
-      if(d.last_contact_summary) rows.push(['Last contact', d.last_contact_summary]);
+      if(d.relationship_notes) rows.push(['Notes', d.relationship_notes]);
     } else if(record_type === 'task') {
       if(d.title || d.task) rows.push(['Task', d.title || d.task]);
       if(d.importance) rows.push(['Importance', d.importance]);
       if(d.deadline_date) rows.push(['Deadline', d.deadline_date]);
       if(d.category) rows.push(['Category', d.category]);
       if(d.notes) rows.push(['Notes', d.notes]);
-    } else if(record_type === 'deal_new' || record_type === 'deal_update') {
+    } else if(record_type === 'pipeline_card') {
       if(d.address) rows.push(['Address', d.address]);
+      if(d.suburb || d.state) rows.push(['Location', [d.suburb, d.state].filter(Boolean).join(', ')]);
       if(d.sector) rows.push(['Sector', d.sector]);
       if(d.strategy) rows.push(['Strategy', d.strategy]);
-      if(d.headline_price) rows.push(['Price', '$' + Number(d.headline_price).toLocaleString()]);
+      if(d.headline_price) rows.push(['Price', fmtMoney(d.headline_price)]);
+      if(d.market_yield) rows.push(['Market yield', fmtPct(d.market_yield)]);
+      if(d.irr) rows.push(['IRR', fmtPct(d.irr)]);
+      if(d.vendor) rows.push(['Vendor', d.vendor]);
+      if(d.agent) rows.push(['Agent', d.agent]);
+      if(d.status) rows.push(['Status', d.status]);
+      if(d.confidence) rows.push(['Confidence', d.confidence]);
+      if(d.notes) rows.push(['Notes', d.notes]);
+    } else if(record_type === 'deal_new' || record_type === 'deal_card' || record_type === 'deal_update') {
+      if(d.address) rows.push(['Address', d.address]);
+      if(d.suburb || d.state) rows.push(['Location', [d.suburb, d.state].filter(Boolean).join(', ')]);
+      if(d.sector) rows.push(['Sector', d.sector]);
+      if(d.strategy) rows.push(['Strategy', d.strategy]);
+      if(d.headline_price) rows.push(['Price', fmtMoney(d.headline_price)]);
+      if(d.market_yield) rows.push(['Market yield', fmtPct(d.market_yield)]);
       if(d.status) rows.push(['Status', d.status]);
       if(d.notes) rows.push(['Notes', d.notes]);
+    } else if(record_type === 'leasing_card') {
+      if(d.tenancy) rows.push(['Tenancy', d.tenancy]);
+      if(d.address) rows.push(['Address', d.address]);
+      if(d.tenant) rows.push(['Tenant', d.tenant]);
+      if(d.landlord) rows.push(['Landlord', d.landlord]);
+      if(d.agent) rows.push(['Agent', d.agent]);
+      if(d.area_sqm) rows.push(['Area (sqm)', Number(d.area_sqm).toLocaleString()]);
+      if(d.face_rent) rows.push(['Face rent', d.face_rent]);
+      if(d.term_years) rows.push(['Term (yrs)', d.term_years]);
+      if(d.notes) rows.push(['Notes', d.notes]);
+    } else if(record_type === 'strategy_idea') {
+      if(d.title) rows.push(['Title', d.title]);
+      if(d.theme) rows.push(['Theme', d.theme]);
+      if(d.sector) rows.push(['Sector', d.sector]);
+      if(d.importance) rows.push(['Importance', d.importance]);
+      if(d.body) rows.push(['Body', d.body]);
     }
     return (
       <div style={{marginTop:10, paddingTop:10, borderTop:'1px solid var(--rule)'}}>
