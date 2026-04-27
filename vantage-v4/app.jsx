@@ -601,6 +601,42 @@ function App(){
   const [modal, setModal] = useStateA(null);
   const [captureText, setCaptureText] = useStateA("");
   const [granolaStatus, setGranolaStatus] = useStateA({ loading: false, status: null, lastSynced: null, requested: false });
+  const [refreshing, setRefreshing] = useStateA(false);
+
+  // Master Refresh: invokes parse_inbox Edge Function (parses pending_captures
+  // via Anthropic API), then re-fetches all Supabase tables.
+  const runMasterRefresh = async () => {
+    if(refreshing) return;
+    setRefreshing(true);
+    try {
+      const sb = window.__vantageAuth;
+      if(!sb){ showToast('Not signed in'); setRefreshing(false); return; }
+      let parseSummary = null;
+      let parseError = null;
+      try {
+        const { data, error } = await sb.functions.invoke('parse_inbox', {});
+        if(error){ parseError = error.message || 'parse_inbox failed'; }
+        else { parseSummary = data; }
+      } catch(e){ parseError = (e && e.message) || String(e); }
+      // Always re-fetch — even if parse failed, DB state may have changed
+      await fetchAllTables();
+      if(parseError){
+        showToast('Refresh: ' + parseError);
+      } else if(parseSummary){
+        const cap = parseSummary.captures_processed || 0;
+        const items = parseSummary.items_created || 0;
+        const errs = (parseSummary.errors || []).length;
+        const spendUsd = parseSummary.monthly_spend_usd;
+        const spendStr = (typeof spendUsd === 'number') ? ' · spend $' + spendUsd.toFixed(2) : '';
+        const errStr = errs ? ' (' + errs + ' err)' : '';
+        showToast('Refreshed · ' + cap + ' captures → ' + items + ' review items' + errStr + spendStr);
+      } else {
+        showToast('Refreshed');
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const loadGranolaStatus = async () => {
     setGranolaStatus(prev => ({ ...prev, loading: true }));
@@ -1217,6 +1253,9 @@ function App(){
               <Icon name="search" size={13}/><span className="btn--label"> Search</span><kbd style={{marginLeft:6, fontSize:10, fontFamily:"var(--mono)", color:"var(--ink-4)"}}>⌘K</kbd>
             </button>
           )}
+          <button className="btn btn--refresh" onClick={runMasterRefresh} disabled={refreshing} title="Refresh: parse captures, re-fetch all data">
+            <Icon name="refresh" size={13}/><span className="btn--label"> {refreshing ? "Refreshing…" : "Refresh"}</span>
+          </button>
           <button className="btn btn--capture" onClick={() => setModal("capture")} title="Quick capture (c)">
             <Icon name="capture" size={13}/><span className="btn--label"> Capture</span>
           </button>
