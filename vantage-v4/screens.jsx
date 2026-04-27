@@ -375,12 +375,13 @@ const ScreenCRM = ({ openContact, addContact, flags }) => {
               <tr>
                 <th style={{width:40}}></th>
                 <th {...sortProps("name")}>Name</th>
-                <th className="hide-sm" {...sortProps("firm")}>Firm</th>
-                <th className="hide-sm" {...sortProps("role")}>Role</th>
-                <th className="hide-md" {...sortProps("sector")}>Sector</th>
-                <th style={{width:85}} {...sortProps("tier")}>Tier</th>
-                <th style={{width:120}} {...sortProps("status")}>Cadence</th>
-                <th className="hide-sm" style={{width:110, textAlign:"right"}} {...sortProps("lastContacted")}>Last</th>
+                <th className="hide-sm" style={{width:170}} {...sortProps("firm")}>Firm</th>
+                <th className="hide-sm" style={{width:180}} {...sortProps("role")}>Role</th>
+                <th className="hide-md" style={{width:130}} {...sortProps("sector")}>Sector</th>
+                <th className="hide-md" style={{width:120}} {...sortProps("city")}>City</th>
+                <th style={{width:75}} {...sortProps("tier")}>Tier</th>
+                <th style={{width:135}} {...sortProps("status")}>Cadence</th>
+                <th className="hide-sm" style={{width:100, textAlign:"right"}} {...sortProps("lastContacted")}>Last</th>
               </tr>
             </thead>
             <tbody className={flags.microMotion ? "stagger" : ""}>
@@ -391,6 +392,7 @@ const ScreenCRM = ({ openContact, addContact, flags }) => {
                   <td className="hide-sm">{c.firm}</td>
                   <td className="hide-sm muted text-sm">{c.role}</td>
                   <td className="hide-md">{c.sector ? <span className={"chip " + window.VT_CLS.sector(c.sector)}>{c.sector}</span> : <span className="muted text-sm">—</span>}</td>
+                  <td className="hide-md">{c.city ? <span className="text-sm">{c.city}</span> : <span className="muted text-sm">—</span>}</td>
                   <td><TierChip t={c.tier}/></td>
                   <td>{c.cadenceWeeks ? (
                     (() => {
