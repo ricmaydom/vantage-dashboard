@@ -873,7 +873,6 @@ const LeasingCard = ({ l, onClick }) => {
         <div style={{position:"absolute", top:14, right:14, textAlign:"right"}}>
           <div className="card__money">{rentDisplay}</div>
           {tenant && <div style={{fontSize:11, color:"var(--ink-3)", marginTop:3, fontWeight:500}}>{tenant}</div>}
-          {l.landlord && l.landlord !== "—" && <div style={{fontSize:10, color:"var(--ink-4)", marginTop:1}}>{l.landlord}</div>}
         </div>
         <div className="card__stats">
           <div className="card__stat">
@@ -891,6 +890,14 @@ const LeasingCard = ({ l, onClick }) => {
           <div className="card__stat">
             <div className="card__stat__l">Incentive</div>
             <div className="card__stat__v">{fmtIncentive(l.incentive_pct)}</div>
+          </div>
+          <div className="card__stat">
+            <div className="card__stat__l">Landlord</div>
+            <div className="card__stat__v" style={{fontSize:13}}>{l.landlord && l.landlord !== "—" ? l.landlord : "—"}</div>
+          </div>
+          <div className="card__stat">
+            <div className="card__stat__l">Agent</div>
+            <div className="card__stat__v" style={{fontSize:13}}>{l.agent && l.agent !== "—" ? l.agent : "—"}</div>
           </div>
         </div>
         <div className="card__chips">

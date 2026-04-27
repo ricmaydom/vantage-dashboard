@@ -974,46 +974,6 @@ function App(){
     return "";
   })();
 
-  const drawerFooter = (() => {
-    const canPrint = flags.printView && (drawer.kind === "deal" || drawer.kind === "tx");
-    const kindLabel = { deal:"deal", tx:"deal card", lease:"leasing card", contact:"contact", intel:"intel record", strategy:"idea", action:"task" }[drawer.kind] || "entry";
-    const onDelete = () => {
-      if(!drawer.record) return;
-      if(!confirm(`Delete this ${kindLabel}? This cannot be undone.`)) return;
-      const id = drawer.record.id;
-      if(drawer.kind === "deal"){
-        window.VT_DEALS = (window.VT_DEALS || []).filter(x => x.id !== id);
-      } else if(drawer.kind === "tx"){
-        window.VT_TRANSACTIONS = (window.VT_TRANSACTIONS || []).filter(x => x.id !== id);
-        window.VT_DEAL_CARDS = (window.VT_DEAL_CARDS || []).filter(x => x.id !== id);
-      } else if(drawer.kind === "lease"){
-        removeLease(id);
-      } else if(drawer.kind === "contact"){
-        window.VT_CONTACTS = (window.VT_CONTACTS || []).filter(x => x.id !== id);
-      } else if(drawer.kind === "intel"){
-        window.VT_INTEL = (window.VT_INTEL || []).filter(x => x.id !== id);
-      } else if(drawer.kind === "strategy"){
-        window.VT_STRATEGY = (window.VT_STRATEGY || []).filter(x => x.id !== id);
-        window.VT_IDEAS = (window.VT_IDEAS || []).filter(x => x.id !== id);
-      } else if(drawer.kind === "action"){
-        window.VT_ACTIONS = (window.VT_ACTIONS || []).filter(x => x.id !== id);
-      }
-      setBumpKey(k => k + 1);
-      showToast(kindLabel.charAt(0).toUpperCase() + kindLabel.slice(1) + " deleted");
-      closeDrawer();
-    };
-    return (
-      <>
-        <button className="btn btn--danger" onClick={onDelete} title="Delete this entry" style={{marginRight:"auto"}}>
-          <Icon name="trash" size={12}/> Delete
-        </button>
-        <button className="btn" onClick={onCancelOrClose}>{drawer.record && drawer.record._draft ? "Cancel" : "Close"}</button>
-        {canPrint && <button className="btn" onClick={() => { setTearsheet(drawer.record); closeDrawer(); }}>Tear-sheet <Icon name="doc" size={12}/></button>}
-        <button className="btn btn--primary" onClick={onSavePrimary}>Save</button>
-      </>
-    );
-  })();
-
   // Save handler — for drafts, INSERT to Supabase and add to local list;
   // for existing records, fields auto-saved per edit, so just close.
   const onSavePrimary = async () => {
@@ -1060,6 +1020,46 @@ function App(){
 
   // Close handler — for drafts, discard without saving (no DB row, no list entry).
   const onCancelOrClose = () => closeDrawer();
+
+  const drawerFooter = (() => {
+    const canPrint = flags.printView && (drawer.kind === "deal" || drawer.kind === "tx");
+    const kindLabel = { deal:"deal", tx:"deal card", lease:"leasing card", contact:"contact", intel:"intel record", strategy:"idea", action:"task" }[drawer.kind] || "entry";
+    const onDelete = () => {
+      if(!drawer.record) return;
+      if(!confirm(`Delete this ${kindLabel}? This cannot be undone.`)) return;
+      const id = drawer.record.id;
+      if(drawer.kind === "deal"){
+        window.VT_DEALS = (window.VT_DEALS || []).filter(x => x.id !== id);
+      } else if(drawer.kind === "tx"){
+        window.VT_TRANSACTIONS = (window.VT_TRANSACTIONS || []).filter(x => x.id !== id);
+        window.VT_DEAL_CARDS = (window.VT_DEAL_CARDS || []).filter(x => x.id !== id);
+      } else if(drawer.kind === "lease"){
+        removeLease(id);
+      } else if(drawer.kind === "contact"){
+        window.VT_CONTACTS = (window.VT_CONTACTS || []).filter(x => x.id !== id);
+      } else if(drawer.kind === "intel"){
+        window.VT_INTEL = (window.VT_INTEL || []).filter(x => x.id !== id);
+      } else if(drawer.kind === "strategy"){
+        window.VT_STRATEGY = (window.VT_STRATEGY || []).filter(x => x.id !== id);
+        window.VT_IDEAS = (window.VT_IDEAS || []).filter(x => x.id !== id);
+      } else if(drawer.kind === "action"){
+        window.VT_ACTIONS = (window.VT_ACTIONS || []).filter(x => x.id !== id);
+      }
+      setBumpKey(k => k + 1);
+      showToast(kindLabel.charAt(0).toUpperCase() + kindLabel.slice(1) + " deleted");
+      closeDrawer();
+    };
+    return (
+      <>
+        <button className="btn btn--danger" onClick={onDelete} title="Delete this entry" style={{marginRight:"auto"}}>
+          <Icon name="trash" size={12}/> Delete
+        </button>
+        <button className="btn" onClick={onCancelOrClose}>{drawer.record && drawer.record._draft ? "Cancel" : "Close"}</button>
+        {canPrint && <button className="btn" onClick={() => { setTearsheet(drawer.record); closeDrawer(); }}>Tear-sheet <Icon name="doc" size={12}/></button>}
+        <button className="btn btn--primary" onClick={onSavePrimary}>Save</button>
+      </>
+    );
+  })();
 
   return (
     <div className={"app" + (sidebarCollapsed ? " app--sidebar-collapsed" : "") + (mobileNavOpen ? " app--mobile-nav-open" : "")}>
