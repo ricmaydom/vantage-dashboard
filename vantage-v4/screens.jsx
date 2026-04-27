@@ -182,7 +182,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, openAction, toggleAction, 
 };
 
 // ================== ACTIONS ==================
-const ScreenActions = ({ toggleAction, openAction, updateAction, flags, setModal }) => {
+const ScreenActions = ({ toggleAction, openAction, updateAction, addAction, flags, setModal }) => {
   const [q, setQ] = useStateS("");
   const [tab, setTab] = useStateS("all");
   const [editing, setEditing] = useStateS(null); // { id, field }
@@ -228,6 +228,7 @@ const ScreenActions = ({ toggleAction, openAction, updateAction, flags, setModal
         <Tabs value={tab} onChange={setTab} items={tabs}/>
         <div className="sec__actions">
           <Search value={q} onChange={setQ} placeholder="Search actions…"/>
+          <button className="btn btn--primary" onClick={addAction}><Icon name="plus" size={11}/> Add action</button>
         </div>
       </div>
 

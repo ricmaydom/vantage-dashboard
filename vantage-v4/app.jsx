@@ -463,6 +463,25 @@ function App(){
     });
   }, []);
 
+  // Create a blank action in draft state (DB write deferred to Save click).
+  const addAction = () => {
+    return {
+      id: _genUUID(),
+      _draft: true,
+      title: "New action",
+      ctx: "—",
+      notes: "",
+      bucket: "today",
+      due: null,
+      dueFmt: null,
+      importance: "Medium",
+      importanceCls: "chip--medium",
+      done: false,
+      dealCardTitle: null,
+      dealCardId: null,
+    };
+  };
+
   // ad-hoc intel edits — Supabase-only, no localStorage layer (intel is read-mostly)
   const updateIntel = (id, patch) => {
     const i = (window.VT_INTEL || []).find(x => x.id === id);
@@ -581,7 +600,6 @@ function App(){
   // modals
   const [modal, setModal] = useStateA(null);
   const [captureText, setCaptureText] = useStateA("");
-  const [eodText, setEodText] = useStateA("");
   const [granolaStatus, setGranolaStatus] = useStateA({ loading: false, status: null, lastSynced: null, requested: false });
 
   const loadGranolaStatus = async () => {
@@ -711,7 +729,6 @@ function App(){
       if(e.key === "/"){ e.preventDefault(); setPaletteOpen(true); return; }
       // single-key commands
       if(e.key === "c"){ e.preventDefault(); setModal("capture"); return; }
-      if(e.key === "b"){ e.preventDefault(); setModal("briefing"); return; }
       if(e.key === "?"){ e.preventDefault(); setModal("shortcuts"); return; }
       // "g x" sequences
       const now = Date.now();
@@ -743,7 +760,7 @@ function App(){
     const props = { flags, setModal };
     switch(view){
       case "dashboard": return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
-      case "actions":   return <ScreenActions toggleAction={toggleAction} openAction={openAction} updateAction={updateAction} {...props}/>;
+      case "actions":   return <ScreenActions toggleAction={toggleAction} openAction={openAction} updateAction={updateAction} addAction={() => { const t = addAction(); if(t) openAction(t); }} {...props}/>;
       case "crm":       return <ScreenCRM openContact={openContact} addContact={addContact} {...props}/>;
       case "pipeline":  return <ScreenPipeline openDeal={openDeal} {...props}/>;
       case "deals":     return <ScreenDeals openTx={openTx} {...props}/>;
@@ -1020,9 +1037,17 @@ function App(){
         case 'deal':    table = 'pipeline_cards'; dbPatch = _mapPipelinePatch(r); break;
         case 'tx':      table = 'deal_cards';     dbPatch = _mapDealPatch(r); break;
         case 'contact': table = 'contacts';       dbPatch = _mapContactPatch(r); break;
+        case 'action':  table = 'tasks';          dbPatch = _mapTaskPatch(r); break;
         default: closeDrawer(); return;
       }
       dbPatch.id = r.id;
+      // Action: required defaults
+      if(drawer.kind === 'action'){
+        if(!dbPatch.title) dbPatch.title = r.title || 'New action';
+        if(!dbPatch.status) dbPatch.status = 'Open';
+        if(!dbPatch.importance) dbPatch.importance = r.importance || 'Medium';
+        dbPatch.date_logged = new Date().toISOString().slice(0,10);
+      }
       // Contact: auto-compose name from first+last if not already set
       if(drawer.kind === 'contact'){
         if(!dbPatch.name){
@@ -1042,6 +1067,7 @@ function App(){
       else if(drawer.kind === 'deal'){ window.VT_DEALS = [saved, ...(window.VT_DEALS || [])]; setBumpKey(k => k + 1); }
       else if(drawer.kind === 'tx'){ window.VT_TRANSACTIONS = [saved, ...(window.VT_TRANSACTIONS || [])]; setBumpKey(k => k + 1); }
       else if(drawer.kind === 'contact'){ window.VT_CONTACTS = [saved, ...(window.VT_CONTACTS || [])]; setBumpKey(k => k + 1); }
+      else if(drawer.kind === 'action'){ window.VT_ACTIONS = [saved, ...(window.VT_ACTIONS || [])]; setBumpKey(k => k + 1); }
       showToast('Saved');
       closeDrawer();
       return;
@@ -1191,14 +1217,8 @@ function App(){
               <Icon name="search" size={13}/><span className="btn--label"> Search</span><kbd style={{marginLeft:6, fontSize:10, fontFamily:"var(--mono)", color:"var(--ink-4)"}}>⌘K</kbd>
             </button>
           )}
-          <button className="btn btn--briefing btn--hide-sm" onClick={() => setModal("briefing")} title="Morning briefing (b)">
-            <Icon name="sun" size={13}/><span className="btn--label"> Briefing</span>
-          </button>
           <button className="btn btn--capture" onClick={() => setModal("capture")} title="Quick capture (c)">
             <Icon name="capture" size={13}/><span className="btn--label"> Capture</span>
-          </button>
-          <button className="btn btn--eod btn--hide-sm" onClick={() => setModal("eod")} title="End of day">
-            <Icon name="moon" size={13}/><span className="btn--label"> EOD</span>
           </button>
           <button className="btn" onClick={() => setModal("granola")} title="Sync Granola meetings">
             <Icon name="refresh" size={13}/><span className="btn--label"> Granola</span>
@@ -1229,39 +1249,6 @@ function App(){
 
       {/* Modals */}
       <Modal
-        open={modal === "briefing"}
-        title="Morning Briefing"
-        subtitle="Leo has processed overnight — here's where you are"
-        onClose={() => setModal(null)}
-        footer={<button className="btn btn--accent" onClick={() => setModal(null)}>Start day</button>}
-      >
-        <div className="leo-read">
-          <div className="leo-read__tag"><span className="orb"/> Leo · read this first</div>
-          <p style={{margin:"6px 0 0"}}>
-            <strong>{window.VT_STATS.overdueActions}</strong> overdue action{window.VT_STATS.overdueActions === 1 ? "" : "s"} and <strong>{window.VT_STATS.todayActions}</strong> due today.
-            Pipeline is <strong>{window.VT_STATS.activeDealValueFmt}</strong> across <strong>{window.VT_STATS.activeDealCount}</strong> deals.
-            {window.VT_STATS.overdueContacts > 0 && <> Cadence is slipping with <strong>{window.VT_STATS.overdueContacts}</strong> contact{window.VT_STATS.overdueContacts === 1 ? "" : "s"} — top of list if you have time.</>}
-          </p>
-        </div>
-        <div className="mt">
-          <h4 style={{fontSize:11, color:"var(--ink-3)", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8}}>Today's action focus</h4>
-          <div className="table-wrap">
-            <table className="table">
-              <tbody>
-                {window.VT_ACTIONS.filter(a => !a.done && (a.bucket === "overdue" || a.bucket === "today")).slice(0, 5).map(a => (
-                  <tr key={a.id}>
-                    <td className="strong">{a.title}</td>
-                    <td style={{width:90}}><ImportanceChip i={a.importance}/></td>
-                    <td className="mono num" style={{textAlign:"right", width:90}}>{a.dueFmt}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
         open={modal === "capture"}
         title="Quick Capture"
         subtitle="Paste anything. Leo will extract actions, deals, intel and contacts."
@@ -1279,26 +1266,6 @@ function App(){
         }
       >
         <textarea className="free" value={captureText} onChange={e => setCaptureText(e.target.value)} placeholder="Paste text, meeting notes, or a quick thought. e.g. 'Mirvac looking to divest Docklands tower — unconfirmed. Call Mark Oates.'"/>
-      </Modal>
-
-      <Modal
-        open={modal === "eod"}
-        title="End of Day"
-        subtitle="Brain-dump anything — Leo will process overnight and route it correctly"
-        onClose={() => setModal(null)}
-        footer={
-          <>
-            <button className="btn" onClick={() => { setEodText(""); setModal(null); }}>Cancel</button>
-            <button className="btn btn--accent" onClick={() => {
-              if(!eodText.trim()){ showToast("Nothing to wrap up"); return; }
-              const text = eodText.trim();
-              setEodText(""); setModal(null); showToast("Wrapped — see you tomorrow");
-              savePendingCapture(text, "eod_dump");
-            }}>Submit & wrap up</button>
-          </>
-        }
-      >
-        <textarea className="free" value={eodText} onChange={e => setEodText(e.target.value)} placeholder="Rumours, to-dos, follow-ups, deal snippets, thoughts. Free-form is fine."/>
       </Modal>
 
       <Modal

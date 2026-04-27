@@ -383,8 +383,6 @@ const CommandPalette = ({ open, onClose, onSelect }) => {
     all.push({ kind: "nav", id:"n-intel", title:"Go to Market Intel", sub:"g i", target:"intel" });
     all.push({ kind: "nav", id:"n-strategy", title:"Go to Strategy", sub:"g s", target:"strategy" });
     all.push({ kind: "cmd", id:"c-capture", title:"Quick Capture", sub:"c", target:"capture" });
-    all.push({ kind: "cmd", id:"c-briefing", title:"Morning Briefing", sub:"b", target:"briefing" });
-    all.push({ kind: "cmd", id:"c-eod", title:"End of Day", sub:"e", target:"eod" });
     if(!q) return all.slice(0, 40);
     const v = q.toLowerCase();
     const scored = all
