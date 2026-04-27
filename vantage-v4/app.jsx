@@ -373,6 +373,7 @@ function App(){
     // Persist to Supabase
     const dbPatch = _mapTaskPatch(clean);
     if(Object.keys(dbPatch).length) _persistPatch('tasks', id, dbPatch);
+    setBumpKey(k => k + 1);
   };
   // apply edits once on mount, normalizing any legacy ISO strings persisted before the format change.
   useEffectA(() => {
@@ -427,6 +428,7 @@ function App(){
       const dbPatch = _mapContactPatch(patch);
       if(Object.keys(dbPatch).length) _persistPatch('contacts', id, dbPatch);
     }
+    setBumpKey(k => k + 1);
   };
   // Create a blank contact in draft state: drawer opens with it, but nothing
   // reaches Supabase or VT_CONTACTS until user clicks Save in the drawer.
@@ -467,6 +469,7 @@ function App(){
     if(i){ Object.assign(i, patch); }
     const dbPatch = _mapIntelPatch(patch);
     if(Object.keys(dbPatch).length) _persistPatch('intel_records', id, dbPatch);
+    setBumpKey(k => k + 1);
   };
 
   // ad-hoc strategy edits — Supabase-only, no localStorage layer
@@ -475,6 +478,7 @@ function App(){
     if(s){ Object.assign(s, patch); }
     const dbPatch = _mapStrategyPatch(patch);
     if(Object.keys(dbPatch).length) _persistPatch('strategy_ideas', id, dbPatch);
+    setBumpKey(k => k + 1);
   };
 
   // ad-hoc deal edits
@@ -497,6 +501,7 @@ function App(){
       const dbPatch = table === 'pipeline_cards' ? _mapPipelinePatch(patch) : _mapDealPatch(patch);
       if(Object.keys(dbPatch).length) _persistPatch(table, id, dbPatch);
     }
+    setBumpKey(k => k + 1);
   };
   useEffectA(() => {
     Object.keys(dealEdits).forEach(id => {
