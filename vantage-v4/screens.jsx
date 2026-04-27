@@ -860,7 +860,7 @@ const LeasingCard = ({ l, onClick }) => {
       <div className="card__edge"/>
       <div className="card__body" style={{position:"relative"}}>
         <div style={{paddingRight:90}}>
-          <div className="card__title">{title}</div>
+          <div className="card__title" style={{whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{title}</div>
           {locationStr && <div className="card__sub" style={{marginTop:3}}>{locationStr}</div>}
         </div>
         <div style={{position:"absolute", top:14, right:14, textAlign:"right"}}>
@@ -901,7 +901,7 @@ const ScreenLeasing = ({ leases = [], openLease, addLease, removeLease, flags, s
       <button className="btn btn--primary" style={{marginLeft:"auto"}} onClick={addLease}><Icon name="plus" size={11}/> New leasing</button>
     </SectionHead>
     {leases.length === 0 ? (
-      <div className="grid" style={{marginTop:12}}>
+      <div className="grid" style={{marginTop:12, gridTemplateColumns:"repeat(auto-fill, minmax(420px, 1fr))"}}>
         <article className="card card--new" onClick={addLease} style={{cursor:"pointer", borderStyle:"dashed", display:"flex", alignItems:"center", justifyContent:"center", minHeight:160, gap:10, color:"var(--ink-3)"}}>
           <Icon name="plus" size={16}/>
           <div>
@@ -911,7 +911,7 @@ const ScreenLeasing = ({ leases = [], openLease, addLease, removeLease, flags, s
         </article>
       </div>
     ) : (
-      <div className={"grid" + (flags.microMotion ? " stagger" : "")} style={{marginTop:12}}>
+      <div className={"grid" + (flags.microMotion ? " stagger" : "")} style={{marginTop:12, gridTemplateColumns:"repeat(auto-fill, minmax(420px, 1fr))"}}>
         {leases.map(l => <LeasingCard key={l.id} l={l} onClick={openLease}/>)}
         <article className="card card--new" onClick={addLease} style={{cursor:"pointer", borderStyle:"dashed", display:"flex", alignItems:"center", justifyContent:"center", minHeight:160, gap:10, color:"var(--ink-3)"}}>
           <Icon name="plus" size={16}/>
