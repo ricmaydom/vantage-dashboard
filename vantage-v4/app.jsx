@@ -251,6 +251,34 @@ function App(){
       showToast('Save failed — connection error');
     }
   };
+  // Delete a row from Supabase. Returns true on success.
+  const _persistDelete = async (table, id) => {
+    const sb = window.__vantageAuth;
+    if(!sb || !id) return false;
+    try {
+      const { error } = await sb.from(table).delete().eq('id', id);
+      if(error){
+        console.warn(`[Vantage] delete ${table} failed:`, error);
+        showToast(`Delete failed: ${error.message || 'unknown error'}`);
+        return false;
+      }
+      return true;
+    } catch(e){
+      console.warn(`[Vantage] delete ${table} threw:`, e);
+      showToast('Delete failed — connection error');
+      return false;
+    }
+  };
+  // Map drawer.kind -> Supabase table name (used by onDelete in drawerFooter)
+  const _kindToTable = {
+    deal: 'pipeline_cards',
+    tx: 'deal_cards',
+    lease: 'leasing_cards',
+    contact: 'contacts',
+    intel: 'intel_records',
+    strategy: 'strategy_ideas',
+    action: 'tasks',
+  };
   // === end drawer-edit persistence helpers =============================
 
 
@@ -1024,17 +1052,29 @@ function App(){
   const drawerFooter = (() => {
     const canPrint = flags.printView && (drawer.kind === "deal" || drawer.kind === "tx");
     const kindLabel = { deal:"deal", tx:"deal card", lease:"leasing card", contact:"contact", intel:"intel record", strategy:"idea", action:"task" }[drawer.kind] || "entry";
-    const onDelete = () => {
+    const onDelete = async () => {
       if(!drawer.record) return;
       if(!confirm(`Delete this ${kindLabel}? This cannot be undone.`)) return;
       const id = drawer.record.id;
+      const isDraft = !!drawer.record._draft;
+      // For non-draft records, hit Supabase first. If it fails, abort so local
+      // state and DB stay in sync.
+      if(!isDraft){
+        const table = _kindToTable[drawer.kind];
+        if(table){
+          const ok = await _persistDelete(table, id);
+          if(!ok) return;
+        }
+      }
+      // Local state cleanup
       if(drawer.kind === "deal"){
         window.VT_DEALS = (window.VT_DEALS || []).filter(x => x.id !== id);
       } else if(drawer.kind === "tx"){
         window.VT_TRANSACTIONS = (window.VT_TRANSACTIONS || []).filter(x => x.id !== id);
         window.VT_DEAL_CARDS = (window.VT_DEAL_CARDS || []).filter(x => x.id !== id);
       } else if(drawer.kind === "lease"){
-        removeLease(id);
+        // Lease list lives in React state, not a window global
+        setLeases(prev => prev.filter(l => l.id !== id));
       } else if(drawer.kind === "contact"){
         window.VT_CONTACTS = (window.VT_CONTACTS || []).filter(x => x.id !== id);
       } else if(drawer.kind === "intel"){
