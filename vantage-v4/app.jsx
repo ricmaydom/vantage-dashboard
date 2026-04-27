@@ -825,6 +825,7 @@ function App(){
         return "Annually";
       };
       const SECTOR_OPTS = ["Office","Retail","Industrial","Residential","Hotel","Alternatives","Diversified","—"];
+      const CITY_OPTS = ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Hobart","Canberra","Darwin","—"];
       const setField = (k,v) => { updateContact(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
@@ -845,7 +846,7 @@ function App(){
               <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setField("sector", v === "—" ? null : v)}/>
               <EditableField label="Email" value={r.email || "—"} onSave={v => setField("email", v)}/>
               <EditableField label="Phone" value={r.phone || "—"} onSave={v => setField("phone", v)}/>
-              <EditableField label="City" value={r.city || "—"} onSave={v => setField("city", v === "—" ? "" : v)}/>
+              <EditableField label="City" value={r.city || "—"} options={CITY_OPTS} onSave={v => setField("city", v === "—" ? null : v)}/>
               <EditableField label="Cadence" value={WEEKS_TO_CADENCE(r.cadenceWeeks)} options={CADENCE_OPTS} onSave={v => setField("cadenceWeeks", CADENCE_TO_WEEKS[v])}/>
               <EditableField label="Last contact" value={r.lastContactedFmt} type="date" onSave={v => setField("lastContactedFmt", v)}/>
             </div>
