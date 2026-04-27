@@ -128,7 +128,9 @@ function App(){
   const _mapContactPatch = (patch) => {
     const M = { name:'name', firm:'firm', role:'role_title', tier:'relationship_tier',
                 email:'email', phone:'business_phone', cadenceWeeks:'cadence_weeks',
-                notes:'relationship_notes' };
+                notes:'relationship_notes',
+                firstName:'first_name', lastName:'last_name',
+                city:'city', state:'state' };
     const out = {};
     for(const k in patch){
       if(M[k]) out[M[k]] = patch[k];
@@ -822,12 +824,15 @@ function App(){
             </div>
             <div className="editrow">
               <EditableField label="Name" value={r.name} onSave={v => setField("name", v)}/>
+              <EditableField label="First name" value={r.firstName || "—"} onSave={v => setField("firstName", v === "—" ? "" : v)}/>
+              <EditableField label="Last name" value={r.lastName || "—"} onSave={v => setField("lastName", v === "—" ? "" : v)}/>
               <EditableField label="Firm" value={r.firm} onSave={v => setField("firm", v)}/>
               <EditableField label="Role" value={r.role} onSave={v => setField("role", v)}/>
               <EditableField label="Tier" value={String(r.tier)} options={TIER_OPTS} onSave={v => setField("tier", Number(v))}/>
               <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setField("sector", v === "—" ? null : v)}/>
               <EditableField label="Email" value={r.email || "—"} onSave={v => setField("email", v)}/>
               <EditableField label="Phone" value={r.phone || "—"} onSave={v => setField("phone", v)}/>
+              <EditableField label="City" value={r.city || "—"} onSave={v => setField("city", v === "—" ? "" : v)}/>
               <EditableField label="Cadence" value={WEEKS_TO_CADENCE(r.cadenceWeeks)} options={CADENCE_OPTS} onSave={v => setField("cadenceWeeks", CADENCE_TO_WEEKS[v])}/>
               <EditableField label="Last contact" value={r.lastContactedFmt} type="date" onSave={v => setField("lastContactedFmt", v)}/>
             </div>

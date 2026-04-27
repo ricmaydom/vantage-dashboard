@@ -295,9 +295,13 @@ const CONTACTS = (RAW.contacts || []).map((c, i) => {
   return {
     id: c.id || ("c-" + i),
     name: c.name || "—",
+    firstName: c.first_name || "",
+    lastName: c.last_name || "",
     initials: initials(c.name),
     firm: c.firm || "—",
     role: c.role_title || c.role || "—",
+    city: c.city || "",
+    state: c.state || "",
     tier: c.tier || 3,
     tierLabel: "Tier " + (c.tier || 3),
     assetCoverage: c.asset_class_coverage || c.asset_classes,
