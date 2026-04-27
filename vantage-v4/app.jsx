@@ -211,7 +211,7 @@ function App(){
   };
   // Drawer-key → DB-column map for leasing_cards.
   const _mapLeasePatch = (patch) => {
-    const M = { address:'address', suburb:'suburb', state:'state', sector:'sector',
+    const M = { tenancy:'tenancy', address:'address', suburb:'suburb', state:'state', sector:'sector',
                 sub_sector:'sub_sector', tenant:'tenant', landlord:'landlord', agent:'agent',
                 lease_type:'lease_type', status:'status', confidence:'confidence', notes:'notes' };
     const out = {};
@@ -918,6 +918,7 @@ function App(){
         <>
           <div className="drawer__section">
             <div className="editrow">
+              <EditableField label="Tenancy" value={r.tenancy || "—"} onSave={v => setLeaseField("tenancy", v === "—" ? null : v)}/>
               <EditableField label="Address" value={r.address || "—"} onSave={v => setLeaseField("address", v)}/>
               <EditableField label="Suburb" value={r.suburb || "—"} onSave={v => setLeaseField("suburb", v)}/>
               <EditableField label="State" value={r.state || "—"} options={["VIC","NSW","QLD","WA","SA","TAS","ACT","NT","—"]} onSave={v => setLeaseField("state", v === "—" ? null : v)}/>
