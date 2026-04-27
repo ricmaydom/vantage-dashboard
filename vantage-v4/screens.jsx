@@ -374,14 +374,14 @@ const ScreenCRM = ({ openContact, addContact, flags }) => {
             <thead>
               <tr>
                 <th style={{width:40}}></th>
-                <th {...sortProps("name")}>Name</th>
-                <th className="hide-sm" style={{width:170}} {...sortProps("firm")}>Firm</th>
-                <th className="hide-sm" style={{width:180}} {...sortProps("role")}>Role</th>
-                <th className="hide-md" style={{width:130}} {...sortProps("sector")}>Sector</th>
-                <th className="hide-md" style={{width:120}} {...sortProps("city")}>City</th>
-                <th style={{width:75}} {...sortProps("tier")}>Tier</th>
-                <th style={{width:135}} {...sortProps("status")}>Cadence</th>
-                <th className="hide-sm" style={{width:100, textAlign:"right"}} {...sortProps("lastContacted")}>Last</th>
+                <th style={{width:"18%"}} {...sortProps("name")}>Name</th>
+                <th className="hide-sm" style={{width:"14%"}} {...sortProps("firm")}>Firm</th>
+                <th className="hide-sm" style={{width:"16%"}} {...sortProps("role")}>Role</th>
+                <th className="hide-md" style={{width:"11%"}} {...sortProps("sector")}>Sector</th>
+                <th className="hide-md" style={{width:"10%"}} {...sortProps("city")}>City</th>
+                <th style={{width:"7%"}} {...sortProps("tier")}>Tier</th>
+                <th style={{width:"14%"}} {...sortProps("status")}>Cadence</th>
+                <th className="hide-sm" style={{width:"10%", textAlign:"right"}} {...sortProps("lastContacted")}>Last</th>
               </tr>
             </thead>
             <tbody className={flags.microMotion ? "stagger" : ""}>
