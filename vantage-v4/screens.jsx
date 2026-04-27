@@ -625,6 +625,7 @@ const ScreenPipeline = ({ openDeal, flags }) => {
                       key={d.id}
                       className={"pipecard" + (dragging === d.id ? " pipecard--dragging" : "")}
                       data-phase={p.k}
+                      data-sector={d.sector || ""}
                       draggable
                       onDragStart={e => {
                         e.dataTransfer.setData("text/deal-id", d.id);
