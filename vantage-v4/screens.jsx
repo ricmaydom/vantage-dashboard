@@ -842,20 +842,25 @@ const ScreenDeals = ({ openTx, flags, setModal }) => {
 
 // ================== LEASING ==================
 const LeasingCard = ({ l, onClick }) => {
-  const rentFmt = fmtFaceRent(l.rent);
-  const basis = rentBasisShort(l.rentBasis);
+  // Field names match leasing_cards columns directly post-schema-rebuild.
+  const rentFmt = fmtFaceRent(l.face_rent);
+  const basis = rentBasisShort(l.lease_type);
   const rentDisplay = rentFmt !== "—" ? rentFmt + (basis ? " " + basis : "") : "—";
   const tenant = l.tenant && l.tenant !== "—" ? l.tenant : null;
   const suburb = l.suburb && l.suburb !== "—" ? l.suburb : null;
   const state = l.state && l.state !== "—" ? l.state : null;
+  const tenancy = l.tenancy && l.tenancy !== "—" ? l.tenancy : null;
+  const address = l.address && l.address !== "—" ? l.address : null;
+  // Title combines tenancy + address when both present (e.g. "Suite 101 — 101 Collins Street")
+  const title = tenancy && address ? tenancy + " — " + address : (address || tenancy || "Untitled lease");
   const locationStr = suburb ? (state ? suburb + ", " + state : suburb) : (state || null);
-  const dateFmt = VT_FMT.DATE(l.commencement);
+  const dateFmt = VT_FMT.DATE(l.lease_date);
   return (
     <div className="card card--hero" data-sector={l.sector || ""} onClick={() => onClick(l)}>
       <div className="card__edge"/>
       <div className="card__body" style={{position:"relative"}}>
         <div style={{paddingRight:90}}>
-          <div className="card__title">{l.title}</div>
+          <div className="card__title">{title}</div>
           {locationStr && <div className="card__sub" style={{marginTop:3}}>{locationStr}</div>}
         </div>
         <div style={{position:"absolute", top:14, right:14, textAlign:"right"}}>
@@ -865,7 +870,7 @@ const LeasingCard = ({ l, onClick }) => {
         <div className="card__stats">
           <div className="card__stat">
             <div className="card__stat__l">Area</div>
-            <div className="card__stat__v">{fmtArea(l.area)}</div>
+            <div className="card__stat__v">{fmtArea(l.area_sqm)}</div>
           </div>
           <div className="card__stat">
             <div className="card__stat__l">Face Rent</div>
@@ -873,11 +878,11 @@ const LeasingCard = ({ l, onClick }) => {
           </div>
           <div className="card__stat">
             <div className="card__stat__l">Term (yrs)</div>
-            <div className="card__stat__v">{fmtTerm(l.term)}</div>
+            <div className="card__stat__v">{fmtTerm(l.term_years)}</div>
           </div>
           <div className="card__stat">
             <div className="card__stat__l">Incentive</div>
-            <div className="card__stat__v">{fmtIncentive(l.incentive)}</div>
+            <div className="card__stat__v">{fmtIncentive(l.incentive_pct)}</div>
           </div>
         </div>
         <div className="card__chips">
