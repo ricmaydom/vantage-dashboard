@@ -1,6 +1,14 @@
 // Root app
 const { useState: useStateA, useEffect: useEffectA, useMemo: useMemoA, useCallback: useCallbackA, useRef: useRefA } = React;
 
+// Australian CRE agencies — used by Agent dropdown across drawers.
+const AGENT_OPTS = ["Savills","Colliers","CBRE","Knight Frank","JLL","Cushman & Wakefield","AND Property","CG Property Group","Dawkins Occhiuto","Fitzroys","Leedwell Property","Stonebridge Property Group","Acton Commercial","Agency HQ Commercial","Ainsworth Property","Allard Shelton","Aston Commercial","Bawdens Industrial","Belle Property Commercial","Beller Commercial","Blue Commercial","Buxton Commercial","Cadigal","Century 21 Commercial","Charter Keck Cramer","CI Australia","Comac Retail Property Group","Commercial Collective","Conquest Estate Agency","Crabtrees Real Estate","Crew Commercial","CRS Property","CVA Property Consultants","Cygnet West","Darcy Jarman","Elders Commercial","Facey Property","First National Commercial","Gartland","GJS Property","Gorman Commercial","GormanKelly","GrayJohnson","Gross Waddell ICR","Harcourts Commercial","Industry Property Group","Jellis Craig Commercial","Jones Real Estate","Just Commercial","Karbon Property","LAWD","Lease Equity","Lemon Baxter","LINK Property Services","LJ Hooker Commercial","m3 Property","M5 Industrial Property Services","McGees Property","Melbourne Commercial Group","Metro Commercial","Modus Property Group","MP Burke Commercial Real Estate","Next Commercial","Nichols Crowder","One Commercial","Pace Property","Parkside Commercial","Professionals Commercial","Raine & Horne Commercial","Ratio Commercial","Ray White Commercial","RCL Group","Realmark Commercial","Rutherfords Real Estate","Smith Partners Real Estate","SQM Commercial","Stanton Hillier Parker","Sterling Property","Sutherland Farrelly","Sutton Anderson","Tenant Leasing Group","Tenant Representation Services","Teska Carson","TG Property","The Agency Commercial","Think Commercial","Turner Real Estate","Vinci Carbone","X Commercial","—"];
+
+// UUID generator with fallback for older browsers
+const _genUUID = () => (typeof crypto !== 'undefined' && crypto.randomUUID)
+  ? crypto.randomUUID()
+  : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x' ? r : (r&0x3|0x8)).toString(16); });
+
 const NAV = [
   { group: "Daily" },
   { id: "dashboard", label: "Dashboard", icon: "dashboard", badge: () => null },
@@ -362,10 +370,9 @@ function App(){
   const [contactEdits, setContactEdits] = useStateA(() => {
     try { return JSON.parse(localStorage.getItem("vt:contactEdits") || "{}"); } catch(e){ return {}; }
   });
-  const updateContact = (id, patch) => {
+  const updateContact = (id, patch, opts) => {
+    const isDraft = opts && opts._draft;
     // Auto-sync: when first/last name change, regenerate full name + initials.
-    // Keeps DB `name` column in lockstep with first_name + last_name without
-    // requiring the user to maintain three fields.
     if('firstName' in patch || 'lastName' in patch){
       const c = window.VT_CONTACTS.find(x => x.id === id);
       const first = ('firstName' in patch ? (patch.firstName || "") : (c && c.firstName) || "");
@@ -378,7 +385,6 @@ function App(){
         }
       }
     } else if('name' in patch && window.VT_FMT && window.VT_FMT.INITIALS){
-      // Direct name edit (Granola sync path; drawer no longer surfaces this).
       patch = { ...patch, initials: window.VT_FMT.INITIALS(patch.name || "") };
     }
     setContactEdits(prev => {
@@ -388,21 +394,21 @@ function App(){
     });
     const c = window.VT_CONTACTS.find(x => x.id === id);
     if(c){ Object.assign(c, patch); }
-    // Persist to Supabase (fire-and-forget; local state already updated)
-    const dbPatch = _mapContactPatch(patch);
-    if(Object.keys(dbPatch).length) _persistPatch('contacts', id, dbPatch);
+    // Persist to Supabase only when not a draft (saved on user click Save).
+    if(!isDraft){
+      const dbPatch = _mapContactPatch(patch);
+      if(Object.keys(dbPatch).length) _persistPatch('contacts', id, dbPatch);
+    }
   };
-  // Create a blank contact: generate UUID client-side, insert into Supabase via
-  // the authenticated client, add to local state. Returns the record so callers
-  // can openContact(c). On insert failure, rolls back the local addition.
+  // Create a blank contact in draft state: drawer opens with it, but nothing
+  // reaches Supabase or VT_CONTACTS until user clicks Save in the drawer.
   const addContact = () => {
-    // Generate a real UUID so the row is valid in Supabase from the start.
-    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : ('00000000-0000-4000-8000-' + Date.now().toString(16).padStart(12, '0'));
-    const blank = {
-      id,
+    return {
+      id: _genUUID(),
+      _draft: true,
       name: "New contact",
+      firstName: "",
+      lastName: "",
       firm: "—",
       role: "—",
       sector: null,
@@ -416,30 +422,9 @@ function App(){
       assetCoverage: "",
       email: null,
       phone: null,
+      city: "",
       notes: "",
     };
-    window.VT_CONTACTS = [blank, ...(window.VT_CONTACTS || [])];
-    setBumpKey(k => k + 1);
-    // Persist to Supabase via the authenticated client.
-    const sb = window.__vantageAuth;
-    if(sb){
-      sb.from('contacts').insert([{
-        id,
-        name: blank.name,
-        relationship_tier: blank.tier,
-        cadence_weeks: blank.cadenceWeeks,
-      }]).then(({ error }) => {
-        if(error){
-          showToast(`Add contact failed: ${error.message || 'unknown error'}`);
-          // Roll back local addition
-          window.VT_CONTACTS = (window.VT_CONTACTS || []).filter(c => c.id !== id);
-          setBumpKey(k => k + 1);
-        }
-      });
-    } else {
-      showToast('Not signed in — contact will not be saved');
-    }
-    return blank;
   };
   useEffectA(() => {
     Object.keys(contactEdits).forEach(id => {
@@ -468,7 +453,8 @@ function App(){
   const [dealEdits, setDealEdits] = useStateA(() => {
     try { return JSON.parse(localStorage.getItem("vt:dealEdits") || "{}"); } catch(e){ return {}; }
   });
-  const updateDeal = (id, patch, table) => {
+  const updateDeal = (id, patch, table, opts) => {
+    const isDraft = opts && opts._draft;
     setDealEdits(prev => {
       const next = { ...prev, [id]: { ...(prev[id] || {}), ...patch } };
       localStorage.setItem("vt:dealEdits", JSON.stringify(next));
@@ -478,8 +464,8 @@ function App(){
       || (window.VT_TRANSACTIONS || []).find(x => x.id === id)
       || (window.VT_DEAL_CARDS || []).find(x => x.id === id);
     if(d){ Object.assign(d, patch); }
-    // Persist to Supabase. Caller passes 'pipeline_cards' (kind="deal") or 'deal_cards' (kind="tx").
-    if(table){
+    // Persist to Supabase only when not a draft.
+    if(table && !isDraft){
       const dbPatch = table === 'pipeline_cards' ? _mapPipelinePatch(patch) : _mapDealPatch(patch);
       if(Object.keys(dbPatch).length) _persistPatch(table, id, dbPatch);
     }
@@ -496,40 +482,30 @@ function App(){
   // leases — Supabase-backed; initial state empty, populated by live-fetch effect
   const [leases, setLeases] = useStateA([]);
   useEffectA(() => { window.VT_LEASES = leases; }, [leases]);
-  const updateLease = (id, patch) => {
+  const updateLease = (id, patch, opts) => {
+    const isDraft = opts && opts._draft;
     // Optimistic local update
     setLeases(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
-    // Persist to Supabase
-    const dbPatch = _mapLeasePatch(patch);
-    if(Object.keys(dbPatch).length) _persistPatch('leasing_cards', id, dbPatch);
+    // Persist to Supabase only when not a draft.
+    if(!isDraft){
+      const dbPatch = _mapLeasePatch(patch);
+      if(Object.keys(dbPatch).length) _persistPatch('leasing_cards', id, dbPatch);
+    }
   };
-  const addLease = async () => {
-    const sb = window.__vantageAuth;
-    const blank_db = {
-      address: "Untitled leasing", suburb: null, state: null, sector: null,
+  const addLease = () => {
+    // Draft pattern: build a blank with _draft:true. The drawer opens with
+    // it; nothing reaches Supabase or the leases list until user clicks Save.
+    return {
+      id: _genUUID(),
+      _draft: true,
+      tenancy: null, address: null, suburb: null, state: null,
+      sector: null, sub_sector: null,
       tenant: null, landlord: null, agent: null,
       area_sqm: null, term_years: null, face_rent: null, effective_rent: null, incentive_pct: null,
-      lease_type: null, lease_date: null, status: 'Active', confidence: 'Reported',
-      is_comparable: true, notes: null,
+      lease_type: null, lease_date: null,
+      status: 'Active', confidence: 'Reported', is_comparable: true,
+      notes: null,
     };
-    if(!sb){
-      // No auth — fall back to local-only stub (won't persist)
-      const stub = { id: "lease_" + Date.now(), ...blank_db };
-      setLeases(prev => [stub, ...prev]);
-      return stub;
-    }
-    try {
-      const { data, error } = await sb.from('leasing_cards').insert([blank_db]).select().single();
-      if(error){
-        showToast(`Add lease failed: ${error.message}`);
-        return null;
-      }
-      setLeases(prev => [data, ...prev]);
-      return data;
-    } catch(e) {
-      showToast('Add lease failed — connection error');
-      return null;
-    }
   };
   const removeLease = async (id) => {
     setLeases(prev => prev.filter(l => l.id !== id));
@@ -738,7 +714,7 @@ function App(){
       case "crm":       return <ScreenCRM openContact={openContact} addContact={addContact} {...props}/>;
       case "pipeline":  return <ScreenPipeline openDeal={openDeal} {...props}/>;
       case "deals":     return <ScreenDeals openTx={openTx} {...props}/>;
-      case "leasing":   return <ScreenLeasing leases={leases} openLease={openLease} addLease={() => { const l = addLease(); openLease(l); }} removeLease={removeLease} {...props}/>;
+      case "leasing":   return <ScreenLeasing leases={leases} openLease={openLease} addLease={() => { const l = addLease(); if(l) openLease(l); }} removeLease={removeLease} {...props}/>;
       case "intel":     return <ScreenIntel openIntel={openIntel} {...props}/>;
       case "strategy":  return <ScreenStrategy openStrategy={openStrategy} {...props}/>;
       case "review":    return <ScreenReview showToast={showToast}/>;
@@ -757,7 +733,7 @@ function App(){
       const CONFIDENCE_OPTS = ["Confirmed","Reported","Rumoured"];
       const CONVICTION_OPTS = ["High","Medium","Low","—"];
       const STRATEGY_OPTS = ["Value Add","Core Plus","Core","Opportunistic","Development","—"];
-      const setDealField = (k,v) => { updateDeal(r.id, { [k]: v }, isDeal ? 'pipeline_cards' : 'deal_cards'); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
+      const setDealField = (k,v) => { updateDeal(r.id, { [k]: v }, isDeal ? 'pipeline_cards' : 'deal_cards', { _draft: !!r._draft }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
           <div className="drawer__section">
@@ -792,7 +768,7 @@ function App(){
               <EditableField label="Purchaser" value={r.purchaser || "—"} onSave={v => setDealField("purchaser", v)}/>
             </div>
             <div className="editrow" style={{marginTop:10}}>
-              <EditableField label="Agent" value={r.agent || "—"} onSave={v => setDealField("agent", v)}/>
+              <EditableField label="Agent" value={r.agent || "—"} options={AGENT_OPTS} onSave={v => setDealField("agent", v === "—" ? null : v)}/>
             </div>
           </div>
 
@@ -826,7 +802,7 @@ function App(){
       };
       const SECTOR_OPTS = ["Office","Retail","Industrial","Residential","Hotel","Alternatives","Diversified","—"];
       const CITY_OPTS = ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Hobart","Canberra","Darwin","—"];
-      const setField = (k,v) => { updateContact(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
+      const setField = (k,v) => { updateContact(r.id, { [k]: v }, { _draft: !!r._draft }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
           <div className="drawer__section">
@@ -913,7 +889,7 @@ function App(){
       const LEASE_TYPE_OPTS = ["Net","Gross","Semi-Gross","—"];
       // Helper: format DB date string (ISO) to display
       const fmtDateDisp = (d) => d ? (window.VT_FMT && window.VT_FMT.DATE ? window.VT_FMT.DATE(d) : d) : "—";
-      const setLeaseField = (k,v) => { updateLease(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
+      const setLeaseField = (k,v) => { updateLease(r.id, { [k]: v }, { _draft: !!r._draft }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
       return (
         <>
           <div className="drawer__section">
@@ -927,7 +903,7 @@ function App(){
               <EditableField label="Status" value={r.status || "—"} options={STATUS_OPTS} onSave={v => setLeaseField("status", v === "—" ? null : v)}/>
               <EditableField label="Tenant" value={r.tenant || "—"} onSave={v => setLeaseField("tenant", v)}/>
               <EditableField label="Landlord" value={r.landlord || "—"} onSave={v => setLeaseField("landlord", v)}/>
-              <EditableField label="Agent" value={r.agent || "—"} onSave={v => setLeaseField("agent", v)}/>
+              <EditableField label="Agent" value={r.agent || "—"} options={AGENT_OPTS} onSave={v => setLeaseField("agent", v === "—" ? null : v)}/>
             </div>
             <div className="editrow" style={{marginTop:10}}>
               <EditableField label="Area (sqm)" value={r.area_sqm != null ? String(r.area_sqm) : "—"} onSave={v => setLeaseField("area_sqm", v)}/>
@@ -1031,12 +1007,59 @@ function App(){
         <button className="btn btn--danger" onClick={onDelete} title="Delete this entry" style={{marginRight:"auto"}}>
           <Icon name="trash" size={12}/> Delete
         </button>
-        <button className="btn" onClick={closeDrawer}>Close</button>
+        <button className="btn" onClick={onCancelOrClose}>{drawer.record && drawer.record._draft ? "Cancel" : "Close"}</button>
         {canPrint && <button className="btn" onClick={() => { setTearsheet(drawer.record); closeDrawer(); }}>Tear-sheet <Icon name="doc" size={12}/></button>}
-        <button className="btn btn--primary" onClick={() => { showToast("Saved"); closeDrawer(); }}>Save</button>
+        <button className="btn btn--primary" onClick={onSavePrimary}>Save</button>
       </>
     );
   })();
+
+  // Save handler — for drafts, INSERT to Supabase and add to local list;
+  // for existing records, fields auto-saved per edit, so just close.
+  const onSavePrimary = async () => {
+    const r = drawer.record;
+    if(r && r._draft){
+      const sb = window.__vantageAuth;
+      if(!sb){ showToast('Not signed in — cannot save'); return; }
+      let table, dbPatch;
+      switch(drawer.kind){
+        case 'lease':   table = 'leasing_cards';  dbPatch = _mapLeasePatch(r); break;
+        case 'deal':    table = 'pipeline_cards'; dbPatch = _mapPipelinePatch(r); break;
+        case 'tx':      table = 'deal_cards';     dbPatch = _mapDealPatch(r); break;
+        case 'contact': table = 'contacts';       dbPatch = _mapContactPatch(r); break;
+        default: closeDrawer(); return;
+      }
+      dbPatch.id = r.id;
+      // Contact: auto-compose name from first+last if not already set
+      if(drawer.kind === 'contact'){
+        if(!dbPatch.name){
+          const composed = ((r.firstName || "") + " " + (r.lastName || "")).trim();
+          dbPatch.name = composed || (r.name || "New contact");
+        }
+        if(dbPatch.relationship_tier == null) dbPatch.relationship_tier = r.tier || 2;
+        if(dbPatch.cadence_weeks == null) dbPatch.cadence_weeks = r.cadenceWeeks || 12;
+      }
+      try {
+        const { error } = await sb.from(table).insert([dbPatch]);
+        if(error){ showToast(`Save failed: ${error.message || 'unknown error'}`); return; }
+      } catch(e){ showToast('Save failed — connection error'); return; }
+      // Optimistically add to the appropriate local list with _draft cleared
+      const saved = { ...r, _draft: false };
+      if(drawer.kind === 'lease') setLeases(prev => [saved, ...prev]);
+      else if(drawer.kind === 'deal'){ window.VT_DEALS = [saved, ...(window.VT_DEALS || [])]; setBumpKey(k => k + 1); }
+      else if(drawer.kind === 'tx'){ window.VT_TRANSACTIONS = [saved, ...(window.VT_TRANSACTIONS || [])]; setBumpKey(k => k + 1); }
+      else if(drawer.kind === 'contact'){ window.VT_CONTACTS = [saved, ...(window.VT_CONTACTS || [])]; setBumpKey(k => k + 1); }
+      showToast('Saved');
+      closeDrawer();
+      return;
+    }
+    // Non-draft: per-field saves already happened; this is just confirmation.
+    showToast("Saved");
+    closeDrawer();
+  };
+
+  // Close handler — for drafts, discard without saving (no DB row, no list entry).
+  const onCancelOrClose = () => closeDrawer();
 
   return (
     <div className={"app" + (sidebarCollapsed ? " app--sidebar-collapsed" : "") + (mobileNavOpen ? " app--mobile-nav-open" : "")}>

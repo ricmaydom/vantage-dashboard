@@ -512,9 +512,13 @@ const ScreenPipeline = ({ openDeal, flags }) => {
   const hasOverrides = Object.keys(overrides).length > 0;
 
   const addPipelineDeal = React.useCallback(() => {
-    const id = "new_" + Date.now();
+    // Draft pattern: in-memory only until user clicks Save.
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x' ? r : (r&0x3|0x8)).toString(16); });
     const blank = {
       id,
+      _draft: true,
       title: "Untitled deal",
       suburb: "—",
       sector: null,
@@ -541,7 +545,6 @@ const ScreenPipeline = ({ openDeal, flags }) => {
       healthLabel: "On track",
       meetingLabel: null,
     };
-    window.VT_DEALS = [blank, ...window.VT_DEALS];
     openDeal(blank);
   }, [openDeal]);
 
@@ -785,9 +788,14 @@ const ScreenDeals = ({ openTx, flags, setModal }) => {
   }, [q, sector, all]);
 
   const addBlankTx = () => {
-    const id = "new_tx_" + Date.now();
+    // Draft pattern: build an in-memory record with _draft:true. Drawer opens
+    // with it; nothing reaches Supabase or VT_TRANSACTIONS until user clicks Save.
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x' ? r : (r&0x3|0x8)).toString(16); });
     const blank = {
       id,
+      _draft: true,
       title: "Untitled deal",
       suburb: "—",
       sector: null,
@@ -812,7 +820,6 @@ const ScreenDeals = ({ openTx, flags, setModal }) => {
       saleDateFmt: "—",
       notes: "",
     };
-    window.VT_TRANSACTIONS = [blank, ...window.VT_TRANSACTIONS];
     openTx(blank);
   };
 
@@ -866,6 +873,7 @@ const LeasingCard = ({ l, onClick }) => {
         <div style={{position:"absolute", top:14, right:14, textAlign:"right"}}>
           <div className="card__money">{rentDisplay}</div>
           {tenant && <div style={{fontSize:11, color:"var(--ink-3)", marginTop:3, fontWeight:500}}>{tenant}</div>}
+          {l.landlord && l.landlord !== "—" && <div style={{fontSize:10, color:"var(--ink-4)", marginTop:1}}>{l.landlord}</div>}
         </div>
         <div className="card__stats">
           <div className="card__stat">
