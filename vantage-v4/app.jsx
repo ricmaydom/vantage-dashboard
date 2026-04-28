@@ -345,11 +345,19 @@ function App(){
       return true;
     } catch(e) {
       console.warn('[Vantage] live fetch failed:', e);
+      try { showToast && showToast('Live fetch failed: ' + (e && e.message || 'unknown')); } catch(_){}
       return false;
     }
   }, []);
 
-  useEffectA(() => { fetchAllTables(); }, []);
+  useEffectA(() => {
+    fetchAllTables().then(ok => {
+      if(!ok){
+        // Nothing arrived. Surface this to the user (silent empty pages were confusing).
+        try { showToast && showToast('No data loaded — try Refresh, or sign out and back in.'); } catch(_){}
+      }
+    });
+  }, []);
 
   const [drawer, setDrawer] = useStateA({ open: false, kind: null, record: null });
   const openDeal = (d) => setDrawer({ open: true, kind: "deal", record: d });
