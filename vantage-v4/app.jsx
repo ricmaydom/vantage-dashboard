@@ -252,19 +252,36 @@ function App(){
     return out;
   };
 
-  // Persist a mapped patch to Supabase. Fire-and-forget with toast on failure.
+  // Persist a mapped patch to Supabase. Tracked in a global pending-writes set
+  // so the Master Refresh can wait for all in-flight writes to settle before
+  // re-fetching (avoids drag-drop moves being overwritten by a stale fetch).
   const _persistPatch = async (table, id, dbPatch) => {
     const sb = window.__vantageAuth;
     if(!sb || !id || !dbPatch || Object.keys(dbPatch).length === 0) return;
+    if(!window.__VT_PENDING_WRITES) window.__VT_PENDING_WRITES = new Set();
+    const writeKey = Symbol(`${table}:${id}`);
+    window.__VT_PENDING_WRITES.add(writeKey);
     try {
       const { error } = await sb.from(table).update(dbPatch).eq('id', id);
       if(error){
         console.warn(`[Vantage] save ${table} failed:`, error);
         showToast(`Save failed: ${error.message || 'unknown error'}`);
+        return error;
       }
     } catch(e){
       console.warn(`[Vantage] save ${table} threw:`, e);
       showToast('Save failed — connection error');
+      return e;
+    } finally {
+      window.__VT_PENDING_WRITES.delete(writeKey);
+    }
+  };
+  // Wait for all in-flight DB writes to settle (with a safety timeout).
+  const _awaitPendingWrites = async (timeoutMs = 5000) => {
+    const start = Date.now();
+    while(window.__VT_PENDING_WRITES && window.__VT_PENDING_WRITES.size > 0){
+      if(Date.now() - start > timeoutMs) break;
+      await new Promise(r => setTimeout(r, 50));
     }
   };
   // Delete a row from Supabase. Returns true on success.
@@ -306,12 +323,20 @@ function App(){
     closed: "Closed",
     dead: "Dead",
   };
-  const updatePhase = (dealId, newPhaseK) => {
+  const updatePhase = async (dealId, newPhaseK) => {
     const dbLabel = _PHASE_LABEL_BY_KEY[newPhaseK] || newPhaseK;
     const d = (window.VT_DEALS || []).find(x => x.id === dealId);
+    const oldLabel = d ? d.phase : null;
+    const oldKey = d ? d.phaseK : null;
+    // Optimistic: mutate local immediately so UI is snappy
     if(d){ d.phase = dbLabel; d.phaseK = newPhaseK; }
-    _persistPatch('pipeline_cards', dealId, { phase: dbLabel });
     setBumpKey(k => k + 1);
+    // Persist; revert on failure
+    const err = await _persistPatch('pipeline_cards', dealId, { phase: dbLabel });
+    if(err){
+      if(d){ d.phase = oldLabel; d.phaseK = oldKey; }
+      setBumpKey(k => k + 1);
+    }
   };
   // === end drawer-edit persistence helpers =============================
 
@@ -702,7 +727,9 @@ function App(){
         if(error){ parseError = error.message || 'parse_inbox failed'; }
         else { parseSummary = data; }
       } catch(e){ parseError = (e && e.message) || String(e); }
-      // Always re-fetch — even if parse failed, DB state may have changed
+      // Wait for any in-flight DB writes (drag-drop, edits) to settle so the
+      // fetch sees their effects rather than overwriting them with stale state.
+      await _awaitPendingWrites();
       await fetchAllTables();
       if(parseError){
         showToast('Refresh: ' + parseError);
