@@ -22,6 +22,7 @@ const NAV = [
   { group: "Intelligence" },
   { id: "intel", label: "Market Intel", icon: "radar", badge: () => null },
   { id: "strategy", label: "Strategy", icon: "idea", badge: () => null },
+  { id: "knowledge", label: "Knowledge", icon: "doc", badge: () => null },
   { group: "System" },
   { id: "review", label: "Review", icon: "check", badge: () => window.VT_PENDING_COUNT || null, badgeTone: () => window.VT_PENDING_COUNT > 0 ? "warm" : null },
 ];
@@ -35,6 +36,7 @@ const TITLES = {
   leasing: ["Deals & Leasing", "Leasing Cards"],
   intel: ["Intelligence", "Market Intel"],
   strategy: ["Intelligence", "Strategy & Ideas"],
+  knowledge: ["Intelligence", "Knowledge"],
   review: ["System", "Pending Review"],
 };
 
@@ -217,6 +219,20 @@ function App(){
     }
     return out;
   };
+  // Drawer-key → DB-column map for knowledge_base.
+  const _mapKnowledgePatch = (patch) => {
+    const M = { title:'title', body:'body', category:'category', tags:'tags',
+                sector:'sector', geography:'geography', source:'source',
+                sourceUrl:'source_url', source_url:'source_url',
+                attachmentName:'attachment_name', attachmentUrl:'attachment_url',
+                importance:'importance', status:'status' };
+    const out = {};
+    for(const k in patch){
+      if(M[k]) out[M[k]] = patch[k];
+      else if(k === 'dateFmt') out.date_logged = _parseDisplayDate(patch[k]);
+    }
+    return out;
+  };
   // Drawer-key → DB-column map for leasing_cards.
   const _mapLeasePatch = (patch) => {
     const M = { tenancy:'tenancy', address:'address', suburb:'suburb', state:'state', sector:'sector',
@@ -277,6 +293,7 @@ function App(){
     contact: 'contacts',
     intel: 'intel_records',
     strategy: 'strategy_ideas',
+    knowledge: 'knowledge_base',
     action: 'tasks',
   };
   // === end drawer-edit persistence helpers =============================
@@ -286,48 +303,53 @@ function App(){
   // First paint uses the inlined snapshot (window.__VANTAGE_RAW). On mount,
   // pull fresh data from Supabase and rebuild the derived globals. Adapter
   // exposes window.VT_buildFromRaw(RAW) for re-runnable transformation.
-  useEffectA(() => {
+  // Reusable fetch — used both on mount and from the master Refresh button.
+  const fetchAllTables = useCallbackA(async () => {
     const sb = window.__vantageAuth;
-    if(!sb || typeof window.VT_buildFromRaw !== 'function') return;
-    let cancelled = false;
-    (async () => {
+    if(!sb || typeof window.VT_buildFromRaw !== 'function') return false;
+    try {
+      const [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows, knowledge] = await Promise.all([
+        sb.from('pipeline_cards').select('*'),
+        sb.from('deal_cards').select('*'),
+        sb.from('tasks').select('id,title,date_logged,deadline_date,importance,status,notes,category,reminder_date,contact_id,deal_card_id,leasing_card_id,meeting_id,meeting_label,granola_doc_id,created_at,updated_at'),
+        sb.from('contacts').select('id,name,first_name,last_name,firm,firm_type,role_title,profession,email,mobile,phone:business_phone,tier:relationship_tier,last_contacted:last_contact_date,last_contact_summary,relationship_notes,cadence_weeks,asset_class_coverage,city,state,linkedin_url,created_at,updated_at'),
+        sb.from('intel_records').select('*'),
+        sb.from('strategy_ideas').select('*'),
+        sb.from('pending_captures').select('*'),
+        sb.from('leasing_cards').select('*'),
+        sb.from('knowledge_base').select('*'),
+      ]);
+      const responses = [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows, knowledge];
+      const errs = responses.map(r => r.error).filter(Boolean);
+      if(errs.length){ console.warn('[Vantage] live fetch errors:', errs); return false; }
+      const RAW = {
+        pipeline_cards: pipe.data || [],
+        deal_cards:     deals.data || [],
+        tasks:          tasks.data || [],
+        contacts:       contacts.data || [],
+        intel:          intel.data || [],
+        strategy:       strategy.data || [],
+        captures:       captures.data || [],
+        leases:         leasingRows.data || [],
+        knowledge:      knowledge.data || [],
+      };
+      if(typeof setLeases === 'function') setLeases(leasingRows.data || []);
+      window.__VANTAGE_RAW = RAW;
+      window.VT_buildFromRaw(RAW);
       try {
-        const [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows] = await Promise.all([
-          sb.from('pipeline_cards').select('*'),
-          sb.from('deal_cards').select('*'),
-          sb.from('tasks').select('id,title,date_logged,deadline_date,importance,status,notes,category,reminder_date,contact_id,deal_card_id,leasing_card_id,meeting_id,meeting_label,granola_doc_id,created_at,updated_at'),
-          sb.from('contacts').select('id,name,first_name,last_name,firm,firm_type,role_title,profession,email,mobile,phone:business_phone,tier:relationship_tier,last_contacted:last_contact_date,last_contact_summary,relationship_notes,cadence_weeks,asset_class_coverage,city,state,linkedin_url,created_at,updated_at'),
-          sb.from('intel_records').select('*'),
-          sb.from('strategy_ideas').select('*'),
-          sb.from('pending_captures').select('*'),
-          sb.from('leasing_cards').select('*'),
-        ]);
-        if(cancelled) return;
-        const responses = [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows];
-        const errs = responses.map(r => r.error).filter(Boolean);
-        if(errs.length){ console.warn('[Vantage] live fetch errors, keeping snapshot:', errs); return; }
-        const RAW = {
-          pipeline_cards: pipe.data || [],
-          deal_cards:     deals.data || [],
-          tasks:          tasks.data || [],
-          contacts:       contacts.data || [],
-          intel:          intel.data || [],
-          strategy:       strategy.data || [],
-          captures:       captures.data || [],
-          leases:         leasingRows.data || [],
-        };
-        // Update React leases state from live data
-        if(typeof setLeases === 'function') setLeases(leasingRows.data || []);
-        window.__VANTAGE_RAW = RAW;
-        window.VT_buildFromRaw(RAW);
-        setBumpKey(k => k + 1);
-        console.log('[Vantage] live data loaded:', Object.fromEntries(Object.entries(RAW).map(([k,v]) => [k, v.length])));
-      } catch(e) {
-        console.warn('[Vantage] live fetch failed, keeping snapshot:', e);
-      }
-    })();
-    return () => { cancelled = true; };
+        const { count } = await sb.from('pending_review').select('id', { count: 'exact', head: true }).eq('status','pending');
+        window.VT_PENDING_COUNT = count || 0;
+      } catch(_){}
+      setBumpKey(k => k + 1);
+      console.log('[Vantage] live data loaded:', Object.fromEntries(Object.entries(RAW).map(([k,v]) => [k, v.length])));
+      return true;
+    } catch(e) {
+      console.warn('[Vantage] live fetch failed:', e);
+      return false;
+    }
   }, []);
+
+  useEffectA(() => { fetchAllTables(); }, []);
 
   const [drawer, setDrawer] = useStateA({ open: false, kind: null, record: null });
   const openDeal = (d) => setDrawer({ open: true, kind: "deal", record: d });
@@ -336,6 +358,7 @@ function App(){
   const openContact = (c) => setDrawer({ open: true, kind: "contact", record: c });
   const openIntel = (i) => setDrawer({ open: true, kind: "intel", record: i });
   const openStrategy = (s) => setDrawer({ open: true, kind: "strategy", record: s });
+  const openKnowledge = (k) => setDrawer({ open: true, kind: "knowledge", record: k });
   const openAction = (a) => setDrawer({ open: true, kind: "action", record: a });
   const closeDrawer = () => setDrawer({ open: false, kind: null, record: null });
 
@@ -498,6 +521,33 @@ function App(){
     const dbPatch = _mapStrategyPatch(patch);
     if(Object.keys(dbPatch).length) _persistPatch('strategy_ideas', id, dbPatch);
     setBumpKey(k => k + 1);
+  };
+
+  // Knowledge edits — Supabase-backed, mirrors strategy.
+  const updateKnowledge = (id, patch) => {
+    const k = (window.VT_KNOWLEDGE || []).find(x => x.id === id);
+    if(k){ Object.assign(k, patch); }
+    const dbPatch = _mapKnowledgePatch(patch);
+    if(Object.keys(dbPatch).length) _persistPatch('knowledge_base', id, dbPatch);
+    setBumpKey(kk => kk + 1);
+  };
+  const addKnowledge = () => {
+    return {
+      id: _genUUID(),
+      _draft: true,
+      title: "New knowledge entry",
+      body: "",
+      category: "Other / Misc",
+      tags: [],
+      sector: null,
+      geography: null,
+      source: null,
+      sourceUrl: null,
+      importance: "Medium",
+      status: "Active",
+      date: new Date().toISOString().slice(0,10),
+      dateFmt: (window.VT_FMT && window.VT_FMT.SHORT_DATE) ? window.VT_FMT.SHORT_DATE(new Date()) : new Date().toISOString().slice(0,10),
+    };
   };
 
   // ad-hoc deal edits
@@ -803,6 +853,7 @@ function App(){
       case "leasing":   return <ScreenLeasing leases={leases} openLease={openLease} addLease={() => { const l = addLease(); if(l) openLease(l); }} removeLease={removeLease} {...props}/>;
       case "intel":     return <ScreenIntel openIntel={openIntel} {...props}/>;
       case "strategy":  return <ScreenStrategy openStrategy={openStrategy} {...props}/>;
+      case "knowledge": return <ScreenKnowledge openKnowledge={openKnowledge} addKnowledge={() => { const k = addKnowledge(); if(k) openKnowledge(k); }} {...props}/>;
       case "review":    return <ScreenReview showToast={showToast}/>;
       default:          return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
     }
@@ -969,6 +1020,48 @@ function App(){
         </>
       );
     }
+    if(drawer.kind === "knowledge"){
+      const CATEGORY_OPTS = ["Tax & Structuring","Legal & Regulatory","Financial & Underwriting","Market Frameworks","Construction & Development","Capital & Investor","Operational","Macro & Economic","Sector Reference","Other / Misc"];
+      const SECTOR_OPTS = ["Office","Retail","Industrial","Alternatives","Capital","Cross-sector","—"];
+      const GEOGRAPHY_OPTS = ["VIC","NSW","QLD","WA","SA","ACT","TAS","NT","National","International","—"];
+      const STATUS_OPTS = ["Active","Archived"];
+      const IMPORTANCE_OPTS = ["High","Medium","Low"];
+      const setKField = (k,v) => { updateKnowledge(r.id, { [k]: v }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
+      const tagsDisplay = Array.isArray(r.tags) && r.tags.length ? r.tags.join(", ") : "—";
+      const handleTagsSave = (v) => {
+        const arr = String(v || "").split(",").map(s => s.trim()).filter(Boolean);
+        setKField("tags", arr);
+      };
+      return (
+        <>
+          <div className="drawer__section">
+            <EditableField label="Title" value={r.title || "—"} onSave={v => setKField("title", v)}/>
+            <div className="editrow">
+              <EditableField label="Category" value={r.category || "Other / Misc"} options={CATEGORY_OPTS} onSave={v => setKField("category", v)}/>
+              <EditableField label="Sector" value={r.sector || "—"} options={SECTOR_OPTS} onSave={v => setKField("sector", v === "—" ? null : v)}/>
+              <EditableField label="Geography" value={r.geography || "—"} options={GEOGRAPHY_OPTS} onSave={v => setKField("geography", v === "—" ? null : v)}/>
+              <EditableField label="Importance" value={r.importance || "Medium"} options={IMPORTANCE_OPTS} onSave={v => setKField("importance", v)}/>
+              <EditableField label="Status" value={r.status || "Active"} options={STATUS_OPTS} onSave={v => setKField("status", v)}/>
+              <EditableField label="Date" value={r.dateFmt} type="date" onSave={v => setKField("dateFmt", v)}/>
+            </div>
+          </div>
+          <div className="drawer__section">
+            <h4>Tags</h4>
+            <EditableField label="" value={tagsDisplay} onSave={handleTagsSave} placeholder="Comma-separated, e.g. MIT, GST, Reference"/>
+          </div>
+          <div className="drawer__section">
+            <div className="editrow">
+              <EditableField label="Source" value={r.source || "—"} onSave={v => setKField("source", v === "—" ? null : v)} placeholder="KPMG, ATO, internal…"/>
+              <EditableField label="Source URL" value={r.sourceUrl || "—"} onSave={v => setKField("sourceUrl", v === "—" ? null : v)} placeholder="https://…"/>
+            </div>
+          </div>
+          <div className="drawer__section">
+            <h4>Body</h4>
+            <EditableField label="" value={r.body || "Add knowledge content…"} multiline onSave={v => setKField("body", v)}/>
+          </div>
+        </>
+      );
+    }
     if(drawer.kind === "lease"){
       const SECTOR_OPTS = ["Office","Retail","Industrial","Residential","Hotel","Alternatives","Diversified","—"];
       const STATUS_OPTS = ["Inquiry","Tour","Negotiating","LOI","Heads of Agreement","Executed","Active","Lost","—"];
@@ -1047,6 +1140,7 @@ function App(){
     if(drawer.kind === "intel") return "Intel";
     if(drawer.kind === "action") return drawer.record.title;
     if(drawer.kind === "strategy") return "Idea";
+    if(drawer.kind === "knowledge") return drawer.record.title || "Knowledge";
     return "";
   })();
 
@@ -1069,11 +1163,12 @@ function App(){
       if(!sb){ showToast('Not signed in — cannot save'); return; }
       let table, dbPatch;
       switch(drawer.kind){
-        case 'lease':   table = 'leasing_cards';  dbPatch = _mapLeasePatch(r); break;
-        case 'deal':    table = 'pipeline_cards'; dbPatch = _mapPipelinePatch(r); break;
-        case 'tx':      table = 'deal_cards';     dbPatch = _mapDealPatch(r); break;
-        case 'contact': table = 'contacts';       dbPatch = _mapContactPatch(r); break;
-        case 'action':  table = 'tasks';          dbPatch = _mapTaskPatch(r); break;
+        case 'lease':     table = 'leasing_cards';  dbPatch = _mapLeasePatch(r); break;
+        case 'deal':      table = 'pipeline_cards'; dbPatch = _mapPipelinePatch(r); break;
+        case 'tx':        table = 'deal_cards';     dbPatch = _mapDealPatch(r); break;
+        case 'contact':   table = 'contacts';       dbPatch = _mapContactPatch(r); break;
+        case 'action':    table = 'tasks';          dbPatch = _mapTaskPatch(r); break;
+        case 'knowledge': table = 'knowledge_base'; dbPatch = _mapKnowledgePatch(r); break;
         default: closeDrawer(); return;
       }
       dbPatch.id = r.id;
@@ -1104,6 +1199,7 @@ function App(){
       else if(drawer.kind === 'tx'){ window.VT_TRANSACTIONS = [saved, ...(window.VT_TRANSACTIONS || [])]; setBumpKey(k => k + 1); }
       else if(drawer.kind === 'contact'){ window.VT_CONTACTS = [saved, ...(window.VT_CONTACTS || [])]; setBumpKey(k => k + 1); }
       else if(drawer.kind === 'action'){ window.VT_ACTIONS = [saved, ...(window.VT_ACTIONS || [])]; setBumpKey(k => k + 1); }
+      else if(drawer.kind === 'knowledge'){ window.VT_KNOWLEDGE = [saved, ...(window.VT_KNOWLEDGE || [])]; setBumpKey(k => k + 1); }
       showToast('Saved');
       closeDrawer();
       return;
@@ -1149,6 +1245,8 @@ function App(){
       } else if(drawer.kind === "strategy"){
         window.VT_STRATEGY = (window.VT_STRATEGY || []).filter(x => x.id !== id);
         window.VT_IDEAS = (window.VT_IDEAS || []).filter(x => x.id !== id);
+      } else if(drawer.kind === "knowledge"){
+        window.VT_KNOWLEDGE = (window.VT_KNOWLEDGE || []).filter(x => x.id !== id);
       } else if(drawer.kind === "action"){
         window.VT_ACTIONS = (window.VT_ACTIONS || []).filter(x => x.id !== id);
       }

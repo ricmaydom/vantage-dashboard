@@ -1083,6 +1083,73 @@ const ScreenStrategy = ({ openStrategy, flags }) => {
   );
 };
 
+
+// ================== KNOWLEDGE ==================
+const ScreenKnowledge = ({ openKnowledge, addKnowledge, flags }) => {
+  const [q, setQ] = useStateS("");
+  const [category, setCategory] = useStateS("all");
+  const all = window.VT_KNOWLEDGE || [];
+  const categories = useMemoS(() => {
+    const counts = new Map();
+    all.forEach(k => { const c = k.category || "Other / Misc"; counts.set(c, (counts.get(c) || 0) + 1); });
+    const tabs = [{v:"all", l:"All", c:all.length}];
+    for(const [c, n] of counts.entries()) tabs.push({v:c, l:c, c:n});
+    return tabs;
+  }, [all]);
+  const filtered = useMemoS(() => {
+    let r = all;
+    if(category !== "all") r = r.filter(x => (x.category || "Other / Misc") === category);
+    if(q){
+      const v = q.toLowerCase();
+      r = r.filter(x =>
+        (x.title + " " + (x.body || "") + " " + ((x.tags || []).join(" ")) + " " + (x.source || "")).toLowerCase().includes(v)
+      );
+    }
+    return r.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+  }, [q, category, all]);
+  return (
+    <div>
+      <SectionHead title="Knowledge" count={all.length}>
+        <button className="btn btn--primary" style={{marginLeft:"auto"}} onClick={addKnowledge}><Icon name="plus" size={11}/> Add knowledge</button>
+      </SectionHead>
+      <div className="sec">
+        <Tabs value={category} onChange={setCategory} items={categories}/>
+        <div className="sec__actions">
+          <Search value={q} onChange={setQ} placeholder="Search knowledge…"/>
+        </div>
+      </div>
+      {filtered.length === 0 ? <Empty title="No knowledge entries yet" sub="Add reference material — tax, legal, structuring, frameworks." cta="Add knowledge" onCta={addKnowledge} flags={flags}/> : (
+        <div className={"stack" + (flags.microMotion ? " stagger" : "")}>
+          {filtered.map(k => (
+            <div key={k.id} className="card" onClick={() => openKnowledge(k)}>
+              <div className="card__head">
+                <div style={{flex:1, minWidth:0}}>
+                  <div className="card__title" style={{marginBottom:4}}>{k.title}</div>
+                  <div className="card__sub" style={{marginBottom:6, display:"flex", alignItems:"center", flexWrap:"wrap", gap:6}}>
+                    <span className="pill">{k.category || "Other / Misc"}</span>
+                    {k.sector && <><span className="dot"/><SectorChip s={k.sector}/></>}
+                    {k.geography && <><span className="dot"/><span className="chip chip--ghost">{k.geography}</span></>}
+                    {k.source && <><span className="dot"/><span className="muted text-sm">{k.source}</span></>}
+                    <span className="dot"/><span className="mono text-sm" {...(flags.relTime && k.date ? { "data-tip": VT_FMT.FULL(k.date) } : {})}>{fmtDDMMMYY(k.date)}</span>
+                  </div>
+                  {Array.isArray(k.tags) && k.tags.length > 0 && (
+                    <div style={{display:"flex", flexWrap:"wrap", gap:4, marginBottom:6}}>
+                      {k.tags.slice(0,8).map(t => <span key={t} className="chip chip--ghost" style={{fontSize:10, padding:"1px 6px"}}>{t}</span>)}
+                      {k.tags.length > 8 && <span className="muted text-sm">+{k.tags.length - 8}</span>}
+                    </div>
+                  )}
+                  <div className="card__notes" style={{WebkitLineClamp:3}}>{k.body}</div>
+                </div>
+                <ImportanceChip i={k.importance}/>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ================== PENDING REVIEW ==================
 const ScreenReview = ({ showToast }) => {
   const { useState: useStateR, useEffect: useEffectR, useCallback: useCallbackR } = React;
@@ -1105,6 +1172,7 @@ const ScreenReview = ({ showToast }) => {
     pipeline_card: "Pipeline Deal",
     leasing_card: "Leasing Deal",
     strategy_idea: "Strategy / Idea",
+    knowledge_base: "Knowledge",
   };
   const TYPE_COLORS = {
     intel: "#6366F1",
@@ -1119,6 +1187,7 @@ const ScreenReview = ({ showToast }) => {
     pipeline_card: "#0EA5E9",
     leasing_card: "#14B8A6",
     strategy_idea: "#F59E0B",
+    knowledge_base: "#0D9488",
   };
 
   const load = useCallbackR(async () => {
@@ -1317,6 +1386,24 @@ const ScreenReview = ({ showToast }) => {
       }]);
       return error;
     }
+    if(type === 'knowledge_base') {
+      const { error } = await sb.from('knowledge_base').insert([{
+        title: d.title || '(untitled)',
+        body: d.body || null,
+        category: d.category || 'Other / Misc',
+        tags: Array.isArray(d.tags) ? d.tags : [],
+        sector: d.sector || null,
+        geography: d.geography || null,
+        source: d.source || null,
+        source_url: d.source_url || d.sourceUrl || null,
+        attachment_name: d.attachment_name || null,
+        attachment_url: d.attachment_url || null,
+        importance: d.importance || 'Medium',
+        status: d.status || 'Active',
+        date_logged: d.date_logged || new Date().toISOString().slice(0,10),
+      }]);
+      return error;
+    }
     return new Error('Unknown record_type: ' + type);
   };
 
@@ -1446,6 +1533,14 @@ const ScreenReview = ({ showToast }) => {
       if(d.sector) rows.push(['Sector', d.sector]);
       if(d.importance) rows.push(['Importance', d.importance]);
       if(d.body) rows.push(['Body', d.body]);
+    } else if(record_type === 'knowledge_base') {
+      if(d.title) rows.push(['Title', d.title]);
+      if(d.category) rows.push(['Category', d.category]);
+      if(d.sector) rows.push(['Sector', d.sector]);
+      if(d.geography) rows.push(['Geography', d.geography]);
+      if(d.source) rows.push(['Source', d.source]);
+      if(Array.isArray(d.tags) && d.tags.length) rows.push(['Tags', d.tags.join(', ')]);
+      if(d.body) rows.push(['Body', d.body]);
     }
     return (
       <div style={{marginTop:10, paddingTop:10, borderTop:'1px solid var(--rule)'}}>
@@ -1533,5 +1628,5 @@ const ScreenReview = ({ showToast }) => {
 
 Object.assign(window, {
   ScreenDashboard, ScreenActions, ScreenCRM, ScreenPipeline,
-  ScreenDeals, ScreenLeasing, ScreenIntel, ScreenStrategy, ScreenReview,
+  ScreenDeals, ScreenLeasing, ScreenIntel, ScreenStrategy, ScreenKnowledge, ScreenReview,
 });

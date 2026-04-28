@@ -376,6 +376,26 @@ const STRATEGY = (RAW.strategy || []).map(s => {
   };
 });
 
+// ---------- KNOWLEDGE ----------
+const KNOWLEDGE = (RAW.knowledge || []).map(k => ({
+  id: k.id,
+  title: k.title || "(untitled)",
+  body: k.body || "",
+  category: k.category || "Other / Misc",
+  tags: Array.isArray(k.tags) ? k.tags : [],
+  sector: k.sector,
+  geography: k.geography,
+  source: k.source,
+  sourceUrl: k.source_url,
+  attachmentName: k.attachment_name,
+  attachmentUrl: k.attachment_url,
+  date: k.date_logged || k.created_at,
+  dateFmt: fmtShortDate(k.date_logged || k.created_at),
+  importance: k.importance || "Medium",
+  status: k.status || "Active",
+  raw: k,
+}));
+
 // ---------- PENDING CAPTURES (Inbox) ----------
 const CAPTURES = (RAW.captures || []).map(c => ({
   id: c.id,
@@ -411,6 +431,7 @@ const STATS = {
 
   intelCount: INTEL.length,
   strategyCount: STRATEGY.length,
+  knowledgeCount: KNOWLEDGE.length,
   captureCount: CAPTURES.filter(c => c.status === "pending").length,
 };
 
@@ -470,6 +491,7 @@ Object.assign(window, {
   VT_CONTACTS: CONTACTS,
   VT_INTEL: INTEL,
   VT_STRATEGY: STRATEGY,
+  VT_KNOWLEDGE: KNOWLEDGE,
   VT_CAPTURES: CAPTURES,
   VT_STATS: STATS,
   VT_PHASES: PHASES,
