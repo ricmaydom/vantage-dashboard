@@ -296,6 +296,23 @@ function App(){
     knowledge: 'knowledge_base',
     action: 'tasks',
   };
+  // phaseK -> DB-stored phase label (used by Pipeline drag-drop)
+  const _PHASE_LABEL_BY_KEY = {
+    identified: "Identified",
+    initial: "Initial Analysis",
+    detailed: "Detailed Analysis",
+    bid: "Bid Submitted",
+    dd: "Entered DD",
+    closed: "Closed",
+    dead: "Dead",
+  };
+  const updatePhase = (dealId, newPhaseK) => {
+    const dbLabel = _PHASE_LABEL_BY_KEY[newPhaseK] || newPhaseK;
+    const d = (window.VT_DEALS || []).find(x => x.id === dealId);
+    if(d){ d.phase = dbLabel; d.phaseK = newPhaseK; }
+    _persistPatch('pipeline_cards', dealId, { phase: dbLabel });
+    setBumpKey(k => k + 1);
+  };
   // === end drawer-edit persistence helpers =============================
 
 
@@ -629,30 +646,39 @@ function App(){
   // tearsheet
   const [tearsheet, setTearsheet] = useStateA(null);
 
-  // action done state
-  const [doneIds, setDoneIds] = useStateA(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("vt:doneIds") || "[]")); } catch { return new Set(); }
-  });
-  useEffectA(() => { localStorage.setItem("vt:doneIds", JSON.stringify([...doneIds])); }, [doneIds]);
-  useEffectA(() => {
-    window.VT_ACTIONS.forEach(a => { if(doneIds.has(a.id)) a.done = true; });
-    window.VT_STATS.openActions = window.VT_ACTIONS.filter(a => !a.done).length;
-    window.VT_STATS.doneActions = window.VT_ACTIONS.filter(a => a.done).length;
-    window.VT_STATS.overdueActions = window.VT_ACTIONS.filter(a => !a.done && a.bucket === "overdue").length;
-    window.VT_STATS.todayActions = window.VT_ACTIONS.filter(a => !a.done && a.bucket === "today").length;
-  }, []);
+  // action done state — DB is source of truth (tasks.status). Legacy localStorage layer dropped.
+  useEffectA(() => { try { localStorage.removeItem("vt:doneIds"); } catch(_){} }, []);
+  const _refreshActionStats = () => {
+    const A = window.VT_ACTIONS || [];
+    const S = window.VT_STATS || (window.VT_STATS = {});
+    S.openActions = A.filter(a => !a.done).length;
+    S.doneActions = A.filter(a => a.done).length;
+    S.overdueActions = A.filter(a => !a.done && a.bucket === "overdue").length;
+    S.todayActions = A.filter(a => !a.done && a.bucket === "today").length;
+  };
   const toggleAction = (id) => {
-    setDoneIds(prev => {
-      const next = new Set(prev);
-      if(next.has(id)) next.delete(id); else next.add(id);
-      const a = window.VT_ACTIONS.find(x => x.id === id);
-      if(a) a.done = next.has(id);
-      return next;
-    });
-    window.VT_STATS.openActions = window.VT_ACTIONS.filter(a => !a.done).length;
-    window.VT_STATS.doneActions = window.VT_ACTIONS.filter(a => a.done).length;
-    window.VT_STATS.overdueActions = window.VT_ACTIONS.filter(a => !a.done && a.bucket === "overdue").length;
-    window.VT_STATS.todayActions = window.VT_ACTIONS.filter(a => !a.done && a.bucket === "today").length;
+    const a = (window.VT_ACTIONS || []).find(x => x.id === id);
+    if(!a) return;
+    const newDone = !a.done;
+    a.done = newDone;
+    if(newDone){ a.bucket = "done"; }
+    else {
+      const dt = a.due ? new Date(a.due) : null;
+      if(!dt || isNaN(dt)) a.bucket = "none";
+      else {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const tgt = new Date(dt); tgt.setHours(0,0,0,0);
+        const diffDays = Math.round((tgt - today) / 86400000);
+        if(diffDays < 0) a.bucket = "overdue";
+        else if(diffDays === 0) a.bucket = "today";
+        else if(diffDays <= 7) a.bucket = "week";
+        else a.bucket = "later";
+      }
+    }
+    a.status = newDone ? "Done" : "Open";
+    _refreshActionStats();
+    _persistPatch('tasks', id, { status: newDone ? "Done" : "Open" });
+    setBumpKey(k => k + 1);
   };
 
   // modals
@@ -856,7 +882,7 @@ function App(){
       case "dashboard": return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
       case "actions":   return <ScreenActions toggleAction={toggleAction} openAction={openAction} updateAction={updateAction} addAction={() => { const t = addAction(); if(t) openAction(t); }} {...props}/>;
       case "crm":       return <ScreenCRM openContact={openContact} addContact={addContact} {...props}/>;
-      case "pipeline":  return <ScreenPipeline openDeal={openDeal} {...props}/>;
+      case "pipeline":  return <ScreenPipeline openDeal={openDeal} updatePhase={updatePhase} {...props}/>;
       case "deals":     return <ScreenDeals openTx={openTx} {...props}/>;
       case "leasing":   return <ScreenLeasing leases={leases} openLease={openLease} addLease={() => { const l = addLease(); if(l) openLease(l); }} removeLease={removeLease} {...props}/>;
       case "intel":     return <ScreenIntel openIntel={openIntel} {...props}/>;

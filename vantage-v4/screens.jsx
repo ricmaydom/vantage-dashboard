@@ -43,11 +43,9 @@ const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, tog
 
   // Apply pipeline phase overrides (same localStorage key as ScreenPipeline) for accurate KPIs
   const pipelineStats = useMemoS(() => {
-    let overrides = {};
-    try { overrides = JSON.parse(localStorage.getItem("vt_phase_overrides") || "{}"); } catch(e) {}
-    const resolvePhase = d => overrides[d.id] || d.phaseK;
-    const activeDeals = window.VT_DEALS.filter(d => resolvePhase(d) !== "dead" && resolvePhase(d) !== "closed");
-    const closedDeals = window.VT_DEALS.filter(d => resolvePhase(d) === "closed");
+    // Source of truth is now d.phaseK (mirrors DB pipeline_cards.phase). No localStorage layer.
+    const activeDeals = window.VT_DEALS.filter(d => d.phaseK !== "dead" && d.phaseK !== "closed");
+    const closedDeals = window.VT_DEALS.filter(d => d.phaseK === "closed");
     return {
       activeCount: activeDeals.length,
       activeValue: VT_FMT.AUD(activeDeals.reduce((a, d) => a + (d.value || 0), 0)),
@@ -427,26 +425,11 @@ const fmtDDMMMYY = VT_FMT.DATE;
 
 // ================== PIPELINE ==================
 const PHASE_LABELS_SHORT = { identified:"Identified", initial:"Initial Analysis", detailed:"Detailed Analysis", bid:"Bid Submitted", dd:"Entered DD", closed:"Closed", dead:"Dead" };
-const ScreenPipeline = ({ openDeal, flags }) => {
+const ScreenPipeline = ({ openDeal, updatePhase, flags }) => {
   const basePhases = window.VT_PHASES;
-  // phase overrides: dealId -> phaseK. Persisted to localStorage for demo continuity.
-  const [overrides, setOverrides] = React.useState(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem("vt_phase_overrides") || "{}");
-      // Migrate legacy phase keys from earlier rename (qualification/investigation/ic/execution → new 5-phase system).
-      const VALID = new Set(["identified","initial","detailed","bid","dd","closed","dead"]);
-      const LEGACY_MAP = { qualification:"identified", investigation:"initial", ic:"detailed", execution:"bid" };
-      const migrated = {};
-      let changed = false;
-      Object.entries(raw).forEach(([id, v]) => {
-        if(VALID.has(v)){ migrated[id] = v; return; }
-        if(LEGACY_MAP[v]){ migrated[id] = LEGACY_MAP[v]; changed = true; return; }
-        changed = true; // unknown → drop
-      });
-      if(changed){ try { localStorage.setItem("vt_phase_overrides", JSON.stringify(migrated)); } catch(e){} }
-      return migrated;
-    } catch(e){ return {}; }
-  });
+  // Source of truth for phase is now pipeline_cards.phase in DB (via VT_DEALS[].phaseK).
+  // One-time cleanup: clear any leftover localStorage override map.
+  React.useEffect(() => { try { localStorage.removeItem("vt_phase_overrides"); } catch(_){} }, []);
   const [dragging, setDragging] = React.useState(null);
   const [dropTarget, setDropTarget] = React.useState(null);
   const [toast, setToast] = React.useState(null);
@@ -459,13 +442,13 @@ const ScreenPipeline = ({ openDeal, flags }) => {
   });
   React.useEffect(() => { try { localStorage.setItem("vt_closed_collapsed", closedCollapsed ? "1" : "0"); } catch(e){} }, [closedCollapsed]);
 
-  const resolvePhase = React.useCallback((d) => overrides[d.id] || d.phaseK, [overrides]);
+  const resolvePhase = React.useCallback((d) => d.phaseK, []);
 
-  // Recompute phases with overrides applied
+  // Recompute phases from VT_DEALS (DB-backed)
   const phases = React.useMemo(() => {
     const order = ["identified","initial","detailed","bid","dd","closed","dead"];
     return order.map(k => {
-      const deals = window.VT_DEALS.filter(d => resolvePhase(d) === k);
+      const deals = window.VT_DEALS.filter(d => d.phaseK === k);
       const value = deals.reduce((a,d) => a + (d.value || 0), 0);
       const basep = basePhases.find(p => p.k === k);
       return {
@@ -477,32 +460,20 @@ const ScreenPipeline = ({ openDeal, flags }) => {
         deals,
       };
     });
-  }, [overrides, basePhases, resolvePhase]);
+  }, [basePhases, resolvePhase]);
 
   const total = phases.filter(p => p.k !== "dead").reduce((a,p) => a + p.count, 0);
   const totalValue = phases.filter(p => p.k !== "dead").reduce((a,p) => a + p.value, 0);
   const activeCount = phases.filter(p => p.k !== "dead" && p.k !== "closed").reduce((a,p) => a + p.count, 0);
 
   const moveToPhase = React.useCallback((deal, newPhaseK) => {
-    const currentPhaseK = resolvePhase(deal);
+    const currentPhaseK = deal.phaseK;
     if(currentPhaseK === newPhaseK) return;
-    setOverrides(prev => {
-      const next = { ...prev };
-      if(newPhaseK === deal.phaseK) delete next[deal.id];
-      else next[deal.id] = newPhaseK;
-      try { localStorage.setItem("vt_phase_overrides", JSON.stringify(next)); } catch(e){}
-      return next;
-    });
+    if(updatePhase) updatePhase(deal.id, newPhaseK);
     const fromLbl = PHASE_LABELS_SHORT[currentPhaseK] || currentPhaseK;
     const toLbl = PHASE_LABELS_SHORT[newPhaseK] || newPhaseK;
     setToast({ msg: `${deal.title} moved ${fromLbl} → ${toLbl}`, at: Date.now() });
-  }, [resolvePhase]);
-
-  const resetOverrides = React.useCallback(() => {
-    setOverrides({});
-    try { localStorage.removeItem("vt_phase_overrides"); } catch(e){}
-    setToast({ msg: "Pipeline moves reset", at: Date.now() });
-  }, []);
+  }, [updatePhase]);
 
   React.useEffect(() => {
     if(!toast) return;
@@ -510,7 +481,7 @@ const ScreenPipeline = ({ openDeal, flags }) => {
     return () => clearTimeout(id);
   }, [toast]);
 
-  const hasOverrides = Object.keys(overrides).length > 0;
+
 
   const addPipelineDeal = React.useCallback(() => {
     // Draft pattern: in-memory only until user clicks Save.
@@ -766,10 +737,10 @@ const ScreenPipeline = ({ openDeal, flags }) => {
               </div>
             );
           })()}
-          {hasOverrides && (
+          {(
             <div className="pipe-reset">
               <span className="muted text-sm"><Icon name="sparkle" size={11}/> {Object.keys(overrides).length} deal{Object.keys(overrides).length === 1 ? "" : "s"} moved this session</span>
-              <button className="btn" onClick={resetOverrides}>Reset moves</button>
+
             </div>
           )}
           {toast && <div className="pipe-toast" key={toast.at}>{toast.msg}</div>}
