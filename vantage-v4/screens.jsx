@@ -41,7 +41,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, tog
   const overdueContacts = window.VT_CONTACTS.filter(c => c.status === "Overdue").slice(0, 5);
   const tableCls = "table" + (flags.stickyHeaders ? " table--sticky" : "");
 
-  // Apply pipeline phase overrides (same localStorage key as ScreenPipeline) for accurate KPIs
+  // Pipeline KPIs derive directly from VT_DEALS[].phaseK (DB-backed)
   const pipelineStats = useMemoS(() => {
     // Source of truth is now d.phaseK (mirrors DB pipeline_cards.phase). No localStorage layer.
     const activeDeals = window.VT_DEALS.filter(d => d.phaseK !== "dead" && d.phaseK !== "closed");
@@ -737,12 +737,6 @@ const ScreenPipeline = ({ openDeal, updatePhase, flags }) => {
               </div>
             );
           })()}
-          {(
-            <div className="pipe-reset">
-              <span className="muted text-sm"><Icon name="sparkle" size={11}/> {Object.keys(overrides).length} deal{Object.keys(overrides).length === 1 ? "" : "s"} moved this session</span>
-
-            </div>
-          )}
           {toast && <div className="pipe-toast" key={toast.at}>{toast.msg}</div>}
         </div>
       ) : (
