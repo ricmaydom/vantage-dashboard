@@ -33,7 +33,7 @@ function useSort(rows, initialKey = null, initialDir = "desc"){
 }
 
 // ================== DASHBOARD ==================
-const ScreenDashboard = ({ setView, openDeal, openTx, openAction, toggleAction, flags, setModal, leoDismissed, setLeoDismissed }) => {
+const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, toggleAction, flags, setModal, leoDismissed, setLeoDismissed }) => {
   const stats = window.VT_STATS;
   const actions = window.VT_ACTIONS.filter(a => !a.done).slice(0, 6);
   const activeDeals = window.VT_DEALS.slice(0, 6);
@@ -139,7 +139,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, openAction, toggleAction, 
                 <table className={tableCls + " table--intel"}>
                   <tbody>
                     {recentIntel.map(i => (
-                      <tr key={i.id}>
+                      <tr key={i.id} onClick={() => openIntel && openIntel(i)} style={{cursor: openIntel ? "pointer" : "default"}}>
                         <td style={{whiteSpace:"normal", verticalAlign:"top", paddingTop:10, paddingBottom:10, paddingRight:14}}>
                           <div className="strong" style={{marginBottom:3}}>{i.title}</div>
                           {i.body && <div className="muted text-sm" style={{display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", lineHeight:1.45}}>{i.body}</div>}
@@ -853,14 +853,17 @@ const ScreenDeals = ({ openTx, flags, setModal }) => {
         </div>
       </div>
       {filtered.length === 0 ? (
-        <Empty title="No deals match" cta="Quick capture" onCta={() => setModal && setModal("capture")} flags={flags}/>
+        <Empty title="No deals yet" sub="Start your first deal card." cta="Start a deal card" onCta={addBlankTx} flags={flags}/>
       ) : (
         <div className={"grid" + (flags.microMotion ? " stagger" : "")}>
-          {filtered.map(d => <TxCard key={d.id} tx={d} onClick={openTx} flags={flags}/>)}
           <article className="card card--new" onClick={addBlankTx} style={{cursor:"pointer", borderStyle:"dashed", display:"flex", alignItems:"center", justifyContent:"center", minHeight:160, gap:10, color:"var(--ink-3)"}}>
             <Icon name="plus" size={16}/>
-            <span>Add deal</span>
+            <div>
+              <div style={{fontWeight:600, color:"var(--ink)"}}>Start a deal card</div>
+              <div className="muted text-sm">Blank card — fill in address, vendor, price, yield</div>
+            </div>
           </article>
+          {filtered.map(d => <TxCard key={d.id} tx={d} onClick={openTx} flags={flags}/>)}
         </div>
       )}
     </div>
@@ -947,11 +950,14 @@ const ScreenLeasing = ({ leases = [], openLease, addLease, removeLease, flags, s
       </div>
     ) : (
       <div className={"grid" + (flags.microMotion ? " stagger" : "")} style={{marginTop:12, gridTemplateColumns:"repeat(auto-fill, minmax(420px, 1fr))"}}>
-        {leases.map(l => <LeasingCard key={l.id} l={l} onClick={openLease}/>)}
         <article className="card card--new" onClick={addLease} style={{cursor:"pointer", borderStyle:"dashed", display:"flex", alignItems:"center", justifyContent:"center", minHeight:160, gap:10, color:"var(--ink-3)"}}>
           <Icon name="plus" size={16}/>
-          <span>Add leasing card</span>
+          <div>
+            <div style={{fontWeight:600, color:"var(--ink)"}}>Start a leasing card</div>
+            <div className="muted text-sm">Blank card — fill in tenant, rent, term, incentive</div>
+          </div>
         </article>
+        {leases.map(l => <LeasingCard key={l.id} l={l} onClick={openLease}/>)}
       </div>
     )}
   </div>

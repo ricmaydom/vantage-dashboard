@@ -853,7 +853,7 @@ function App(){
   const content = (() => {
     const props = { flags, setModal };
     switch(view){
-      case "dashboard": return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
+      case "dashboard": return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
       case "actions":   return <ScreenActions toggleAction={toggleAction} openAction={openAction} updateAction={updateAction} addAction={() => { const t = addAction(); if(t) openAction(t); }} {...props}/>;
       case "crm":       return <ScreenCRM openContact={openContact} addContact={addContact} {...props}/>;
       case "pipeline":  return <ScreenPipeline openDeal={openDeal} {...props}/>;
@@ -863,7 +863,7 @@ function App(){
       case "strategy":  return <ScreenStrategy openStrategy={openStrategy} {...props}/>;
       case "knowledge": return <ScreenKnowledge openKnowledge={openKnowledge} addKnowledge={() => { const k = addKnowledge(); if(k) openKnowledge(k); }} {...props}/>;
       case "review":    return <ScreenReview showToast={showToast}/>;
-      default:          return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
+      default:          return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
     }
   })();
 
