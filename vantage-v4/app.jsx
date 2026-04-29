@@ -712,38 +712,46 @@ function App(){
   const [granolaStatus, setGranolaStatus] = useStateA({ loading: false, status: null, lastSynced: null, requested: false });
   const [refreshing, setRefreshing] = useStateA(false);
 
-  // Master Refresh: invokes parse_inbox Edge Function (parses pending_captures
-  // via Anthropic API), then re-fetches all Supabase tables.
+  // Master Refresh: invokes parse_inbox + parse_granola Edge Functions in
+  // parallel (captures + meetings), then re-fetches all tables.
   const runMasterRefresh = async () => {
     if(refreshing) return;
     setRefreshing(true);
     try {
       const sb = window.__vantageAuth;
       if(!sb){ showToast('Not signed in'); setRefreshing(false); return; }
-      let parseSummary = null;
-      let parseError = null;
-      try {
-        const { data, error } = await sb.functions.invoke('parse_inbox', {});
-        if(error){ parseError = error.message || 'parse_inbox failed'; }
-        else { parseSummary = data; }
-      } catch(e){ parseError = (e && e.message) || String(e); }
-      // Wait for any in-flight DB writes (drag-drop, edits) to settle so the
-      // fetch sees their effects rather than overwriting them with stale state.
+      const invoke = async (name) => {
+        try {
+          const { data, error } = await sb.functions.invoke(name, {});
+          if(error) return { name, error: error.message || (name + ' failed') };
+          return { name, data };
+        } catch(e){ return { name, error: (e && e.message) || String(e) }; }
+      };
+      const [inboxRes, granolaRes] = await Promise.all([
+        invoke('parse_inbox'),
+        invoke('parse_granola'),
+      ]);
       await _awaitPendingWrites();
       await fetchAllTables();
-      if(parseError){
-        showToast('Refresh: ' + parseError);
-      } else if(parseSummary){
-        const cap = parseSummary.captures_processed || 0;
-        const items = parseSummary.items_created || 0;
-        const errs = (parseSummary.errors || []).length;
-        const spendUsd = parseSummary.monthly_spend_usd;
-        const spendStr = (typeof spendUsd === 'number') ? ' · spend $' + spendUsd.toFixed(2) : '';
-        const errStr = errs ? ' (' + errs + ' err)' : '';
-        showToast('Refreshed · ' + cap + ' captures → ' + items + ' review items' + errStr + spendStr);
-      } else {
-        showToast('Refreshed');
+      const parts = [];
+      let totalSpend = null;
+      if(inboxRes.error) parts.push('captures: ' + inboxRes.error);
+      else if(inboxRes.data){
+        const c = inboxRes.data.captures_processed || 0;
+        const i = inboxRes.data.items_created || 0;
+        if(c > 0 || i > 0) parts.push(c + ' capture' + (c===1?'':'s') + ' → ' + i + ' item' + (i===1?'':'s'));
+        if(typeof inboxRes.data.monthly_spend_usd === 'number') totalSpend = inboxRes.data.monthly_spend_usd;
       }
+      if(granolaRes.error) parts.push('granola: ' + granolaRes.error);
+      else if(granolaRes.data){
+        const d = granolaRes.data.docs_processed || 0;
+        const i = granolaRes.data.items_created || 0;
+        if(d > 0 || i > 0) parts.push(d + ' meeting' + (d===1?'':'s') + ' → ' + i + ' item' + (i===1?'':'s'));
+        if(typeof granolaRes.data.monthly_spend_usd === 'number') totalSpend = granolaRes.data.monthly_spend_usd;
+      }
+      const spendStr = (typeof totalSpend === 'number') ? ' · spend $' + totalSpend.toFixed(2) : '';
+      if(parts.length === 0) showToast('Refreshed · nothing new' + spendStr);
+      else showToast('Refreshed · ' + parts.join(' · ') + spendStr);
     } finally {
       setRefreshing(false);
     }
