@@ -327,7 +327,7 @@ const CONTACTS = (RAW.contacts || []).map((c, i) => {
     cadenceWeeks: c.cadence_weeks,
     lastContacted: c.last_contacted,
     lastContactedFmt: c.last_contacted ? agoText(c.last_contacted) : "—",
-    notes: c.notes || "",
+    notes: c.relationship_notes || c.notes || "",
     status,
     statusCls,
     raw: c,
