@@ -412,14 +412,10 @@ function App(){
   const openAction = (a) => setDrawer({ open: true, kind: "action", record: a });
   const closeDrawer = () => setDrawer({ open: false, kind: null, record: null });
 
-  // ad-hoc action edits (stored per-id, spread over VT_ACTIONS at render)
-  const [actionEdits, setActionEdits] = useStateA(() => {
-    try { return JSON.parse(localStorage.getItem("vt:actionEdits") || "{}"); } catch(e){ return {}; }
-  });
-  // Normalize any date-like string into the DD MMM YY format used everywhere.
+  // Action edits — DB is source of truth (tasks). Legacy localStorage layer dropped.
+  useEffectA(() => { try { localStorage.removeItem("vt:actionEdits"); } catch(_){} }, []);
   const normalizeDateLike = (v) => {
     if(!v || v === "—") return v;
-    // ISO yyyy-mm-dd or anything Date() accepts
     const dt = new Date(v);
     if(!isNaN(dt) && /^\d{4}-\d{2}-\d{2}/.test(String(v))){
       return window.VT_FMT ? window.VT_FMT.DATE(v) : v;
@@ -433,48 +429,17 @@ function App(){
   };
   const updateAction = (id, patch) => {
     const clean = sanitizePatch(patch);
-    setActionEdits(prev => {
-      const nextEdit = { ...(prev[id] || {}), ...clean };
-      if(nextEdit.dueFmt) nextEdit.dueFmt = normalizeDateLike(nextEdit.dueFmt);
-      const next = { ...prev, [id]: nextEdit };
-      localStorage.setItem("vt:actionEdits", JSON.stringify(next));
-      return next;
-    });
-    // apply to live data so grouping stays consistent
     const a = window.VT_ACTIONS.find(x => x.id === id);
     if(a){ Object.assign(a, clean); }
-    // Persist to Supabase
     const dbPatch = _mapTaskPatch(clean);
     if(Object.keys(dbPatch).length) _persistPatch('tasks', id, dbPatch);
     setBumpKey(k => k + 1);
   };
-  // apply edits once on mount, normalizing any legacy ISO strings persisted before the format change.
-  useEffectA(() => {
-    Object.keys(actionEdits).forEach(id => {
-      const a = window.VT_ACTIONS.find(x => x.id === id);
-      if(!a) return;
-      const edits = actionEdits[id];
-      const clean = { ...edits };
-      if(clean.dueFmt) clean.dueFmt = normalizeDateLike(clean.dueFmt);
-      Object.assign(a, clean);
-    });
-    // Also persist the cleaned version back so future reads are consistent.
-    const cleaned = {};
-    Object.keys(actionEdits).forEach(id => {
-      const e = { ...actionEdits[id] };
-      if(e.dueFmt) e.dueFmt = normalizeDateLike(e.dueFmt);
-      cleaned[id] = e;
-    });
-    localStorage.setItem("vt:actionEdits", JSON.stringify(cleaned));
-  }, []);
 
-  // ad-hoc contact edits
-  const [contactEdits, setContactEdits] = useStateA(() => {
-    try { return JSON.parse(localStorage.getItem("vt:contactEdits") || "{}"); } catch(e){ return {}; }
-  });
+  // Contact edits — DB is source of truth. Legacy localStorage layer dropped.
+  useEffectA(() => { try { localStorage.removeItem("vt:contactEdits"); } catch(_){} }, []);
   const updateContact = (id, patch, opts) => {
     const isDraft = opts && opts._draft;
-    // Auto-sync: when first/last name change, regenerate full name + initials.
     if('firstName' in patch || 'lastName' in patch){
       const c = window.VT_CONTACTS.find(x => x.id === id);
       const first = ('firstName' in patch ? (patch.firstName || "") : (c && c.firstName) || "");
@@ -489,14 +454,8 @@ function App(){
     } else if('name' in patch && window.VT_FMT && window.VT_FMT.INITIALS){
       patch = { ...patch, initials: window.VT_FMT.INITIALS(patch.name || "") };
     }
-    setContactEdits(prev => {
-      const next = { ...prev, [id]: { ...(prev[id] || {}), ...patch } };
-      localStorage.setItem("vt:contactEdits", JSON.stringify(next));
-      return next;
-    });
     const c = window.VT_CONTACTS.find(x => x.id === id);
     if(c){ Object.assign(c, patch); }
-    // Persist to Supabase only when not a draft (saved on user click Save).
     if(!isDraft){
       const dbPatch = _mapContactPatch(patch);
       if(Object.keys(dbPatch).length) _persistPatch('contacts', id, dbPatch);
@@ -529,12 +488,7 @@ function App(){
       notes: "",
     };
   };
-  useEffectA(() => {
-    Object.keys(contactEdits).forEach(id => {
-      const c = window.VT_CONTACTS.find(x => x.id === id);
-      if(c) Object.assign(c, contactEdits[id]);
-    });
-  }, []);
+
 
   // Create a blank action in draft state (DB write deferred to Save click).
   const addAction = () => {
@@ -600,36 +554,20 @@ function App(){
     };
   };
 
-  // ad-hoc deal edits
-  const [dealEdits, setDealEdits] = useStateA(() => {
-    try { return JSON.parse(localStorage.getItem("vt:dealEdits") || "{}"); } catch(e){ return {}; }
-  });
+  // Deal edits — DB is source of truth (pipeline_cards / deal_cards). Legacy localStorage layer dropped.
+  useEffectA(() => { try { localStorage.removeItem("vt:dealEdits"); } catch(_){} }, []);
   const updateDeal = (id, patch, table, opts) => {
     const isDraft = opts && opts._draft;
-    setDealEdits(prev => {
-      const next = { ...prev, [id]: { ...(prev[id] || {}), ...patch } };
-      localStorage.setItem("vt:dealEdits", JSON.stringify(next));
-      return next;
-    });
     const d = (window.VT_DEALS || []).find(x => x.id === id)
       || (window.VT_TRANSACTIONS || []).find(x => x.id === id)
       || (window.VT_DEAL_CARDS || []).find(x => x.id === id);
     if(d){ Object.assign(d, patch); }
-    // Persist to Supabase only when not a draft.
     if(table && !isDraft){
       const dbPatch = table === 'pipeline_cards' ? _mapPipelinePatch(patch) : _mapDealPatch(patch);
       if(Object.keys(dbPatch).length) _persistPatch(table, id, dbPatch);
     }
     setBumpKey(k => k + 1);
   };
-  useEffectA(() => {
-    Object.keys(dealEdits).forEach(id => {
-      const d = (window.VT_DEALS || []).find(x => x.id === id)
-        || (window.VT_TRANSACTIONS || []).find(x => x.id === id)
-        || (window.VT_DEAL_CARDS || []).find(x => x.id === id);
-      if(d) Object.assign(d, dealEdits[id]);
-    });
-  }, []);
 
   // leases — Supabase-backed; initial state empty, populated by live-fetch effect
   const [leases, setLeases] = useStateA([]);
