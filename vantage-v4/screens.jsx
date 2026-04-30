@@ -1176,6 +1176,62 @@ const ScreenReview = ({ showToast }) => {
 
   useEffectR(() => { load(); }, []);
 
+  // Defensive sanitiser — coerces colloquial strings ("mid-6%", "$220m", "low-mid $40m")
+  // to proper numerics for fields that the DB schema expects as numbers. If we can't
+  // parse cleanly, returns null and the original text is preserved in notes by caller.
+  const _coerceNumeric = (val) => {
+    if(val == null || val === "") return null;
+    if(typeof val === "number") return isFinite(val) ? val : null;
+    let s = String(val).toLowerCase().trim();
+    if(!s) return null;
+    s = s.replace(/[, ]/g, "");
+    // Pull a leading numeric range mid-point (e.g. "mid-6%" -> 6.5; "low-mid 40" -> 42)
+    if(s.includes("low-mid") || s.includes("lowtomid")) s = s.replace(/low-?mid|lowtomid/, "");
+    if(s.includes("mid-high") || s.includes("midtohigh")) s = s.replace(/mid-?high|midtohigh/, "");
+    if(s.startsWith("mid-")) s = s.slice(4);
+    else if(s.startsWith("low-")) s = s.slice(4);
+    else if(s.startsWith("high-")) s = s.slice(5);
+    // Strip $ and m/million/k suffixes after extracting a multiplier
+    let mult = 1;
+    if(/m\b|mn\b|million/.test(s)){ mult = 1_000_000; }
+    else if(/\bk\b|thousand/.test(s)){ mult = 1_000; }
+    else if(/\bb\b|billion/.test(s)){ mult = 1_000_000_000; }
+    // Yield-style: "6%" -> 0.06; "6.5%" -> 0.065
+    const isPct = s.includes("%");
+    s = s.replace(/[$%a-z]/g, "");
+    // Now extract the first number found
+    const m = s.match(/-?\d+(?:\.\d+)?/);
+    if(!m) return null;
+    let n = parseFloat(m[0]);
+    if(!isFinite(n)) return null;
+    if(isPct){
+      // For "mid-6%" pattern we already trimmed prefix; n is e.g. 6 -> 0.06.
+      // For "6.5%" -> 0.065
+      n = n / 100;
+    } else {
+      n = n * mult;
+    }
+    return n;
+  };
+  const _sanitisePipelineNumerics = (d) => {
+    if(!d || typeof d !== 'object') return d;
+    const out = { ...d };
+    ['headline_price','reported_yield','market_yield','irr','cap_value','nla_sqm','wale'].forEach(k => {
+      if(k in out){
+        const orig = out[k];
+        const n = _coerceNumeric(orig);
+        if(orig != null && orig !== "" && (typeof orig !== 'number') && n == null){
+          // Preserve unparseable text in notes
+          out.notes = (out.notes ? (out.notes + ' ') : '') + '[Original ' + k + ': ' + String(orig) + ']';
+          out[k] = null;
+        } else {
+          out[k] = n;
+        }
+      }
+    });
+    return out;
+  };
+
   const writeToLiveTable = async (rec) => {
     const d = rec.proposed_data || {};
     const type = rec.record_type;
@@ -1249,29 +1305,30 @@ const ScreenReview = ({ showToast }) => {
       return error;
     }
     if(type === 'pipeline_card') {
+      const ds = _sanitisePipelineNumerics(d);
       const { error } = await sb.from('pipeline_cards').insert([{
-        address: d.address || null,
-        suburb: d.suburb || null,
-        state: d.state || null,
-        sector: d.sector || null,
-        phase: d.phase || 'Identified',
-        status: d.status || 'Watching',
-        confidence: d.confidence || 'Reported',
-        conviction: d.conviction || 'Watching',
-        strategy: d.strategy || null,
-        process_type: d.process_type || null,
-        headline_price: d.headline_price || null,
-        reported_yield: d.reported_yield || null,
-        market_yield: d.market_yield || null,
-        irr: d.irr || null,
-        cap_value: d.cap_value || null,
-        nla_sqm: d.nla_sqm || null,
-        wale: d.wale || null,
-        vendor: d.vendor || null,
-        purchaser: d.purchaser || null,
-        agent: d.agent || null,
-        notes: d.notes || null,
-        input_date: d.input_date || new Date().toISOString().slice(0,10),
+        address: ds.address || null,
+        suburb: ds.suburb || null,
+        state: ds.state || null,
+        sector: ds.sector || null,
+        phase: ds.phase || 'Identified',
+        status: ds.status || 'Watching',
+        confidence: ds.confidence || 'Reported',
+        conviction: ds.conviction || 'Watching',
+        strategy: ds.strategy || null,
+        process_type: ds.process_type || null,
+        headline_price: ds.headline_price || null,
+        reported_yield: ds.reported_yield || null,
+        market_yield: ds.market_yield || null,
+        irr: ds.irr || null,
+        cap_value: ds.cap_value || null,
+        nla_sqm: ds.nla_sqm || null,
+        wale: ds.wale || null,
+        vendor: ds.vendor || null,
+        purchaser: ds.purchaser || null,
+        agent: ds.agent || null,
+        notes: ds.notes || null,
+        input_date: ds.input_date || new Date().toISOString().slice(0,10),
         meeting_label: rec.source_meeting_label || null,
         meeting_id: rec.source_meeting_id || null,
         granola_doc_id: rec.granola_doc_id || null,
@@ -1279,31 +1336,32 @@ const ScreenReview = ({ showToast }) => {
       return error;
     }
     if(type === 'deal_new' || type === 'deal_card') {
+      const ds = _sanitisePipelineNumerics(d);
       const { error } = await sb.from('deal_cards').insert([{
-        address: d.address || null,
-        suburb: d.suburb || null,
-        state: d.state || null,
-        sector: d.sector || null,
-        sub_sector: d.sub_sector || null,
-        strategy: d.strategy || null,
-        process_type: d.process_type || null,
-        vendor: d.vendor || null,
-        purchaser: d.purchaser || null,
-        agent: d.agent || null,
-        headline_price: d.headline_price || null,
-        reported_yield: d.reported_yield || null,
-        market_yield: d.market_yield || null,
-        irr: d.irr || null,
-        cap_value: d.cap_value || null,
-        nla_sqm: d.nla_sqm || null,
-        wale: d.wale || null,
-        sale_date: d.sale_date || null,
-        status: d.status || 'Rumoured',
-        confidence: d.confidence || 'Rumoured',
-        conviction: d.conviction || null,
-        source: d.source || null,
-        notes: d.notes || null,
-        is_comparable: d.is_comparable !== false,
+        address: ds.address || null,
+        suburb: ds.suburb || null,
+        state: ds.state || null,
+        sector: ds.sector || null,
+        sub_sector: ds.sub_sector || null,
+        strategy: ds.strategy || null,
+        process_type: ds.process_type || null,
+        vendor: ds.vendor || null,
+        purchaser: ds.purchaser || null,
+        agent: ds.agent || null,
+        headline_price: ds.headline_price || null,
+        reported_yield: ds.reported_yield || null,
+        market_yield: ds.market_yield || null,
+        irr: ds.irr || null,
+        cap_value: ds.cap_value || null,
+        nla_sqm: ds.nla_sqm || null,
+        wale: ds.wale || null,
+        sale_date: ds.sale_date || null,
+        status: ds.status || 'Rumoured',
+        confidence: ds.confidence || 'Rumoured',
+        conviction: ds.conviction || null,
+        source: ds.source || null,
+        notes: ds.notes || null,
+        is_comparable: ds.is_comparable !== false,
         meeting_label: rec.source_meeting_label || null,
         meeting_id: rec.source_meeting_id || null,
         granola_doc_id: rec.granola_doc_id || null,
