@@ -650,6 +650,22 @@ function App(){
   const [granolaStatus, setGranolaStatus] = useStateA({ loading: false, status: null, lastSynced: null, requested: false });
   const [refreshing, setRefreshing] = useStateA(false);
 
+  // Outlook sync request: writes a flag in app_config that the Cowork scheduled task picks up.
+  // Processing happens on Ric's machine when Cowork is open (within ~15 min of click).
+  const requestOutlookSync = async () => {
+    try {
+      const sb = window.__vantageAuth;
+      if(!sb){ showToast('Not signed in'); return; }
+      const now = new Date().toISOString();
+      const { error } = await sb.from('app_config').upsert([
+        { key: 'outlook_sync_requested', value: now },
+        { key: 'outlook_sync_status', value: 'requested' },
+      ], { onConflict: 'key' });
+      if(error){ showToast('Outlook request failed: ' + error.message); return; }
+      showToast('Outlook sync requested — runs when Cowork is next open');
+    } catch(e){ showToast('Outlook request failed: ' + ((e && e.message) || String(e))); }
+  };
+
   // Master Refresh: invokes parse_inbox + parse_granola Edge Functions in
   // parallel (captures + meetings), then re-fetches all tables.
   const runMasterRefresh = async () => {
@@ -1360,6 +1376,9 @@ function App(){
           )}
           <button className="btn btn--refresh" onClick={runMasterRefresh} disabled={refreshing} title="Refresh: parse captures, re-fetch all data">
             <Icon name="refresh" size={13}/><span className="btn--label"> {refreshing ? "Refreshing…" : "Refresh"}</span>
+          </button>
+          <button className="btn btn--outlook btn--hide-sm" onClick={requestOutlookSync} title="Request Outlook sync (runs when Cowork is open)">
+            <Icon name="mail" size={13}/><span className="btn--label"> Outlook</span>
           </button>
           <button className="btn btn--capture" onClick={() => setModal("capture")} title="Quick capture (c)">
             <Icon name="capture" size={13}/><span className="btn--label"> Capture</span>
