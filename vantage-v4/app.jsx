@@ -408,6 +408,24 @@ function App(){
   const openTx = (t) => setDrawer({ open: true, kind: "tx", record: t });
   const openLease = (l) => setDrawer({ open: true, kind: "lease", record: l });
   const openContact = (c) => setDrawer({ open: true, kind: "contact", record: c });
+  const tickContact = useCallbackA(async (contactId) => {
+    if(!contactId) return;
+    const todayISO = new Date().toISOString().slice(0, 10);
+    try {
+      // Update local snapshot for instant feedback
+      if(Array.isArray(window.__VANTAGE_RAW && window.__VANTAGE_RAW.contacts)){
+        const c = window.__VANTAGE_RAW.contacts.find(x => x.id === contactId);
+        if(c){
+          c.last_contacted = todayISO;
+          c.last_contact_date = todayISO;
+          if(typeof window.VT_buildFromRaw === 'function') window.VT_buildFromRaw(window.__VANTAGE_RAW);
+        }
+      }
+      _persistPatch('contacts', contactId, { last_contact_date: todayISO });
+      try { showToast && showToast('Logged contact for today'); } catch(_){}
+    } catch(e){ console.warn('tickContact fail', e); }
+  }, []);
+
   const dismissPreMeeting = useCallbackA(async (briefId) => {
     const sb = window.__vantageAuth;
     if(!sb || !briefId) return;
@@ -879,7 +897,7 @@ function App(){
   const content = (() => {
     const props = { flags, setModal };
     switch(view){
-      case "dashboard": return <ScreenDashboard dismissPreMeeting={dismissPreMeeting} setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} openContact={openContact} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
+      case "dashboard": return <ScreenDashboard tickContact={tickContact} dismissPreMeeting={dismissPreMeeting} setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} openContact={openContact} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
       case "actions":   return <ScreenActions toggleAction={toggleAction} openAction={openAction} updateAction={updateAction} addAction={() => { const t = addAction(); if(t) openAction(t); }} {...props}/>;
       case "crm":       return <ScreenCRM openContact={openContact} addContact={addContact} {...props}/>;
       case "pipeline":  return <ScreenPipeline openDeal={openDeal} updatePhase={updatePhase} {...props}/>;
@@ -889,7 +907,7 @@ function App(){
       case "strategy":  return <ScreenStrategy openStrategy={openStrategy} {...props}/>;
       case "knowledge": return <ScreenKnowledge openKnowledge={openKnowledge} addKnowledge={() => { const k = addKnowledge(); if(k) openKnowledge(k); }} {...props}/>;
       case "review":    return <ScreenReview showToast={showToast}/>;
-      default:          return <ScreenDashboard dismissPreMeeting={dismissPreMeeting} setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} openContact={openContact} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
+      default:          return <ScreenDashboard tickContact={tickContact} dismissPreMeeting={dismissPreMeeting} setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} openContact={openContact} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
     }
   })();
 

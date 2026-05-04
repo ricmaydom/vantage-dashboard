@@ -265,7 +265,7 @@ function computeMorningBrief({ contacts, deals, intel, transactions, actions }){
   };
 }
 
-const MorningBrief = ({ openContact, openDeal, openIntel, setView }) => {
+const MorningBrief = ({ openContact, openDeal, openIntel, setView, tickContact }) => {
   const brief = useMemoS(() => computeMorningBrief({
     contacts: window.VT_CONTACTS || [],
     deals: window.VT_DEALS || [],
@@ -274,11 +274,68 @@ const MorningBrief = ({ openContact, openDeal, openIntel, setView }) => {
     actions: window.VT_ACTIONS || [],
   }), []);
 
+  // Tick state: keyed by today's date so it auto-clears at midnight
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const storageKey = "vt:brief-ticked:" + todayKey;
+  const [ticked, setTicked] = useStateS(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if(raw){ return JSON.parse(raw); }
+    } catch(_){}
+    // Clean up stale keys from prior days
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith("vt:brief-ticked:") && k !== storageKey).forEach(k => localStorage.removeItem(k));
+    } catch(_){}
+    return { contact: [], deal: [], intel: [] };
+  });
+
+  const persistTicked = (next) => {
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch(_){}
+    setTicked(next);
+  };
+
+  const isTicked = (kind, id) => Array.isArray(ticked[kind]) && ticked[kind].includes(id);
+
+  const toggleTick = (kind, item, e) => {
+    if(e){ e.stopPropagation(); }
+    const list = ticked[kind] || [];
+    const next = { ...ticked };
+    if(list.includes(item.id)){
+      next[kind] = list.filter(x => x !== item.id);
+    } else {
+      next[kind] = [...list, item.id];
+      // Real data update for contacts: log today as last_contact_date
+      if(kind === "contact" && tickContact){
+        tickContact(item.id);
+      }
+    }
+    persistTicked(next);
+  };
+
   const dateLabel = new Date().toLocaleDateString("en-AU", { weekday:"long", day:"numeric", month:"long" });
 
   if(brief.contacts.length === 0 && brief.deals.length === 0 && brief.intel.length === 0){
     return null;
   }
+
+  const renderItem = (kind, item, opts) => {
+    const tickedNow = isTicked(kind, item.id);
+    const onClick = opts.onClick;
+    return (
+      <div key={item.id} className={"brief__item" + (tickedNow ? " brief__item--ticked" : "")}>
+        <span
+          className={"check brief__check" + (tickedNow ? " done" : "")}
+          onClick={(e) => toggleTick(kind, item, e)}
+          role="checkbox"
+          aria-checked={tickedNow}
+          aria-label={"Mark " + (item.name || item.title || "") + " as " + (tickedNow ? "not done" : "done")}
+        />
+        <div className="brief__item-text" onClick={() => !tickedNow && onClick && onClick(item)}>
+          {opts.body(item)}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="brief">
@@ -296,45 +353,48 @@ const MorningBrief = ({ openContact, openDeal, openIntel, setView }) => {
           <div className="brief__col-head">Speak to today</div>
           {brief.contacts.length === 0 ? (
             <div className="brief__empty">All cadences current</div>
-          ) : brief.contacts.map(c => (
-            <div key={c.id} className="brief__item" onClick={() => openContact && openContact(c)}>
+          ) : brief.contacts.map(c => renderItem("contact", c, {
+            onClick: openContact,
+            body: (c) => (<>
               <div className="brief__item-main">
                 <span className="brief__item-name">{c.name}</span>
                 <span className="brief__item-sub"> · {c.firm}</span>
               </div>
               <div className="brief__why">{c.briefWhy || "Tier " + (c.tier || 3)}</div>
-            </div>
-          ))}
+            </>)
+          }))}
         </div>
         <div className="brief__col">
           <div className="brief__col-head">Deals to action</div>
           {brief.deals.length === 0 ? (
             <div className="brief__empty">No stale deals</div>
-          ) : brief.deals.map(d => {
-            const sectorCls = d.sector ? "chip chip--sector-" + String(d.sector).toLowerCase() : "";
-            return (
-              <div key={d.id} className="brief__item" onClick={() => openDeal && openDeal(d)}>
+          ) : brief.deals.map(d => renderItem("deal", d, {
+            onClick: openDeal,
+            body: (d) => {
+              const sectorCls = d.sector ? "chip chip--sector-" + String(d.sector).toLowerCase() : "";
+              return (<>
                 <div className="brief__item-main">
                   <span className="brief__item-name">{d.title}</span>
                   {d.sector && <span className={sectorCls} style={{marginLeft:6, fontSize:10, padding:"1px 6px"}}>{d.sector}</span>}
                 </div>
                 <div className="brief__why">{d.briefWhy}</div>
-              </div>
-            );
-          })}
+              </>);
+            }
+          }))}
         </div>
         <div className="brief__col">
           <div className="brief__col-head">Intel to read</div>
           {brief.intel.length === 0 ? (
             <div className="brief__empty">No fresh intel</div>
-          ) : brief.intel.map(i => (
-            <div key={i.id} className="brief__item" onClick={() => openIntel && openIntel(i)}>
+          ) : brief.intel.map(i => renderItem("intel", i, {
+            onClick: openIntel,
+            body: (i) => (<>
               <div className="brief__item-main">
                 <span className="brief__item-name">{i.title}</span>
               </div>
               <div className="brief__why">{i.briefWhy}</div>
-            </div>
-          ))}
+            </>)
+          }))}
         </div>
       </div>
     </div>
@@ -342,7 +402,7 @@ const MorningBrief = ({ openContact, openDeal, openIntel, setView }) => {
 };
 
 // ================== DASHBOARD ==================
-const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, openContact, toggleAction, dismissPreMeeting, flags, setModal, leoDismissed, setLeoDismissed }) => {
+const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, openContact, toggleAction, dismissPreMeeting, tickContact, flags, setModal, leoDismissed, setLeoDismissed }) => {
   const stats = window.VT_STATS;
   const actions = window.VT_ACTIONS.filter(a => !a.done).slice(0, 6);
   const activeDeals = window.VT_DEALS.slice(0, 6);
@@ -369,7 +429,7 @@ const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, ope
 
       <PreMeetingBanner dismissPreMeeting={dismissPreMeeting} openContact={openContact} openDeal={openDeal}/>
 
-      <MorningBrief openContact={openContact} openDeal={openDeal} openIntel={openIntel} setView={setView}/>
+      <MorningBrief openContact={openContact} openDeal={openDeal} openIntel={openIntel} setView={setView} tickContact={tickContact}/>
 
       <div className="kpis">
         <KPI accent label="Active pipeline" value={pipelineStats.activeValue} sub={`${pipelineStats.activeCount} deal${pipelineStats.activeCount === 1 ? "" : "s"} in flow`} sparkline={flags.sparkline ? window.VT_PIPELINE_HISTORY : null} onClick={() => setView("pipeline")}/>
