@@ -350,7 +350,7 @@ function App(){
     const sb = window.__vantageAuth;
     if(!sb || typeof window.VT_buildFromRaw !== 'function') return false;
     try {
-      const [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows, knowledge] = await Promise.all([
+      const [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows, knowledge, premeet] = await Promise.all([
         sb.from('pipeline_cards').select('*'),
         sb.from('deal_cards').select('*'),
         sb.from('tasks').select('id,title,date_logged,deadline_date,importance,status,notes,category,reminder_date,contact_id,deal_card_id,leasing_card_id,meeting_id,meeting_label,granola_doc_id,created_at,updated_at'),
@@ -360,6 +360,7 @@ function App(){
         sb.from('pending_captures').select('*'),
         sb.from('leasing_cards').select('*'),
         sb.from('knowledge_base').select('*'),
+        sb.from('pre_meeting_briefs').select('*').eq('status','pending').gte('meeting_start', new Date(Date.now() - 5*60*1000).toISOString()).order('meeting_start', { ascending: true }),
       ]);
       const responses = [pipe, deals, tasks, contacts, intel, strategy, captures, leasingRows, knowledge];
       const errs = responses.map(r => r.error).filter(Boolean);
@@ -377,6 +378,7 @@ function App(){
       };
       if(typeof setLeases === 'function') setLeases(leasingRows.data || []);
       window.__VANTAGE_RAW = RAW;
+      window.VT_PREMEET_BRIEFS = (premeet && premeet.data) || [];
       window.VT_buildFromRaw(RAW);
       try {
         const { count } = await sb.from('pending_review').select('id', { count: 'exact', head: true }).eq('status','pending');
@@ -406,6 +408,15 @@ function App(){
   const openTx = (t) => setDrawer({ open: true, kind: "tx", record: t });
   const openLease = (l) => setDrawer({ open: true, kind: "lease", record: l });
   const openContact = (c) => setDrawer({ open: true, kind: "contact", record: c });
+  const dismissPreMeeting = useCallbackA(async (briefId) => {
+    const sb = window.__vantageAuth;
+    if(!sb || !briefId) return;
+    try {
+      await sb.from('pre_meeting_briefs').update({ status: 'dismissed', updated_at: new Date().toISOString() }).eq('id', briefId);
+      window.VT_PREMEET_BRIEFS = (window.VT_PREMEET_BRIEFS || []).filter(b => b.id !== briefId);
+      setBumpKey(k => k + 1);
+    } catch(e){ console.warn('dismiss premeet fail', e); }
+  }, []);
   const openIntel = (i) => setDrawer({ open: true, kind: "intel", record: i });
   const openStrategy = (s) => setDrawer({ open: true, kind: "strategy", record: s });
   const openKnowledge = (k) => setDrawer({ open: true, kind: "knowledge", record: k });
@@ -868,7 +879,7 @@ function App(){
   const content = (() => {
     const props = { flags, setModal };
     switch(view){
-      case "dashboard": return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
+      case "dashboard": return <ScreenDashboard dismissPreMeeting={dismissPreMeeting} setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} openContact={openContact} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
       case "actions":   return <ScreenActions toggleAction={toggleAction} openAction={openAction} updateAction={updateAction} addAction={() => { const t = addAction(); if(t) openAction(t); }} {...props}/>;
       case "crm":       return <ScreenCRM openContact={openContact} addContact={addContact} {...props}/>;
       case "pipeline":  return <ScreenPipeline openDeal={openDeal} updatePhase={updatePhase} {...props}/>;
@@ -878,7 +889,7 @@ function App(){
       case "strategy":  return <ScreenStrategy openStrategy={openStrategy} {...props}/>;
       case "knowledge": return <ScreenKnowledge openKnowledge={openKnowledge} addKnowledge={() => { const k = addKnowledge(); if(k) openKnowledge(k); }} {...props}/>;
       case "review":    return <ScreenReview showToast={showToast}/>;
-      default:          return <ScreenDashboard setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
+      default:          return <ScreenDashboard dismissPreMeeting={dismissPreMeeting} setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} openContact={openContact} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
     }
   })();
 

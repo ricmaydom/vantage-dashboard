@@ -96,6 +96,94 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:n
 input,textarea{font-family:inherit;color:inherit}
 ::selection{background:var(--accent);color:#fff}
 
+
+/* ============== Pre-meeting brief banner ============== */
+.premeet{
+  background:linear-gradient(180deg, rgba(196,53,61,0.08) 0%, var(--surface) 100%);
+  border:1px solid var(--neg);
+  border-left:4px solid var(--neg);
+  border-radius:10px;
+  padding:0;
+  margin-bottom:14px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  overflow:hidden;
+}
+.premeet__head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 14px;
+  cursor:pointer;
+}
+.premeet__icon{
+  color:var(--neg);
+  font-size:11px;
+  animation: premeet-pulse 1.6s ease-in-out infinite;
+}
+@keyframes premeet-pulse{
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.premeet__main{flex:1;min-width:0}
+.premeet__title{
+  font-size:14px;
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.premeet__when{
+  font-weight:700;
+  color:var(--neg);
+  letter-spacing:-0.01em;
+}
+.premeet__name{font-weight:600;color:var(--ink)}
+.premeet__firm{color:var(--ink-3);font-size:13px}
+.premeet__subject{
+  font-size:12px;
+  color:var(--ink-3);
+  margin-top:2px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.premeet__actions{display:flex;gap:6px}
+.btn--small{
+  padding:4px 10px !important;
+  font-size:11px !important;
+}
+.premeet__body{
+  border-top:1px solid var(--rule);
+  padding:12px 14px;
+  background:var(--surface);
+}
+.premeet__row{
+  display:flex;
+  gap:10px;
+  padding:5px 0;
+  font-size:13px;
+  line-height:1.45;
+}
+.premeet__row + .premeet__row{border-top:1px dashed var(--rule)}
+.premeet__row-label{
+  font-weight:600;
+  color:var(--ink-3);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  flex:0 0 90px;
+  padding-top:2px;
+}
+.premeet__row-val{flex:1;color:var(--ink-2);min-width:0}
+.premeet__empty{
+  font-size:12px;
+  color:var(--ink-4);
+  font-style:italic;
+}
+body[data-theme="dark"] .premeet{
+  background:linear-gradient(180deg, rgba(196,53,61,0.18) 0%, var(--surface) 100%);
+}
+
 /* ============== Shell ============== */
 /* Single scroll container = the document itself. Sidebar + topbar stay pinned
    via position:sticky while the page scrolls behind them. This makes the mouse
@@ -925,6 +1013,78 @@ body.body--lock{touch-action:none}
 @media (max-width: 760px){
   input,select,textarea,.efield__value,.inline-edit{font-size:16px !important}
 }
+
+/* ============== Morning brief panel ============== */
+.brief{
+  background:linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
+  border:1px solid var(--accent);
+  border-radius:14px;
+  padding:18px 20px;
+  margin-bottom:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.brief__head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.brief__title{font-size:18px;font-weight:700;color:var(--accent-ink);letter-spacing:-0.01em}
+.brief__date{font-size:12px;color:var(--ink-3);margin-top:2px}
+.brief__counts{font-size:11px;letter-spacing:0.02em;text-transform:uppercase}
+.brief__body{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:18px;
+}
+@media (max-width:780px){
+  .brief__body{grid-template-columns:1fr}
+}
+.brief__col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.brief__col-head{
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink-3);
+  padding-bottom:6px;
+  border-bottom:1px solid var(--accent);
+  margin-bottom:2px;
+}
+.brief__item{
+  cursor:pointer;
+  padding:7px 8px;
+  border-radius:6px;
+  transition:background 120ms ease;
+  min-width:0;
+}
+.brief__item:hover{background:rgba(184,137,58,0.08)}
+.brief__item-main{
+  font-size:13.5px;
+  line-height:1.35;
+  color:var(--ink);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.brief__item-name{font-weight:600}
+.brief__item-sub{color:var(--ink-3);font-weight:400}
+.brief__why{
+  font-size:11px;
+  color:var(--ink-3);
+  margin-top:2px;
+  font-style:italic;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.brief__empty{
+  font-size:12px;
+  color:var(--ink-4);
+  font-style:italic;
+  padding:8px;
+}
+body[data-theme="dark"] .brief{
+  background:linear-gradient(180deg, rgba(212,163,85,0.10) 0%, var(--surface) 100%);
+  border-color:rgba(212,163,85,0.45);
+}
+body[data-theme="dark"] .brief__item:hover{background:rgba(212,163,85,0.12)}
+
 </style>
 </head>
 <body data-theme="light" data-density="comfortable" data-micro-motion="on">
@@ -1153,10 +1313,10 @@ window.HEALTH_LABEL_MAP = {
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<script src="vantage-v4/data-inline.js?v=51"></script>
-<script type="text/babel" src="vantage-v4/adapter.jsx?v=51"></script>
-<script type="text/babel" src="vantage-v4/components.jsx?v=51"></script>
-<script type="text/babel" src="vantage-v4/screens.jsx?v=51"></script>
-<script type="text/babel" src="vantage-v4/app.jsx?v=51"></script>
+<script src="vantage-v4/data-inline.js?v=52"></script>
+<script type="text/babel" src="vantage-v4/adapter.jsx?v=52"></script>
+<script type="text/babel" src="vantage-v4/components.jsx?v=52"></script>
+<script type="text/babel" src="vantage-v4/screens.jsx?v=52"></script>
+<script type="text/babel" src="vantage-v4/app.jsx?v=52"></script>
 </body>
 </html>

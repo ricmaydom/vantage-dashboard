@@ -32,8 +32,317 @@ function useSort(rows, initialKey = null, initialDir = "desc"){
   return { rows: sorted, sortProps, sort };
 }
 
+// ================== PRE-MEETING BRIEF BANNER ==================
+function selectImminentBrief(briefs){
+  if(!Array.isArray(briefs) || briefs.length === 0) return null;
+  const now = Date.now();
+  const halfHourAhead = now + 30 * 60 * 1000;
+  const fifteenMinPast = now - 15 * 60 * 1000;
+  // Most imminent meeting starting in [-15min, +30min]
+  const eligible = briefs
+    .filter(b => b.meeting_start && new Date(b.meeting_start).getTime() >= fifteenMinPast && new Date(b.meeting_start).getTime() <= halfHourAhead)
+    .sort((a,b) => new Date(a.meeting_start) - new Date(b.meeting_start));
+  return eligible[0] || null;
+}
+
+const PreMeetingBanner = ({ dismissPreMeeting, openContact, openDeal }) => {
+  const [expanded, setExpanded] = useStateS(false);
+  const briefs = window.VT_PREMEET_BRIEFS || [];
+  const brief = useMemoS(() => selectImminentBrief(briefs), [briefs]);
+
+  if(!brief) return null;
+
+  const start = new Date(brief.meeting_start);
+  const minsUntil = Math.round((start.getTime() - Date.now()) / 60000);
+  const timeStr = start.toLocaleTimeString("en-AU", { hour:"numeric", minute:"2-digit" });
+  const body = brief.brief_body || {};
+  const lastMeeting = body.last_meeting;
+  const lastEmail = body.last_email;
+  const deals = Array.isArray(body.deals) ? body.deals : [];
+  const intel = Array.isArray(body.intel) ? body.intel : [];
+
+  const minsLabel = minsUntil < 0 ? "now" : (minsUntil + " min");
+
+  return (
+    <div className="premeet">
+      <div className="premeet__head" onClick={() => setExpanded(x => !x)}>
+        <div className="premeet__icon">●</div>
+        <div className="premeet__main">
+          <div className="premeet__title">
+            <span className="premeet__when">{timeStr} · {minsLabel}</span>
+            <span className="premeet__name">{brief.contact_name || "Tier 1 contact"}</span>
+            {brief.contact_firm && <span className="premeet__firm"> · {brief.contact_firm}</span>}
+          </div>
+          {brief.meeting_subject && <div className="premeet__subject">{brief.meeting_subject}</div>}
+        </div>
+        <div className="premeet__actions">
+          <button className="btn btn--small" onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}>{expanded ? "Hide" : "Brief"}</button>
+          <button className="btn btn--small" onClick={(e) => { e.stopPropagation(); dismissPreMeeting && dismissPreMeeting(brief.id); }}>Dismiss</button>
+        </div>
+      </div>
+      {expanded && (
+        <div className="premeet__body">
+          {lastMeeting && lastMeeting.summary ? (
+            <div className="premeet__row">
+              <span className="premeet__row-label">Last meeting</span>
+              <span className="premeet__row-val">{lastMeeting.date ? `${fmtDDMMMYY(lastMeeting.date)} — ` : ""}{lastMeeting.summary}</span>
+            </div>
+          ) : null}
+          {lastEmail && (lastEmail.subject || lastEmail.summary) ? (
+            <div className="premeet__row">
+              <span className="premeet__row-label">Last email</span>
+              <span className="premeet__row-val">{lastEmail.date ? `${fmtDDMMMYY(lastEmail.date)} — ` : ""}{lastEmail.subject || ""}{lastEmail.summary ? ` — ${lastEmail.summary}` : ""}</span>
+            </div>
+          ) : null}
+          {deals.length > 0 ? (
+            <div className="premeet__row">
+              <span className="premeet__row-label">Deals</span>
+              <span className="premeet__row-val">{deals.map(d => `${d.address || "—"}${d.phase ? ` (${d.phase})` : ""}`).join(" · ")}</span>
+            </div>
+          ) : null}
+          {intel.length > 0 ? (
+            <div className="premeet__row">
+              <span className="premeet__row-label">Recent intel</span>
+              <span className="premeet__row-val">{intel.map(i => i.title).filter(Boolean).join(" · ")}</span>
+            </div>
+          ) : null}
+          {!lastMeeting && !lastEmail && deals.length === 0 && intel.length === 0 ? (
+            <div className="premeet__empty">No prior context found. Walk in fresh.</div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ================== MORNING BRIEF ==================
+function computeMorningBrief({ contacts, deals, intel, transactions, actions }){
+  const today = new Date();
+  const ms14 = 14*86400000, ms7 = 7*86400000;
+
+  // Live pipeline counterparties (vendor/purchaser/agent on non-dead/non-closed deals)
+  const liveDeals = deals.filter(d => d.phaseK !== "dead" && d.phaseK !== "closed");
+  const liveCounterparties = new Set();
+  liveDeals.forEach(d => {
+    [d.vendor, d.purchaser, d.agent].forEach(v => v && liveCounterparties.add(String(v).toLowerCase()));
+  });
+
+  // Open task → contact match (text match against task title since direct contact_id link is rare)
+  const contactsWithOpenTask = new Set();
+  actions.filter(a => !a.done).forEach(a => {
+    const title = (a.title || "").toLowerCase();
+    contacts.forEach(c => {
+      if(c.name && c.name.length > 5 && title.includes(c.name.toLowerCase())) contactsWithOpenTask.add(c.id);
+    });
+  });
+
+  // Recent intel mentions (last 14d) of contact name
+  const cutoffI = new Date(today.getTime() - ms14);
+  const recentlyMentioned = new Set();
+  intel.filter(i => i.date && new Date(i.date) > cutoffI).forEach(i => {
+    const haystack = ((i.title || "") + " " + (i.body || "") + " " + (i.source || "")).toLowerCase();
+    contacts.forEach(c => {
+      if(c.name && c.name.length > 5 && haystack.includes(c.name.toLowerCase())) recentlyMentioned.add(c.id);
+    });
+  });
+
+  // -------- CONTACT SCORING --------
+  const scoredContacts = contacts.map(c => {
+    let score = 0;
+    const why = [];
+    const tier = Number(c.tier);
+
+    // Cadence
+    if(c.status === "Overdue" && c.cadenceWeeks && c.lastContacted){
+      const days = (today - new Date(c.lastContacted)) / 86400000;
+      const weeksOverdue = Math.floor((days - c.cadenceWeeks * 7) / 7);
+      if(weeksOverdue > 0){
+        score += Math.min(weeksOverdue * 5, 50);
+        why.push(weeksOverdue + (weeksOverdue===1?" wk":" wks") + " overdue");
+      }
+    } else if(c.status === "Due soon"){
+      score += 5;
+    } else if(c.status === "Never contacted" && tier === 1){
+      score += 35;
+      why.push("never contacted");
+    }
+
+    // Tier weight
+    if(tier === 1){ score += 30; why.unshift("T1"); }
+    else if(tier === 2){ score += 15; why.unshift("T2"); }
+
+    // Live pipeline counterparty
+    if(liveCounterparties.has((c.name || "").toLowerCase())){
+      score += 25;
+      why.push("on live deal");
+    }
+    // Recent intel mention
+    if(recentlyMentioned.has(c.id)){
+      score += 25;
+      why.push("mentioned in intel");
+    }
+    // Open task linked
+    if(contactsWithOpenTask.has(c.id)){
+      score += 20;
+      why.push("open task");
+    }
+
+    return { ...c, briefScore: score, briefWhy: why.join(" · ") };
+  })
+  .filter(c => c.briefScore >= 35)
+  .sort((a,b) => b.briefScore - a.briefScore);
+
+  // -------- DEAL SCORING --------
+  const phaseStaleThreshold = { identified: 14, initial: 21, detailed: 30, bid: 14, dd: 45 };
+  const overdueTaskByDealId = new Set();
+  actions.filter(a => !a.done && a.bucket === "overdue" && a.dealCardId).forEach(a => overdueTaskByDealId.add(a.dealCardId));
+  // Comp landed nearby (transaction in same suburb in last 14d)
+  const cutoffT = new Date(today.getTime() - ms14);
+  const recentTxBySuburb = new Map();
+  transactions.filter(t => t.saleDate && new Date(t.saleDate) > cutoffT).forEach(t => {
+    const key = (t.suburbOnly || "").toLowerCase();
+    if(key){
+      if(!recentTxBySuburb.has(key)) recentTxBySuburb.set(key, []);
+      recentTxBySuburb.get(key).push(t);
+    }
+  });
+
+  const scoredDeals = liveDeals.map(d => {
+    let score = 0;
+    const why = [];
+    const threshold = phaseStaleThreshold[d.phaseK] || 30;
+    if(d.days > threshold){
+      const ratio = d.days / threshold;
+      score += Math.min(ratio * 30, 60);
+      why.push(d.days + "d in " + (d.phase || "phase"));
+    }
+    if(overdueTaskByDealId.has(d.id)){
+      score += 40;
+      why.push("overdue action");
+    }
+    const suburbKey = d.suburb ? d.suburb.split(",")[0].trim().toLowerCase() : "";
+    if(suburbKey && recentTxBySuburb.has(suburbKey)){
+      score += 25;
+      why.push("comp nearby");
+    }
+    if(String(d.conviction || "").toLowerCase() === "high") score += 15;
+    return { ...d, briefScore: score, briefWhy: why.join(" · ") || "Live deal" };
+  })
+  .filter(d => d.briefScore >= 20)
+  .sort((a,b) => b.briefScore - a.briefScore);
+
+  // -------- INTEL SCORING --------
+  const cutoff7 = new Date(today.getTime() - ms7);
+  const cutoff14 = new Date(today.getTime() - ms14);
+  const activeSectors = new Set(liveDeals.map(d => (d.sector || "").toLowerCase()).filter(Boolean));
+
+  const scoredIntel = intel.map(i => {
+    let score = 0;
+    const why = [];
+    if(i.date){
+      const dt = new Date(i.date);
+      if(dt > cutoff7){ score += 30; why.push("this week"); }
+      else if(dt > cutoff14){ score += 15; why.push("recent"); }
+    }
+    if(String(i.confidence || "").toLowerCase() === "high"){ score += 15; }
+    if(i.sector && activeSectors.has(String(i.sector).toLowerCase())){
+      score += 20;
+      why.push((i.sector + "").toLowerCase() + " active");
+    }
+    const haystack = ((i.title || "") + " " + (i.body || "")).toLowerCase();
+    for(const cp of liveCounterparties){
+      if(cp && cp.length > 4 && haystack.includes(cp)){ score += 25; why.push("counterparty named"); break; }
+    }
+    return { ...i, briefScore: score, briefWhy: why.join(" · ") || "Recent" };
+  })
+  .filter(i => i.briefScore > 0)
+  .sort((a,b) => b.briefScore - a.briefScore);
+
+  return {
+    contacts: scoredContacts.slice(0, 3),
+    deals: scoredDeals.slice(0, 3),
+    intel: scoredIntel.slice(0, 2),
+  };
+}
+
+const MorningBrief = ({ openContact, openDeal, openIntel, setView }) => {
+  const brief = useMemoS(() => computeMorningBrief({
+    contacts: window.VT_CONTACTS || [],
+    deals: window.VT_DEALS || [],
+    intel: window.VT_INTEL || [],
+    transactions: window.VT_TRANSACTIONS || [],
+    actions: window.VT_ACTIONS || [],
+  }), []);
+
+  const dateLabel = new Date().toLocaleDateString("en-AU", { weekday:"long", day:"numeric", month:"long" });
+
+  if(brief.contacts.length === 0 && brief.deals.length === 0 && brief.intel.length === 0){
+    return null;
+  }
+
+  return (
+    <div className="brief">
+      <div className="brief__head">
+        <div>
+          <div className="brief__title">Morning brief</div>
+          <div className="brief__date">{dateLabel}</div>
+        </div>
+        <div className="brief__counts muted text-sm">
+          {brief.contacts.length} contacts · {brief.deals.length} deals · {brief.intel.length} intel
+        </div>
+      </div>
+      <div className="brief__body">
+        <div className="brief__col">
+          <div className="brief__col-head">Speak to today</div>
+          {brief.contacts.length === 0 ? (
+            <div className="brief__empty">All cadences current</div>
+          ) : brief.contacts.map(c => (
+            <div key={c.id} className="brief__item" onClick={() => openContact && openContact(c)}>
+              <div className="brief__item-main">
+                <span className="brief__item-name">{c.name}</span>
+                <span className="brief__item-sub"> · {c.firm}</span>
+              </div>
+              <div className="brief__why">{c.briefWhy || "Tier " + (c.tier || 3)}</div>
+            </div>
+          ))}
+        </div>
+        <div className="brief__col">
+          <div className="brief__col-head">Deals to action</div>
+          {brief.deals.length === 0 ? (
+            <div className="brief__empty">No stale deals</div>
+          ) : brief.deals.map(d => {
+            const sectorCls = d.sector ? "chip chip--sector-" + String(d.sector).toLowerCase() : "";
+            return (
+              <div key={d.id} className="brief__item" onClick={() => openDeal && openDeal(d)}>
+                <div className="brief__item-main">
+                  <span className="brief__item-name">{d.title}</span>
+                  {d.sector && <span className={sectorCls} style={{marginLeft:6, fontSize:10, padding:"1px 6px"}}>{d.sector}</span>}
+                </div>
+                <div className="brief__why">{d.briefWhy}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="brief__col">
+          <div className="brief__col-head">Intel to read</div>
+          {brief.intel.length === 0 ? (
+            <div className="brief__empty">No fresh intel</div>
+          ) : brief.intel.map(i => (
+            <div key={i.id} className="brief__item" onClick={() => openIntel && openIntel(i)}>
+              <div className="brief__item-main">
+                <span className="brief__item-name">{i.title}</span>
+              </div>
+              <div className="brief__why">{i.briefWhy}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ================== DASHBOARD ==================
-const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, toggleAction, flags, setModal, leoDismissed, setLeoDismissed }) => {
+const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, openContact, toggleAction, dismissPreMeeting, flags, setModal, leoDismissed, setLeoDismissed }) => {
   const stats = window.VT_STATS;
   const actions = window.VT_ACTIONS.filter(a => !a.done).slice(0, 6);
   const activeDeals = window.VT_DEALS.slice(0, 6);
@@ -57,6 +366,10 @@ const ScreenDashboard = ({ setView, openDeal, openTx, openAction, openIntel, tog
   return (
     <div>
       {flags.leoStrip && !leoDismissed && <LeoStrip onDismiss={() => setLeoDismissed(true)}/>}
+
+      <PreMeetingBanner dismissPreMeeting={dismissPreMeeting} openContact={openContact} openDeal={openDeal}/>
+
+      <MorningBrief openContact={openContact} openDeal={openDeal} openIntel={openIntel} setView={setView}/>
 
       <div className="kpis">
         <KPI accent label="Active pipeline" value={pipelineStats.activeValue} sub={`${pipelineStats.activeCount} deal${pipelineStats.activeCount === 1 ? "" : "s"} in flow`} sparkline={flags.sparkline ? window.VT_PIPELINE_HISTORY : null} onClick={() => setView("pipeline")}/>
@@ -1656,6 +1969,6 @@ const ScreenReview = ({ showToast }) => {
 };
 
 Object.assign(window, {
-  ScreenDashboard, ScreenActions, ScreenCRM, ScreenPipeline,
+  ScreenDashboard, MorningBrief, computeMorningBrief, PreMeetingBanner, ScreenActions, ScreenCRM, ScreenPipeline,
   ScreenDeals, ScreenLeasing, ScreenIntel, ScreenStrategy, ScreenKnowledge, ScreenReview,
 });
