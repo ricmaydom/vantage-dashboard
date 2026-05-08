@@ -590,7 +590,13 @@ function App(){
     const d = (window.VT_DEALS || []).find(x => x.id === id)
       || (window.VT_TRANSACTIONS || []).find(x => x.id === id)
       || (window.VT_DEAL_CARDS || []).find(x => x.id === id);
-    if(d){ Object.assign(d, patch); }
+    // If phase (display label) is being changed, also recompute phaseK
+    // so the Pipeline view (which groups by phaseK) picks up the move.
+    // phaseKey() is a global from adapter.jsx.
+    const fullPatch = (patch.phase != null && typeof phaseKey === 'function')
+      ? { ...patch, phaseK: phaseKey(patch.phase) }
+      : patch;
+    if(d){ Object.assign(d, fullPatch); }
     if(table && !isDraft){
       const dbPatch = table === 'pipeline_cards' ? _mapPipelinePatch(patch) : _mapDealPatch(patch);
       if(Object.keys(dbPatch).length) _persistPatch(table, id, dbPatch);
@@ -922,7 +928,15 @@ function App(){
       const CONFIDENCE_OPTS = ["Confirmed","Reported","Rumoured"];
       const CONVICTION_OPTS = ["High","Medium","Low","—"];
       const STRATEGY_OPTS = ["Value Add","Core Plus","Core","Opportunistic","Development","—"];
-      const setDealField = (k,v) => { updateDeal(r.id, { [k]: v }, isDeal ? 'pipeline_cards' : 'deal_cards', { _draft: !!r._draft }); setDrawer(d => ({ ...d, record: { ...d.record, [k]: v }})); };
+      const setDealField = (k,v) => {
+        updateDeal(r.id, { [k]: v }, isDeal ? 'pipeline_cards' : 'deal_cards', { _draft: !!r._draft });
+        setDrawer(d => {
+          const recPatch = (k === 'phase' && typeof phaseKey === 'function')
+            ? { phase: v, phaseK: phaseKey(v) }
+            : { [k]: v };
+          return { ...d, record: { ...d.record, ...recPatch }};
+        });
+      };
       return (
         <>
           <div className="drawer__section">
