@@ -906,7 +906,7 @@ function App(){
       case "dashboard": return <ScreenDashboard tickContact={tickContact} dismissPreMeeting={dismissPreMeeting} setView={setView} openDeal={openDeal} openTx={openTx} openAction={openAction} openIntel={openIntel} openContact={openContact} toggleAction={toggleAction} flags={flags} setModal={setModal} leoDismissed={leoDismissed} setLeoDismissed={setLeoDismissed}/>;
       case "actions":   return <ScreenActions toggleAction={toggleAction} openAction={openAction} updateAction={updateAction} addAction={() => { const t = addAction(); if(t) openAction(t); }} {...props}/>;
       case "crm":       return <ScreenCRM openContact={openContact} addContact={addContact} {...props}/>;
-      case "pipeline":  return <ScreenPipeline openDeal={openDeal} updatePhase={updatePhase} {...props}/>;
+      case "pipeline":  return <ScreenPipeline openDeal={openDeal} updatePhase={updatePhase} bumpKey={bumpKey} {...props}/>;
       case "deals":     return <ScreenDeals openTx={openTx} {...props}/>;
       case "leasing":   return <ScreenLeasing leases={leases} openLease={openLease} addLease={() => { const l = addLease(); if(l) openLease(l); }} removeLease={removeLease} {...props}/>;
       case "intel":     return <ScreenIntel openIntel={openIntel} {...props}/>;

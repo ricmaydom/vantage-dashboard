@@ -798,7 +798,7 @@ const fmtDDMMMYY = VT_FMT.DATE;
 
 // ================== PIPELINE ==================
 const PHASE_LABELS_SHORT = { identified:"Identified", initial:"Initial Analysis", detailed:"Detailed Analysis", bid:"Bid Submitted", dd:"Entered DD", closed:"Closed", dead:"Dead" };
-const ScreenPipeline = ({ openDeal, updatePhase, flags }) => {
+const ScreenPipeline = ({ openDeal, updatePhase, flags, bumpKey }) => {
   const basePhases = window.VT_PHASES;
   // Source of truth for phase is now pipeline_cards.phase in DB (via VT_DEALS[].phaseK).
   // One-time cleanup: clear any leftover localStorage override map.
@@ -817,7 +817,8 @@ const ScreenPipeline = ({ openDeal, updatePhase, flags }) => {
 
   const resolvePhase = React.useCallback((d) => d.phaseK, []);
 
-  // Recompute phases from VT_DEALS (DB-backed)
+  // Recompute phases from VT_DEALS (DB-backed). bumpKey forces invalidation
+  // when phase/phaseK is mutated in place via updateDeal (drawer save path).
   const phases = React.useMemo(() => {
     const order = ["identified","initial","detailed","bid","dd","closed","dead"];
     return order.map(k => {
@@ -833,7 +834,7 @@ const ScreenPipeline = ({ openDeal, updatePhase, flags }) => {
         deals,
       };
     });
-  }, [basePhases, resolvePhase]);
+  }, [basePhases, resolvePhase, bumpKey]);
 
   const total = phases.filter(p => p.k !== "dead").reduce((a,p) => a + p.count, 0);
   const totalValue = phases.filter(p => p.k !== "dead").reduce((a,p) => a + p.value, 0);
